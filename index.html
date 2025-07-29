@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>EcoEats | Home</title>
+  <link rel="stylesheet" href="style.css" />
+  <script>
+    window.onload = function () {
+      if (!localStorage.getItem("loggedUser")) {
+        window.location.href = "login.html";
+      }
+    };
+  </script>
+</head>
+<body>
+  <header>
+    <h1>EcoEats</h1>
+    <nav>
+      <a href="post.html">Post Food</a>
+      <a href="view.html">View Food</a>
+      <a href="#" onclick="logout()">Logout</a>
+    </nav>
+  </header>
+  <main>
+    <div class="card">
+      <h2>Welcome to EcoEats</h2>
+      <p>EcoEats helps ASU event organizers reduce food waste by sharing food with students in real-time.</p>
+      <p>Post food or view what's available on campus now!</p>
+    </div>
+  </main>
+
+  <script>
+    function logout() {
+      localStorage.removeItem("loggedUser");
+      window.location.href = "login.html";
+    }
+  </script>
+</body>
+</html>

@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Post Food | EcoEats</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <header>
+    <h1>EcoEats</h1>
+    <nav>
+      <a href="index.html">Home</a>
+      <a href="view.html">View Food</a>
+      <a href="#" onclick="logout()">Logout</a>
+    </nav>
+  </header>
+
+  <main>
+    <div class="card">
+      <h2>Post Food</h2>
+      <form id="foodForm">
+        <label>Organization Name:</label>
+        <input type="text" id="org" required />
+
+        <label>Event Name:</label>
+        <input type="text" id="event" required />
+
+        <label>Campus:</label>
+        <select id="campus" required>
+          <option value="">-- Select Campus --</option>
+          <option value="Tempe">Tempe</option>
+          <option value="Polytechnic">Polytechnic</option>
+          <option value="Downtown Phoenix">Downtown Phoenix</option>
+        </select>
+
+        <label>Location:</label>
+        <input type="text" id="location" required />
+
+        <label>Description of Food:</label>
+        <textarea id="description" rows="3" required></textarea>
+
+        <label>Upload Photo (Optional):</label>
+        <input type="file" id="photo" accept="image/*" />
+
+        <button type="submit">Submit</button>
+      </form>
+    </div>
+  </main>
+
+  <script>
+    function logout() {
+      localStorage.removeItem("loggedUser");
+      window.location.href = "login.html";
+    }
+
+    document.getElementById("foodForm").addEventListener("submit", function (e) {
+      e.preventDefault();
+
+      const reader = new FileReader();
+      const file = document.getElementById("photo").files[0];
+
+      const savePost = (imageBase64 = "") => {
+        const post = {
+          org: document.getElementById("org").value,
+          event: document.getElementById("event").value,
+          campus: document.getElementById("campus").value,
+          location: document.getElementById("location").value,
+          description: document.getElementById("description").value,
+          image: imageBase64,
+          user: localStorage.getItem("loggedUser"),
+        };
+
+        let posts = JSON.parse(localStorage.getItem("posts") || "[]");
+        posts.push(post);
+        localStorage.setItem("posts", JSON.stringify(posts));
+
+        alert("Post submitted!");
+        window.location.href = "view.html";
+      };
+
+      if (file) {
+        reader.onload = () => savePost(reader.result);
+        reader.readAsDataURL(file);
+      } else {
+        savePost();
+      }
+    });
+  </script>
+</body>
+</html>
