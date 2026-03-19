@@ -1,1 +1,2306 @@
-
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>EcoEats — Rescue Food at ASU</title>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,700;0,800;0,900;1,700&family=Plus+Jakarta+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.min.css"/>
+<script src="https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.min.js"></script>
+<style>
+:root {
+  --bg: #F6F3EE;
+  --bg2: #EDE9E1;
+  --white: #FFFFFF;
+  --forest: #0C3D1E;
+  --forest-mid: #145528;
+  --leaf: #1F8040;
+  --lime: #52C041;
+  --lime-light: #E6F5E2;
+  --amber: #D4930C;
+  --amber-bg: #FEF4E0;
+  --red: #C83030;
+  --red-bg: #FDECEC;
+  --ink: #1C1C1A;
+  --ink2: #4C4C47;
+  --ink3: #8C8C84;
+  --border: #DDD9D0;
+  --border2: #CBC7BC;
+  --sidebar-w: 240px;
+  --topbar-h: 64px;
+  --r: 12px;
+  --r-lg: 18px;
+  --r-xl: 24px;
+  --shadow: 0 1px 6px rgba(12,61,30,.07), 0 4px 16px rgba(12,61,30,.05);
+  --shadow-md: 0 4px 20px rgba(12,61,30,.10), 0 1px 4px rgba(12,61,30,.06);
+  --shadow-lg: 0 12px 48px rgba(12,61,30,.15);
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html{scroll-behavior:smooth}
+body{font-family:'Plus Jakarta Sans',sans-serif;background:var(--bg);color:var(--ink);-webkit-font-smoothing:antialiased}
+button,input,select,textarea{font-family:inherit}
+img{display:block;max-width:100%}
+ 
+/* ── PAGES ── */
+.page{display:none}
+.page.active{display:flex;flex-direction:column;min-height:100vh}
+#page-landing.active{display:block}
+#page-auth.active{display:flex;min-height:100vh}
+#page-app.active{display:flex;flex-direction:row;min-height:100vh}
+ 
+/* ══════════════════════════════════
+   LANDING
+══════════════════════════════════ */
+.l-nav{
+  position:fixed;top:0;left:0;right:0;z-index:200;
+  height:66px;padding:0 6%;
+  display:flex;align-items:center;justify-content:space-between;
+  background:rgba(246,243,238,.93);backdrop-filter:blur(18px);
+  border-bottom:1px solid var(--border);transition:box-shadow .3s;
+}
+.l-nav.up{box-shadow:var(--shadow)}
+.l-logo{font-family:'Playfair Display',serif;font-size:22px;font-weight:900;color:var(--forest);display:flex;align-items:center;gap:8px;cursor:pointer}
+.l-logo-box{width:34px;height:34px;background:var(--forest);border-radius:9px;display:flex;align-items:center;justify-content:center;font-size:18px}
+.l-nav-links{display:flex;align-items:center;gap:28px}
+.l-nav-link{font-size:14px;font-weight:500;color:var(--ink2);cursor:pointer;transition:color .2s}
+.l-nav-link:hover{color:var(--forest)}
+.l-nav-cta{background:var(--forest);color:#fff;font-size:14px;font-weight:700;padding:9px 22px;border-radius:8px;border:none;cursor:pointer;transition:background .2s,transform .15s}
+.l-nav-cta:hover{background:var(--forest-mid);transform:translateY(-1px)}
+ 
+/* hero */
+.hero{min-height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:120px 6% 80px;position:relative;overflow:hidden}
+.hero-bg{position:absolute;inset:0;background:radial-gradient(ellipse 70% 55% at 50% 0%,rgba(82,192,65,.09) 0%,transparent 55%),radial-gradient(ellipse 45% 40% at 85% 70%,rgba(212,147,12,.06) 0%,transparent 50%);pointer-events:none}
+.eyebrow{display:inline-flex;align-items:center;gap:7px;background:var(--lime-light);border:1px solid rgba(82,192,65,.3);color:var(--leaf);font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:1px;padding:6px 14px;border-radius:20px;margin-bottom:28px;opacity:0;animation:fu .6s ease .2s forwards}
+.pdot{width:6px;height:6px;background:var(--lime);border-radius:50%;animation:pdp 1.8s ease-in-out infinite}
+@keyframes pdp{0%,100%{opacity:1;transform:scale(1)}50%{opacity:.3;transform:scale(.6)}}
+.hero-h1{font-family:'Playfair Display',serif;font-size:clamp(44px,8vw,86px);font-weight:900;line-height:1.04;letter-spacing:-2.5px;max-width:860px;margin-bottom:24px;opacity:0;animation:fu .7s ease .35s forwards}
+.hero-h1 em{font-style:italic;color:var(--forest)}
+.hero-h1 .uw{position:relative;display:inline-block}
+.hero-h1 .uw::after{content:'';position:absolute;bottom:6px;left:0;right:0;height:4px;background:var(--lime);border-radius:2px}
+.hero-sub{font-size:18px;color:var(--ink2);max-width:500px;line-height:1.65;margin-bottom:40px;opacity:0;animation:fu .7s ease .5s forwards}
+.hero-btns{display:flex;gap:14px;flex-wrap:wrap;justify-content:center;opacity:0;animation:fu .7s ease .65s forwards}
+.btn-p{background:var(--forest);color:#fff;font-size:16px;font-weight:700;padding:15px 34px;border-radius:var(--r);border:none;cursor:pointer;box-shadow:0 4px 20px rgba(12,61,30,.25);transition:background .2s,transform .15s,box-shadow .2s}
+.btn-p:hover{background:var(--forest-mid);transform:translateY(-2px);box-shadow:0 8px 28px rgba(12,61,30,.3)}
+.btn-s{background:transparent;color:var(--ink);font-size:16px;font-weight:600;padding:15px 32px;border-radius:var(--r);border:1.5px solid var(--border2);cursor:pointer;transition:all .2s}
+.btn-s:hover{border-color:var(--forest);background:var(--lime-light);transform:translateY(-2px)}
+.hero-stat-row{display:flex;background:var(--white);border:1px solid var(--border);border-radius:var(--r-xl);padding:28px 0;margin-top:64px;box-shadow:var(--shadow-md);width:100%;max-width:640px;opacity:0;animation:fu .7s ease .8s forwards}
+.hstat{flex:1;text-align:center}
+.hstat+.hstat{border-left:1px solid var(--border)}
+.hstat-n{font-family:'Playfair Display',serif;font-size:34px;font-weight:900;color:var(--forest);line-height:1}
+.hstat-l{font-size:11px;color:var(--ink3);margin-top:5px;font-weight:500}
+@keyframes fu{from{opacity:0;transform:translateY(20px)}to{opacity:1;transform:translateY(0)}}
+ 
+/* HOW IT WORKS */
+.l-hiw{padding:96px 6%;background:var(--white)}
+.l-inner{max-width:1120px;margin:0 auto}
+.sl{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:1.5px;color:var(--leaf);margin-bottom:12px}
+.st{font-family:'Playfair Display',serif;font-size:clamp(28px,4vw,46px);font-weight:800;letter-spacing:-1px;line-height:1.15;margin-bottom:14px}
+.ss{font-size:16px;color:var(--ink2);line-height:1.65;max-width:500px}
+.hiw-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(270px,1fr));gap:20px;margin-top:52px}
+.hiw-card{background:var(--bg);border:1px solid var(--border);border-radius:var(--r-xl);padding:30px;position:relative;overflow:hidden;transition:transform .2s,box-shadow .2s}
+.hiw-card:hover{transform:translateY(-4px);box-shadow:var(--shadow-md)}
+.hiw-card::before{content:attr(data-n);position:absolute;top:16px;right:20px;font-family:'Playfair Display',serif;font-size:80px;font-weight:900;color:rgba(12,61,30,.04);line-height:1}
+.hiw-ico{width:50px;height:50px;border-radius:13px;display:flex;align-items:center;justify-content:center;font-size:23px;margin-bottom:18px}
+.ico-g{background:var(--lime-light)} .ico-a{background:var(--amber-bg)} .ico-f{background:var(--forest);color:#fff}
+.hiw-ct{font-size:17px;font-weight:700;margin-bottom:9px}
+.hiw-cd{font-size:14px;color:var(--ink2);line-height:1.65}
+ 
+/* IMPACT */
+.l-impact{padding:96px 6%;background:var(--forest);position:relative;overflow:hidden}
+.l-impact::before{content:'';position:absolute;inset:0;background:radial-gradient(ellipse 60% 50% at 85% 50%,rgba(82,192,65,.13) 0%,transparent 55%);pointer-events:none}
+.impact-grid{display:grid;grid-template-columns:1fr 1fr;gap:72px;align-items:center;max-width:1120px;margin:0 auto}
+.imp-l .sl{color:var(--lime)}
+.imp-l .st{color:#fff}
+.imp-l .ss{color:rgba(255,255,255,.6)}
+.imp-nums{display:grid;grid-template-columns:1fr 1fr;gap:18px;margin-top:44px}
+.incard{background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.1);border-radius:var(--r);padding:22px}
+.inv{font-family:'Playfair Display',serif;font-size:34px;font-weight:900;color:var(--lime);line-height:1;margin-bottom:5px}
+.inl{font-size:12px;color:rgba(255,255,255,.5)}
+.imp-r{background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.1);border-radius:var(--r-xl);padding:32px}
+.imp-q{font-family:'Playfair Display',serif;font-size:21px;font-style:italic;font-weight:700;color:#fff;line-height:1.5;margin-bottom:22px}
+.imp-q span{color:var(--lime)}
+.imp-qa{display:flex;align-items:center;gap:12px}
+.qa-av{width:40px;height:40px;background:var(--lime-light);border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:19px}
+.qa-name{font-size:14px;font-weight:600;color:#fff}
+.qa-role{font-size:12px;color:rgba(255,255,255,.45)}
+ 
+/* PHONE PREVIEW */
+.l-preview{padding:96px 6%;background:var(--bg);text-align:center}
+.phone-wrap{display:inline-block;background:var(--ink);border-radius:46px;padding:12px;box-shadow:var(--shadow-lg);margin-top:48px}
+.phone-screen{width:310px;background:var(--bg);border-radius:36px;overflow:hidden}
+.ph-notch{height:26px;background:var(--ink);border-radius:0 0 16px 16px;width:100px;margin:0 auto}
+.ph-topbar{padding:10px 14px 8px;background:var(--white);border-bottom:1px solid var(--border);display:flex;justify-content:space-between;align-items:center}
+.ph-logo{font-family:'Playfair Display',serif;font-size:15px;font-weight:900;color:var(--forest)}
+.ph-live{background:var(--lime-light);color:var(--leaf);font-size:9px;font-weight:700;padding:3px 8px;border-radius:10px;display:flex;align-items:center;gap:4px}
+.ph-ld{width:5px;height:5px;background:var(--lime);border-radius:50%;animation:pdp 1.8s ease-in-out infinite}
+.ph-cards{padding:10px;background:var(--bg);display:flex;flex-direction:column;gap:8px}
+.ph-card{background:var(--white);border:1px solid var(--border);border-radius:10px;padding:10px;display:flex;gap:8px;align-items:center;position:relative;overflow:hidden}
+.ph-card::before{content:'';position:absolute;top:0;left:0;width:3px;height:100%}
+.phc-r::before{background:var(--red)} .phc-a::before{background:var(--amber)} .phc-g::before{background:var(--lime)}
+.ph-em{font-size:22px;flex-shrink:0}
+.ph-inf{flex:1}
+.ph-t{font-size:10px;font-weight:700;color:var(--ink);margin-bottom:1px}
+.ph-l{font-size:9px;color:var(--ink3)}
+.ph-badge{font-size:9px;font-weight:700;padding:3px 6px;border-radius:5px;flex-shrink:0}
+.phb-r{background:var(--red-bg);color:var(--red)} .phb-a{background:var(--amber-bg);color:var(--amber)} .phb-g{background:var(--lime-light);color:var(--leaf)}
+.ph-nav{display:flex;background:var(--white);border-top:1px solid var(--border);padding:8px 0 12px}
+.ph-ni{flex:1;text-align:center;font-size:7px;color:var(--ink3);display:flex;flex-direction:column;align-items:center;gap:2px}
+.ph-ni.a{color:var(--forest)} .ph-ni-ic{font-size:14px}
+ 
+/* FINAL CTA + FOOTER */
+.l-fcta{padding:96px 6%;background:var(--white);text-align:center}
+.l-fcta-inner{max-width:560px;margin:0 auto}
+.l-footer{background:var(--forest);padding:36px 6%;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:18px}
+.lf-logo{font-family:'Playfair Display',serif;font-size:20px;font-weight:900;color:#fff}
+.lf-note{font-size:13px;color:rgba(255,255,255,.4)}
+.lf-link{font-size:13px;color:rgba(255,255,255,.5);cursor:pointer;transition:color .2s}
+.lf-link:hover{color:var(--lime)}
+ 
+/* ══════════════════════════════════
+   AUTH
+══════════════════════════════════ */
+#page-auth{background:var(--white)}
+.auth-left{flex:1;background:var(--forest);display:flex;flex-direction:column;justify-content:center;padding:60px;position:relative;overflow:hidden;min-height:100vh}
+.auth-left::before{content:'';position:absolute;inset:0;background:radial-gradient(ellipse 70% 60% at 35% 45%,rgba(82,192,65,.16) 0%,transparent 55%);pointer-events:none}
+.al-brand{font-family:'Playfair Display',serif;font-size:26px;font-weight:900;color:#fff;display:flex;align-items:center;gap:10px;margin-bottom:44px}
+.al-brand-box{width:38px;height:38px;background:var(--lime);border-radius:11px;display:flex;align-items:center;justify-content:center;font-size:20px}
+.al-q{font-family:'Playfair Display',serif;font-size:30px;font-weight:800;font-style:italic;color:#fff;line-height:1.3;margin-bottom:40px;max-width:400px}
+.al-q span{color:var(--lime)}
+.al-proof{display:flex;flex-direction:column;gap:14px}
+.ap-item{display:flex;align-items:center;gap:12px}
+.ap-ico{width:36px;height:36px;background:rgba(255,255,255,.1);border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:16px;flex-shrink:0}
+.ap-txt{font-size:14px;color:rgba(255,255,255,.65);line-height:1.45}
+.ap-txt strong{color:#fff}
+ 
+.auth-right{width:480px;display:flex;flex-direction:column;justify-content:center;align-items:center;padding:60px 52px;background:var(--white);position:relative}
+.ar-back{position:absolute;top:26px;left:26px;display:flex;align-items:center;gap:5px;font-size:13px;font-weight:500;color:var(--ink3);cursor:pointer;transition:color .2s}
+.ar-back:hover{color:var(--forest)}
+.ar-form{width:100%;max-width:340px}
+.ar-title{font-family:'Playfair Display',serif;font-size:27px;font-weight:900;color:var(--ink);letter-spacing:-.5px;margin-bottom:5px}
+.ar-sub{font-size:14px;color:var(--ink3);margin-bottom:32px}
+.ar-tabs{display:flex;background:var(--bg);border:1px solid var(--border);border-radius:var(--r);padding:4px;margin-bottom:26px}
+.ar-tab{flex:1;text-align:center;padding:9px;font-size:13px;font-weight:600;color:var(--ink3);cursor:pointer;border-radius:9px;transition:all .2s}
+.ar-tab.on{background:var(--white);color:var(--forest);box-shadow:var(--shadow)}
+.fld{margin-bottom:15px}
+.fld-l{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:var(--ink2);margin-bottom:5px;display:block}
+.fld-i,.fld-s{width:100%;border:1.5px solid var(--border);border-radius:var(--r);padding:12px 14px;font-size:14px;color:var(--ink);background:var(--white);outline:none;transition:border-color .2s,box-shadow .2s}
+.fld-i:focus,.fld-s:focus{border-color:var(--leaf);box-shadow:0 0 0 3px rgba(82,192,65,.14)}
+.fld-row{display:flex;gap:11px}
+.fld-row .fld{flex:1}
+.role-grid{display:grid;grid-template-columns:1fr 1fr;gap:9px;margin-bottom:18px}
+.role-opt{border:1.5px solid var(--border);border-radius:var(--r);padding:11px 13px;cursor:pointer;display:flex;align-items:center;gap:8px;transition:all .2s}
+.role-opt:hover{border-color:var(--leaf);background:var(--lime-light)}
+.role-opt.sel{border-color:var(--leaf);background:var(--lime-light);color:var(--forest)}
+.role-em{font-size:17px}
+.role-lbl{font-size:12px;font-weight:600}
+.forgot{text-align:right;font-size:12px;color:var(--leaf);cursor:pointer;margin-top:-9px;margin-bottom:14px;font-weight:500}
+.ar-submit{width:100%;background:var(--forest);color:#fff;font-size:15px;font-weight:700;padding:14px;border-radius:var(--r);border:none;cursor:pointer;margin-top:6px;transition:background .2s,transform .15s}
+.ar-submit:hover{background:var(--forest-mid);transform:translateY(-1px)}
+.divider{display:flex;align-items:center;gap:11px;margin:18px 0;color:var(--ink3);font-size:12px}
+.divider::before,.divider::after{content:'';flex:1;height:1px;background:var(--border)}
+.soc-btns{display:flex;gap:9px}
+.soc-btn{flex:1;border:1.5px solid var(--border);border-radius:var(--r);padding:10px;display:flex;align-items:center;justify-content:center;gap:7px;font-size:13px;font-weight:600;color:var(--ink2);cursor:pointer;background:var(--white);transition:all .2s}
+.soc-btn:hover{border-color:var(--border2);background:var(--bg)}
+.ar-switch{margin-top:18px;text-align:center;font-size:13px;color:var(--ink3)}
+.ar-switch span{color:var(--forest);font-weight:600;cursor:pointer}
+ 
+/* ══════════════════════════════════
+   APP — LAYOUT
+══════════════════════════════════ */
+/* SIDEBAR */
+.sidebar{
+  width:var(--sidebar-w);min-width:var(--sidebar-w);
+  background:var(--white);border-right:1px solid var(--border);
+  display:flex;flex-direction:column;padding:0;
+  position:sticky;top:0;height:100vh;overflow-y:auto;
+  z-index:100;
+}
+.sb-logo{
+  padding:22px 20px 18px;
+  font-family:'Playfair Display',serif;font-size:20px;font-weight:900;color:var(--forest);
+  display:flex;align-items:center;gap:8px;
+  border-bottom:1px solid var(--border);
+}
+.sb-logo-dot{width:8px;height:8px;background:var(--lime);border-radius:50%;animation:pdp 1.8s ease-in-out infinite}
+.sb-user{
+  margin:16px 12px;
+  background:var(--bg);border:1px solid var(--border);border-radius:var(--r);
+  padding:12px;display:flex;align-items:center;gap:10px;
+}
+.sb-av{width:36px;height:36px;background:var(--lime-light);border:2px solid var(--lime);border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:17px;flex-shrink:0}
+.sb-uname{font-size:13px;font-weight:700;color:var(--ink)}
+.sb-urole{font-size:11px;color:var(--ink3)}
+.sb-nav{padding:8px 10px;flex:1}
+.sb-section-label{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:var(--ink3);padding:8px 10px 5px}
+.sb-item{
+  display:flex;align-items:center;gap:10px;
+  padding:10px 12px;border-radius:var(--r);
+  font-size:14px;font-weight:500;color:var(--ink2);
+  cursor:pointer;margin-bottom:2px;transition:all .15s;
+  position:relative;
+}
+.sb-item:hover{background:var(--bg);color:var(--ink)}
+.sb-item.on{background:var(--lime-light);color:var(--forest);font-weight:700}
+.sb-item-ico{font-size:17px;width:22px;text-align:center;flex-shrink:0}
+.sb-badge{
+  margin-left:auto;background:var(--red);color:#fff;
+  font-size:10px;font-weight:700;
+  min-width:18px;height:18px;border-radius:9px;
+  display:flex;align-items:center;justify-content:center;
+  padding:0 5px;
+}
+.sb-bottom{padding:14px 12px;border-top:1px solid var(--border)}
+.sb-signout{display:flex;align-items:center;gap:10px;padding:10px 12px;border-radius:var(--r);font-size:13px;color:var(--ink3);cursor:pointer;transition:all .15s}
+.sb-signout:hover{background:var(--red-bg);color:var(--red)}
+ 
+/* MAIN CONTENT */
+.app-main{flex:1;display:flex;flex-direction:column;overflow:hidden;min-width:0}
+.app-topbar{
+  height:var(--topbar-h);padding:0 28px;
+  display:flex;align-items:center;justify-content:space-between;
+  background:var(--white);border-bottom:1px solid var(--border);
+  position:sticky;top:0;z-index:50;
+  box-shadow:0 1px 6px rgba(12,61,30,.05);
+}
+.at-title{font-family:'Playfair Display',serif;font-size:20px;font-weight:800;color:var(--ink)}
+.at-right{display:flex;align-items:center;gap:10px}
+.at-notif-btn{
+  width:38px;height:38px;background:var(--bg);border:1px solid var(--border);
+  border-radius:10px;display:flex;align-items:center;justify-content:center;
+  cursor:pointer;font-size:17px;position:relative;transition:all .15s;
+}
+.at-notif-btn:hover{background:var(--bg2);border-color:var(--border2)}
+.npip{position:absolute;top:6px;right:6px;width:7px;height:7px;background:var(--red);border-radius:50%;border:2px solid var(--white)}
+.at-live-badge{display:flex;align-items:center;gap:6px;background:var(--lime-light);border:1px solid rgba(82,192,65,.3);color:var(--leaf);font-size:11px;font-weight:700;padding:5px 12px;border-radius:20px;text-transform:uppercase;letter-spacing:.5px}
+ 
+/* PANES */
+.app-pane{display:none;flex:1;overflow-y:auto;padding:28px}
+.app-pane.on{display:block}
+.app-pane::-webkit-scrollbar{width:5px}
+.app-pane::-webkit-scrollbar-track{background:transparent}
+.app-pane::-webkit-scrollbar-thumb{background:var(--border2);border-radius:3px}
+ 
+/* MOBILE NAV */
+.mob-nav{display:none;background:var(--white);border-top:1px solid var(--border);padding:8px 0 18px;z-index:100;position:sticky;bottom:0}
+.mob-nav-inner{display:flex}
+.mn-item{flex:1;display:flex;flex-direction:column;align-items:center;gap:3px;padding:6px;cursor:pointer;font-size:10px;font-weight:600;color:var(--ink3);transition:color .15s}
+.mn-item.on{color:var(--forest)}
+.mn-item-ic{font-size:20px;line-height:1}
+.mn-pip{position:relative;display:inline-block}
+.mn-pip::after{content:'';position:absolute;top:0;right:-2px;width:6px;height:6px;background:var(--red);border-radius:50%;border:1.5px solid var(--white)}
+ 
+/* ══════════════════════════════════
+   HOME PANE
+══════════════════════════════════ */
+.home-welcome{margin-bottom:22px}
+.hw-name{font-family:'Playfair Display',serif;font-size:26px;font-weight:800;color:var(--ink)}
+.hw-name span{color:var(--forest)}
+.hw-sub{font-size:14px;color:var(--ink3);margin-top:3px}
+.stats-row{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-bottom:26px}
+.stat-card{background:var(--white);border:1px solid var(--border);border-radius:var(--r-lg);padding:18px 20px;box-shadow:var(--shadow)}
+.stat-card.sc-green{background:var(--lime-light);border-color:rgba(82,192,65,.25)}
+.sc-n{font-family:'Playfair Display',serif;font-size:26px;font-weight:900;color:var(--forest);line-height:1;margin-bottom:4px}
+.sc-green .sc-n{color:var(--leaf)}
+.sc-l{font-size:12px;color:var(--ink3);font-weight:500}
+.sec-hd{display:flex;justify-content:space-between;align-items:center;margin-bottom:14px}
+.sec-hd-t{font-size:15px;font-weight:700;color:var(--ink)}
+.sec-hd-live{display:flex;align-items:center;gap:5px;background:var(--lime-light);border:1px solid rgba(82,192,65,.3);color:var(--leaf);font-size:10px;font-weight:700;padding:4px 10px;border-radius:20px;text-transform:uppercase;letter-spacing:.5px}
+.sec-hd-link{font-size:12px;color:var(--leaf);font-weight:600;cursor:pointer}
+ 
+/* FOOD CARDS */
+.feed{display:flex;flex-direction:column;gap:14px}
+.fc{background:var(--white);border:1px solid var(--border);border-radius:var(--r-lg);overflow:hidden;cursor:pointer;transition:transform .15s,box-shadow .15s;box-shadow:var(--shadow)}
+.fc:hover{transform:translateY(-2px);box-shadow:var(--shadow-md)}
+.fc-img-wrap{position:relative;height:160px;background:var(--bg2);overflow:hidden}
+.fc-img-wrap img{width:100%;height:100%;object-fit:cover;display:block}
+.fc-img-placeholder{width:100%;height:100%;display:flex;align-items:center;justify-content:center;font-size:56px;background:linear-gradient(135deg,var(--bg2),var(--bg))}
+.fc-urgency-stripe{position:absolute;top:0;left:0;right:0;height:4px}
+.fc-time-badge{position:absolute;top:10px;right:10px;font-size:11px;font-weight:700;padding:5px 10px;border-radius:8px;backdrop-filter:blur(8px)}
+.fcb-r{background:rgba(200,48,48,.9);color:#fff}
+.fcb-a{background:rgba(212,147,12,.92);color:#fff}
+.fcb-g{background:rgba(31,128,64,.9);color:#fff}
+.fc-body{padding:16px}
+.fc-row1{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:10px}
+.fc-left-info{}
+.fc-title{font-size:15px;font-weight:700;color:var(--ink);margin-bottom:3px}
+.fc-event{font-size:12px;color:var(--ink3)}
+.fc-bar-wrap{margin-bottom:12px}
+.fc-bar-labels{display:flex;justify-content:space-between;font-size:10px;color:var(--ink3);margin-bottom:4px;font-weight:500}
+.fc-bar{height:4px;background:var(--bg2);border-radius:4px;overflow:hidden}
+.fc-bar-fill{height:100%;border-radius:4px}
+.fc-row2{display:flex;justify-content:space-between;align-items:center}
+.fc-meta{display:flex;flex-direction:column;gap:5px}
+.fc-loc{display:flex;align-items:center;gap:4px;font-size:12px;color:var(--ink3)}
+.fc-tags{display:flex;gap:5px;flex-wrap:wrap}
+.fc-tag{font-size:10px;font-weight:500;padding:2px 7px;border-radius:5px}
+.tag-v{background:var(--lime-light);color:var(--leaf)}
+.tag-h{background:var(--amber-bg);color:var(--amber)}
+.tag-g{background:var(--bg2);color:var(--ink3)}
+.grab-btn{background:var(--forest);color:#fff;font-size:12px;font-weight:700;padding:9px 16px;border-radius:var(--r);border:none;cursor:pointer;white-space:nowrap;transition:all .15s}
+.grab-btn:hover{background:var(--forest-mid);transform:scale(1.04)}
+.fc-social{display:flex;align-items:center;gap:6px;margin-top:12px;padding-top:12px;border-top:1px solid var(--border)}
+.fc-avs{display:flex}
+.fc-av{width:18px;height:18px;border-radius:50%;border:1.5px solid var(--white);margin-left:-5px;background:var(--bg2);font-size:10px;display:flex;align-items:center;justify-content:center}
+.fc-av:first-child{margin-left:0}
+.fc-soc-txt{font-size:11px;color:var(--ink3);margin-left:4px}
+ 
+/* ══════════════════════════════════
+   MAP PANE
+══════════════════════════════════ */
+.map-layout{display:grid;grid-template-columns:1fr 340px;gap:20px;align-items:start}
+.map-card{background:var(--white);border:1px solid var(--border);border-radius:var(--r-lg);overflow:hidden;box-shadow:var(--shadow)}
+.map-hd{padding:14px 18px;border-bottom:1px solid var(--border);display:flex;justify-content:space-between;align-items:center}
+.map-hd-title{font-size:14px;font-weight:700}
+.map-hd-sub{font-size:11px;color:var(--ink3)}
+#leaflet-map{height:480px;z-index:1}
+.map-legend{padding:10px 16px;display:flex;gap:18px;border-top:1px solid var(--border);background:var(--bg)}
+.ml-item{display:flex;align-items:center;gap:5px;font-size:11px;color:var(--ink3)}
+.ml-dot{width:8px;height:8px;border-radius:2px}
+.map-list-card{background:var(--white);border:1px solid var(--border);border-radius:var(--r-lg);overflow:hidden;box-shadow:var(--shadow)}
+.mli{display:flex;align-items:center;gap:11px;padding:13px 16px;border-bottom:1px solid var(--border);cursor:pointer;transition:background .15s}
+.mli:last-child{border-bottom:none}
+.mli:hover{background:var(--lime-light)}
+.mli-em{font-size:22px;flex-shrink:0}
+.mli-info{flex:1}
+.mli-t{font-size:13px;font-weight:700;color:var(--ink);margin-bottom:2px}
+.mli-l{font-size:11px;color:var(--ink3)}
+.mli-badge{font-size:10px;font-weight:700;padding:4px 8px;border-radius:6px}
+ 
+/* ══════════════════════════════════
+   POST PANE
+══════════════════════════════════ */
+.post-layout{display:grid;grid-template-columns:1fr 340px;gap:22px;align-items:start}
+.post-hero{background:var(--forest);border-radius:var(--r-xl);padding:26px;margin-bottom:20px;position:relative;overflow:hidden}
+.post-hero::before{content:'';position:absolute;inset:0;background:radial-gradient(ellipse 60% 50% at 80% 30%,rgba(82,192,65,.18) 0%,transparent 55%);pointer-events:none}
+.post-hero-em{font-size:36px;margin-bottom:10px;position:relative}
+.post-hero-t{font-family:'Playfair Display',serif;font-size:19px;font-weight:800;color:#fff;margin-bottom:6px;position:relative}
+.post-hero-s{font-size:12px;color:rgba(255,255,255,.55);line-height:1.6;position:relative}
+.form-card{background:var(--white);border:1px solid var(--border);border-radius:var(--r-lg);padding:22px;box-shadow:var(--shadow)}
+.pfl{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:var(--ink2);margin-bottom:6px;display:block}
+.pfi,.pfs,.pfta{width:100%;border:1.5px solid var(--border);border-radius:var(--r);padding:11px 13px;font-size:13px;color:var(--ink);background:var(--bg);outline:none;transition:border-color .2s,box-shadow .2s;margin-bottom:14px}
+.pfi:focus,.pfs:focus,.pfta:focus{border-color:var(--leaf);box-shadow:0 0 0 3px rgba(82,192,65,.12);background:var(--white)}
+.pfs{appearance:none;cursor:pointer}
+.pfta{min-height:80px;resize:vertical}
+.pf-row{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+/* IMAGE UPLOAD */
+.img-upload-zone{
+  border:2px dashed var(--border2);border-radius:var(--r-lg);
+  padding:28px;text-align:center;cursor:pointer;
+  margin-bottom:16px;transition:all .2s;background:var(--bg);
+  position:relative;
+}
+.img-upload-zone:hover{border-color:var(--leaf);background:var(--lime-light)}
+.img-upload-zone.has-img{padding:0;border-style:solid;border-color:var(--leaf)}
+.img-upload-zone img{width:100%;height:180px;object-fit:cover;border-radius:12px;display:block}
+.iuz-ico{font-size:32px;margin-bottom:10px}
+.iuz-t{font-size:13px;font-weight:600;color:var(--ink2);margin-bottom:4px}
+.iuz-s{font-size:11px;color:var(--ink3)}
+.iuz-remove{position:absolute;top:8px;right:8px;background:rgba(0,0,0,.5);color:#fff;border:none;border-radius:20px;padding:4px 10px;font-size:11px;cursor:pointer;font-family:'Plus Jakarta Sans',sans-serif}
+#img-input{display:none}
+.pfchips{display:flex;gap:7px;flex-wrap:wrap;margin-bottom:16px}
+.pfchip{padding:6px 12px;border-radius:20px;border:1.5px solid var(--border);background:var(--bg);font-size:12px;color:var(--ink2);cursor:pointer;transition:all .15s;font-weight:500}
+.pfchip.on{border-color:var(--leaf);background:var(--lime-light);color:var(--forest)}
+.pf-submit{width:100%;background:var(--forest);color:#fff;font-size:15px;font-weight:700;padding:14px;border-radius:var(--r);border:none;cursor:pointer;transition:all .2s;margin-top:6px}
+.pf-submit:hover{background:var(--forest-mid);transform:translateY(-1px)}
+.post-success{display:none;background:var(--lime-light);border:1.5px solid rgba(82,192,65,.3);border-radius:var(--r-xl);padding:30px;text-align:center}
+.post-success.on{display:block}
+.ps-ico{font-size:44px;margin-bottom:14px}
+.ps-t{font-family:'Playfair Display',serif;font-size:22px;font-weight:800;color:var(--forest);margin-bottom:8px}
+.ps-s{font-size:13px;color:var(--ink2);line-height:1.6;margin-bottom:20px}
+.ps-reset{background:var(--forest);color:#fff;border:none;border-radius:var(--r);padding:12px 24px;font-size:14px;font-weight:700;cursor:pointer;font-family:'Plus Jakarta Sans',sans-serif}
+/* post sidebar stats */
+.post-side-card{background:var(--white);border:1px solid var(--border);border-radius:var(--r-lg);padding:20px;margin-bottom:16px;box-shadow:var(--shadow)}
+.psc-t{font-size:13px;font-weight:700;margin-bottom:14px;color:var(--ink)}
+.psc-row{display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid var(--border)}
+.psc-row:last-child{border-bottom:none}
+.psc-ico{width:32px;height:32px;border-radius:9px;background:var(--lime-light);display:flex;align-items:center;justify-content:center;font-size:15px;flex-shrink:0}
+.psc-info{flex:1}
+.psc-name{font-size:12px;font-weight:600;color:var(--ink)}
+.psc-val{font-size:11px;color:var(--ink3)}
+ 
+/* ══════════════════════════════════
+   ALERTS PANE
+══════════════════════════════════ */
+.alerts-layout{display:grid;grid-template-columns:1fr 300px;gap:22px;align-items:start}
+.prefs-card{background:var(--white);border:1px solid var(--border);border-radius:var(--r-lg);overflow:hidden;margin-bottom:16px;box-shadow:var(--shadow)}
+.prefs-hd{padding:13px 18px;font-size:13px;font-weight:700;color:var(--ink);border-bottom:1px solid var(--border);background:var(--bg)}
+.pref-row{display:flex;justify-content:space-between;align-items:center;padding:14px 18px;border-bottom:1px solid var(--border)}
+.pref-row:last-child{border-bottom:none}
+.pref-info{flex:1;padding-right:14px}
+.pref-name{font-size:13px;font-weight:600;color:var(--ink);margin-bottom:2px}
+.pref-desc{font-size:11px;color:var(--ink3)}
+.tog{width:44px;height:24px;background:var(--bg2);border-radius:12px;position:relative;cursor:pointer;flex-shrink:0;transition:background .2s;border:1px solid var(--border)}
+.tog.on{background:var(--forest);border-color:var(--forest)}
+.tog::after{content:'';position:absolute;top:3px;left:3px;width:16px;height:16px;background:#fff;border-radius:50%;transition:left .2s;box-shadow:0 1px 3px rgba(0,0,0,.2)}
+.tog.on::after{left:22px}
+.notifs-card{background:var(--white);border:1px solid var(--border);border-radius:var(--r-lg);overflow:hidden;box-shadow:var(--shadow)}
+.notifs-hd{padding:13px 18px;display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid var(--border);background:var(--bg)}
+.notifs-hd-t{font-size:13px;font-weight:700;color:var(--ink)}
+.notifs-clear{font-size:12px;color:var(--leaf);cursor:pointer;font-weight:600}
+.ni{display:flex;align-items:flex-start;gap:11px;padding:14px 18px;border-bottom:1px solid var(--border);cursor:pointer;transition:background .15s}
+.ni:last-child{border-bottom:none}
+.ni:hover{background:var(--bg)}
+.ni.unread{background:var(--lime-light)}
+.ni.unread:hover{background:#d8f0d4}
+.ni-ico{width:38px;height:38px;border-radius:10px;background:var(--bg);display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0}
+.ni-content{flex:1}
+.ni-t{font-size:13px;font-weight:600;color:var(--ink);margin-bottom:3px;line-height:1.4}
+.ni-time{font-size:11px;color:var(--ink3)}
+.undot{width:8px;height:8px;background:var(--leaf);border-radius:50%;flex-shrink:0;margin-top:4px}
+/* alerts sidebar: impact summary */
+.impact-card{background:var(--forest);border-radius:var(--r-lg);padding:20px;color:#fff;box-shadow:var(--shadow-md)}
+.ic-t{font-family:'Playfair Display',serif;font-size:16px;font-weight:800;margin-bottom:14px}
+.ic-stat{display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:1px solid rgba(255,255,255,.1)}
+.ic-stat:last-child{border-bottom:none}
+.ic-sl{font-size:12px;color:rgba(255,255,255,.55)}
+.ic-sv{font-family:'Playfair Display',serif;font-size:18px;font-weight:800;color:var(--lime)}
+ 
+/* ══════════════════════════════════
+   MODAL / BOTTOM SHEET
+══════════════════════════════════ */
+.overlay{position:fixed;inset:0;background:rgba(28,28,26,.45);backdrop-filter:blur(6px);z-index:300;display:none;align-items:flex-end;justify-content:center}
+.overlay.on{display:flex}
+.sheet{background:var(--white);border-radius:24px 24px 0 0;width:100%;max-width:600px;padding:0 0 40px;animation:shup .3s cubic-bezier(.34,1.2,.64,1);max-height:92vh;overflow-y:auto}
+@keyframes shup{from{transform:translateY(100%)}to{transform:translateY(0)}}
+.sheet-handle{width:36px;height:4px;background:var(--bg2);border-radius:2px;margin:14px auto 18px}
+.sheet-inner{padding:0 26px}
+.sh-img{width:100%;height:200px;object-fit:cover;border-radius:var(--r-lg);margin-bottom:18px;background:var(--bg2);display:flex;align-items:center;justify-content:center;font-size:64px}
+.sh-t{font-family:'Playfair Display',serif;font-size:22px;font-weight:800;color:var(--ink);margin-bottom:4px}
+.sh-ev{font-size:13px;color:var(--ink3);margin-bottom:18px}
+.sh-rows{border:1px solid var(--border);border-radius:var(--r);overflow:hidden;margin-bottom:18px}
+.sh-row{display:flex;justify-content:space-between;padding:12px 16px;border-bottom:1px solid var(--border)}
+.sh-row:last-child{border-bottom:none}
+.sh-k{font-size:12px;color:var(--ink3);display:flex;align-items:center;gap:5px}
+.sh-v{font-size:12px;font-weight:600;color:var(--ink)}
+.sh-cta{width:100%;background:var(--forest);color:#fff;font-size:16px;font-weight:700;padding:15px;border:none;border-radius:var(--r);cursor:pointer;margin-bottom:10px;transition:all .2s;font-family:'Plus Jakarta Sans',sans-serif}
+.sh-cta:hover{background:var(--forest-mid);transform:translateY(-1px)}
+.sh-cancel{width:100%;background:var(--bg);color:var(--ink2);font-size:14px;font-weight:600;padding:12px;border:1.5px solid var(--border);border-radius:var(--r);cursor:pointer;font-family:'Plus Jakarta Sans',sans-serif}
+ 
+/* TOAST */
+.toast{position:fixed;bottom:28px;left:50%;transform:translateX(-50%) translateY(80px);background:var(--forest);color:#fff;font-size:13px;font-weight:600;padding:11px 22px;border-radius:20px;z-index:9999;transition:transform .3s cubic-bezier(.34,1.56,.64,1);white-space:nowrap;box-shadow:var(--shadow-md)}
+.toast.on{transform:translateX(-50%) translateY(0)}
+ 
+/* ══════════════════════════════════
+   AI FEATURES
+══════════════════════════════════ */
+ 
+/* AI FAB button */
+.ai-fab{
+  position:fixed;bottom:32px;right:28px;z-index:400;
+  width:56px;height:56px;
+  background:linear-gradient(135deg,var(--forest),var(--leaf));
+  border-radius:50%;border:none;cursor:pointer;
+  display:flex;align-items:center;justify-content:center;
+  box-shadow:0 4px 20px rgba(12,61,30,.35);
+  transition:transform .2s,box-shadow .2s;
+  font-size:22px;
+}
+.ai-fab:hover{transform:scale(1.1);box-shadow:0 8px 28px rgba(12,61,30,.4)}
+.ai-fab-pulse{
+  position:absolute;inset:-4px;border-radius:50%;
+  border:2px solid rgba(82,192,65,.4);
+  animation:aipulse 2.5s ease-in-out infinite;
+}
+@keyframes aipulse{0%,100%{transform:scale(1);opacity:.6}50%{transform:scale(1.12);opacity:0}}
+ 
+/* AI Scout Chat Panel */
+.ai-panel{
+  position:fixed;bottom:100px;right:28px;z-index:399;
+  width:360px;background:var(--white);
+  border-radius:var(--r-xl);border:1px solid var(--border);
+  box-shadow:var(--shadow-lg);
+  display:none;flex-direction:column;
+  max-height:520px;overflow:hidden;
+  animation:aislide .25s cubic-bezier(.34,1.2,.64,1);
+}
+.ai-panel.on{display:flex}
+@keyframes aislide{from{opacity:0;transform:translateY(16px) scale(.97)}to{opacity:1;transform:translateY(0) scale(1)}}
+.ai-panel-hd{
+  padding:16px 18px;
+  background:linear-gradient(135deg,var(--forest),var(--forest-mid));
+  display:flex;align-items:center;gap:10px;
+  border-radius:var(--r-xl) var(--r-xl) 0 0;
+}
+.ai-panel-av{
+  width:36px;height:36px;background:var(--lime);border-radius:50%;
+  display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0;
+}
+.ai-panel-name{font-size:14px;font-weight:700;color:#fff}
+.ai-panel-sub{font-size:11px;color:rgba(255,255,255,.55)}
+.ai-panel-close{margin-left:auto;background:rgba(255,255,255,.15);border:none;color:#fff;width:28px;height:28px;border-radius:50%;cursor:pointer;font-size:14px;display:flex;align-items:center;justify-content:center;transition:background .15s}
+.ai-panel-close:hover{background:rgba(255,255,255,.25)}
+.ai-msgs{flex:1;overflow-y:auto;padding:14px;display:flex;flex-direction:column;gap:10px;scrollbar-width:thin}
+.ai-msgs::-webkit-scrollbar{width:4px}
+.ai-msgs::-webkit-scrollbar-thumb{background:var(--border2);border-radius:2px}
+.ai-msg{max-width:88%;padding:10px 13px;border-radius:14px;font-size:13px;line-height:1.55}
+.ai-msg.bot{background:var(--lime-light);border:1px solid rgba(82,192,65,.2);color:var(--ink);border-bottom-left-radius:4px;align-self:flex-start}
+.ai-msg.user{background:var(--forest);color:#fff;border-bottom-right-radius:4px;align-self:flex-end}
+.ai-msg.thinking{background:var(--bg2);color:var(--ink3);font-style:italic;align-self:flex-start}
+.ai-typing{display:flex;gap:4px;align-items:center;padding:10px 13px;background:var(--lime-light);border:1px solid rgba(82,192,65,.2);border-radius:14px;border-bottom-left-radius:4px;align-self:flex-start;width:fit-content}
+.ai-typing span{width:6px;height:6px;background:var(--leaf);border-radius:50%;animation:aityping 1.2s ease-in-out infinite}
+.ai-typing span:nth-child(2){animation-delay:.15s}
+.ai-typing span:nth-child(3){animation-delay:.3s}
+@keyframes aityping{0%,100%{transform:translateY(0);opacity:.5}50%{transform:translateY(-4px);opacity:1}}
+.ai-chips{display:flex;gap:6px;flex-wrap:wrap;padding:0 14px 10px}
+.ai-chip{background:var(--bg);border:1px solid var(--border);border-radius:20px;padding:5px 11px;font-size:11px;font-weight:600;color:var(--ink2);cursor:pointer;white-space:nowrap;transition:all .15s}
+.ai-chip:hover{border-color:var(--leaf);background:var(--lime-light);color:var(--forest)}
+.ai-input-row{
+  padding:12px 14px;border-top:1px solid var(--border);
+  display:flex;gap:8px;align-items:center;background:var(--bg);
+  border-radius:0 0 var(--r-xl) var(--r-xl);
+}
+.ai-input{flex:1;border:1.5px solid var(--border);border-radius:20px;padding:9px 14px;font-size:13px;background:var(--white);color:var(--ink);outline:none;font-family:'Plus Jakarta Sans',sans-serif;transition:border-color .2s}
+.ai-input:focus{border-color:var(--leaf)}
+.ai-send{width:34px;height:34px;background:var(--forest);border:none;border-radius:50%;cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:14px;transition:background .15s,transform .15s;flex-shrink:0}
+.ai-send:hover{background:var(--forest-mid);transform:scale(1.05)}
+ 
+/* AI Listing Writer (Post pane) */
+.ai-writer-card{
+  background:linear-gradient(135deg,rgba(12,61,30,.04),rgba(82,192,65,.06));
+  border:1.5px solid rgba(82,192,65,.3);
+  border-radius:var(--r-lg);padding:18px;margin-bottom:20px;
+}
+.ai-writer-hd{display:flex;align-items:center;gap:8px;margin-bottom:12px}
+.ai-writer-badge{background:linear-gradient(135deg,var(--forest),var(--leaf));color:#fff;font-size:10px;font-weight:700;padding:3px 9px;border-radius:20px;letter-spacing:.5px;text-transform:uppercase}
+.ai-writer-title{font-size:14px;font-weight:700;color:var(--ink)}
+.ai-writer-sub{font-size:12px;color:var(--ink3);margin-bottom:12px;line-height:1.5}
+.ai-writer-input-row{display:flex;gap:8px}
+.ai-writer-input{flex:1;border:1.5px solid var(--border2);border-radius:var(--r);padding:10px 13px;font-size:13px;color:var(--ink);background:var(--white);outline:none;font-family:'Plus Jakarta Sans',sans-serif;transition:border-color .2s}
+.ai-writer-input:focus{border-color:var(--leaf);box-shadow:0 0 0 3px rgba(82,192,65,.12)}
+.ai-writer-btn{background:var(--forest);color:#fff;border:none;border-radius:var(--r);padding:10px 16px;font-size:13px;font-weight:700;cursor:pointer;white-space:nowrap;transition:all .2s;font-family:'Plus Jakarta Sans',sans-serif;display:flex;align-items:center;gap:6px}
+.ai-writer-btn:hover{background:var(--forest-mid)}
+.ai-writer-btn:disabled{opacity:.5;cursor:not-allowed}
+.ai-writer-result{
+  margin-top:12px;padding:12px 14px;
+  background:var(--white);border:1px solid rgba(82,192,65,.25);
+  border-radius:var(--r);font-size:12px;color:var(--ink2);
+  line-height:1.6;display:none;
+}
+.ai-writer-result.on{display:block}
+.ai-apply-btn{margin-top:10px;background:var(--lime-light);color:var(--forest);border:1.5px solid rgba(82,192,65,.3);border-radius:var(--r);padding:8px 16px;font-size:12px;font-weight:700;cursor:pointer;font-family:'Plus Jakarta Sans',sans-serif;transition:all .15s}
+.ai-apply-btn:hover{background:rgba(82,192,65,.2)}
+ 
+/* AI Photo Analyzer result */
+.ai-photo-result{
+  margin-top:10px;padding:12px;
+  background:var(--lime-light);border:1px solid rgba(82,192,65,.3);
+  border-radius:var(--r);font-size:12px;color:var(--ink2);
+  line-height:1.6;display:none;
+}
+.ai-photo-result.on{display:block}
+.ai-photo-label{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:var(--leaf);margin-bottom:4px}
+ 
+/* AI badge on sidebar */
+.ai-spark{background:linear-gradient(135deg,var(--forest),var(--leaf));color:#fff;font-size:9px;font-weight:700;padding:2px 7px;border-radius:10px;margin-left:auto;letter-spacing:.3px}
+ 
+/* ══ AGENT 1: SAFETY & COMPLIANCE ══ */
+.safety-bar-wrap{margin:10px 0 6px}
+.safety-bar-labels{display:flex;justify-content:space-between;font-size:10px;margin-bottom:4px;font-weight:500}
+.sf-left{color:var(--ink3)} .sf-safe{color:var(--leaf)} .sf-warn{color:var(--amber)} .sf-danger{color:var(--red)}
+.safety-bar{height:3px;background:var(--bg2);border-radius:3px;overflow:hidden}
+.safety-fill{height:100%;border-radius:3px}
+.verified-badge{display:inline-flex;align-items:center;gap:4px;background:rgba(31,128,64,.1);border:1px solid rgba(31,128,64,.25);color:var(--leaf);font-size:10px;font-weight:700;padding:2px 8px;border-radius:10px}
+.fc.fc-expired{opacity:.5;pointer-events:none;position:relative}
+.expired-banner{position:absolute;top:0;left:0;right:0;background:var(--red);color:#fff;font-size:11px;font-weight:700;text-align:center;padding:5px;border-radius:var(--r-lg) var(--r-lg) 0 0;z-index:2}
+.liability-wrap{background:var(--amber-bg);border:1.5px solid rgba(212,147,12,.3);border-radius:var(--r);padding:14px;margin-bottom:16px}
+.liability-title{font-size:12px;font-weight:700;color:var(--amber);margin-bottom:6px}
+.liability-text{font-size:12px;color:var(--ink2);line-height:1.55;margin-bottom:10px}
+.liability-row{display:flex;align-items:flex-start;gap:9px;cursor:pointer}
+.liability-row input{width:16px;height:16px;accent-color:var(--forest);flex-shrink:0;margin-top:2px;cursor:pointer}
+.liability-lbl{font-size:12px;color:var(--ink);line-height:1.5;font-weight:500}
+.safety-notice{display:flex;align-items:center;gap:5px;font-size:10px;margin-top:6px;padding-top:8px;border-top:1px solid var(--border)}
+ 
+/* ══ AGENT 2: TIMING & PREDICTION ══ */
+.schedule-toggle-wrap{background:var(--lime-light);border:1.5px solid rgba(82,192,65,.3);border-radius:var(--r);padding:12px 14px;margin-bottom:14px;display:flex;justify-content:space-between;align-items:center}
+.schedule-toggle-info{font-size:12px;font-weight:600;color:var(--forest)}
+.schedule-toggle-sub{font-size:11px;color:var(--ink3);margin-top:2px}
+.schedule-fields{display:none;margin-top:10px;padding-top:10px;border-top:1px solid rgba(82,192,65,.2)}
+.schedule-fields.on{display:block}
+.on-my-way-btn{background:var(--lime-light);color:var(--forest);border:1.5px solid rgba(82,192,65,.3);border-radius:var(--r);padding:8px 14px;font-size:12px;font-weight:700;cursor:pointer;display:flex;align-items:center;gap:6px;transition:all .15s;font-family:inherit;white-space:nowrap}
+.on-my-way-btn:hover{background:rgba(82,192,65,.2)}
+.on-my-way-btn.going{background:var(--forest);color:#fff;border-color:var(--forest)}
+.reservation-countdown{background:var(--amber-bg);border:1px solid rgba(212,147,12,.25);border-radius:var(--r);padding:10px 14px;font-size:12px;color:var(--amber);font-weight:600;display:none;margin-top:8px;text-align:center}
+.reservation-countdown.on{display:block}
+.eta-badge{background:var(--lime-light);color:var(--leaf);font-size:10px;font-weight:700;padding:3px 8px;border-radius:8px;border:1px solid rgba(82,192,65,.2)}
+.scheduled-badge{background:var(--amber-bg);color:var(--amber);font-size:10px;font-weight:700;padding:3px 8px;border-radius:8px}
+ 
+/* ══ AGENT 3: SUSTAINABILITY DASHBOARD ══ */
+.esg-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;margin-bottom:20px}
+.esg-card{background:var(--white);border:1px solid var(--border);border-radius:var(--r-lg);padding:18px;box-shadow:var(--shadow);text-align:center}
+.esg-card.esg-green{background:var(--lime-light);border-color:rgba(82,192,65,.25)}
+.esg-val{font-family:'Playfair Display',serif;font-size:28px;font-weight:900;color:var(--forest);line-height:1;margin-bottom:4px}
+.esg-green .esg-val{color:var(--leaf)}
+.esg-label{font-size:11px;color:var(--ink3);font-weight:500}
+.partner-card{background:var(--forest);border-radius:var(--r-xl);padding:24px;color:#fff;margin-bottom:20px;box-shadow:var(--shadow-md)}
+.partner-card-t{font-family:'Playfair Display',serif;font-size:18px;font-weight:800;margin-bottom:4px}
+.partner-card-s{font-size:12px;color:rgba(255,255,255,.55);margin-bottom:18px}
+.partner-metrics{display:grid;grid-template-columns:repeat(2,1fr);gap:12px}
+.pm-card{background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.1);border-radius:var(--r);padding:14px}
+.pm-val{font-family:'Playfair Display',serif;font-size:22px;font-weight:900;color:var(--lime);line-height:1;margin-bottom:3px}
+.pm-lbl{font-size:11px;color:rgba(255,255,255,.5)}
+.report-btn{background:var(--lime);color:var(--forest);border:none;border-radius:var(--r);padding:11px 22px;font-size:13px;font-weight:700;cursor:pointer;font-family:inherit;transition:all .2s;margin-top:4px}
+.report-btn:hover{background:#6EE05A;transform:translateY(-1px)}
+.official-event-wrap{display:flex;justify-content:space-between;align-items:center;background:var(--forest);border-radius:var(--r);padding:12px 16px;margin-bottom:14px;color:#fff}
+.oe-info .oe-title{font-size:13px;font-weight:700}
+.oe-info .oe-sub{font-size:11px;color:rgba(255,255,255,.5);margin-top:2px}
+.official-pin{background:var(--forest);color:#fff;font-size:9px;font-weight:700;padding:2px 7px;border-radius:10px;border:1.5px solid var(--lime)}
+.monthly-report-card{background:var(--white);border:1px solid var(--border);border-radius:var(--r-lg);padding:20px;box-shadow:var(--shadow);margin-bottom:16px}
+.mrc-t{font-size:14px;font-weight:700;color:var(--ink);margin-bottom:14px;display:flex;justify-content:space-between;align-items:center}
+.mrc-row{display:flex;justify-content:space-between;align-items:center;padding:9px 0;border-bottom:1px solid var(--border)}
+.mrc-row:last-child{border-bottom:none}
+.mrc-k{font-size:12px;color:var(--ink3)}
+.mrc-v{font-size:13px;font-weight:700;color:var(--forest)}
+.trend-up{color:var(--leaf);font-size:11px}
+.trend-down{color:var(--red);font-size:11px}
+ 
+/* ══ AGENT 4: PERSONALIZATION ══ */
+.onboard-overlay{position:fixed;inset:0;background:rgba(28,28,26,.6);backdrop-filter:blur(8px);z-index:500;display:none;align-items:center;justify-content:center}
+.onboard-overlay.on{display:flex}
+.onboard-card{background:var(--white);border-radius:var(--r-xl);padding:32px;width:100%;max-width:420px;box-shadow:var(--shadow-lg);animation:aislide .3s cubic-bezier(.34,1.2,.64,1)}
+.ob-step{display:none}
+.ob-step.on{display:block}
+.ob-emoji{font-size:40px;margin-bottom:14px}
+.ob-title{font-family:'Playfair Display',serif;font-size:22px;font-weight:800;color:var(--ink);margin-bottom:6px}
+.ob-sub{font-size:14px;color:var(--ink3);line-height:1.6;margin-bottom:22px}
+.ob-options{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:22px}
+.ob-opt{border:2px solid var(--border);border-radius:var(--r);padding:12px;cursor:pointer;text-align:center;transition:all .2s}
+.ob-opt:hover{border-color:var(--leaf);background:var(--lime-light)}
+.ob-opt.sel{border-color:var(--leaf);background:var(--lime-light);color:var(--forest)}
+.ob-opt-em{font-size:24px;margin-bottom:6px}
+.ob-opt-l{font-size:12px;font-weight:600}
+.ob-next{width:100%;background:var(--forest);color:#fff;border:none;border-radius:var(--r);padding:13px;font-size:15px;font-weight:700;cursor:pointer;font-family:inherit;transition:all .2s}
+.ob-next:hover{background:var(--forest-mid)}
+.ob-skip{text-align:center;margin-top:10px;font-size:12px;color:var(--ink3);cursor:pointer}
+.ob-skip:hover{color:var(--forest)}
+.ob-progress{display:flex;gap:6px;justify-content:center;margin-bottom:20px}
+.ob-pip{width:8px;height:8px;border-radius:50%;background:var(--bg2);transition:background .2s}
+.ob-pip.on{background:var(--forest)}
+/* Reputation scores */
+.rep-score{display:inline-flex;align-items:center;gap:3px;font-size:11px;font-weight:700;color:var(--amber);margin-left:6px}
+.rep-count{font-size:10px;color:var(--ink3);font-weight:400;margin-left:1px}
+/* Personalized feed badge */
+.pf-badge{display:inline-flex;align-items:center;gap:5px;background:var(--bg2);border:1px solid var(--border);color:var(--ink3);font-size:11px;font-weight:600;padding:4px 10px;border-radius:20px;cursor:pointer;transition:all .15s}
+.pf-badge:hover{border-color:var(--leaf);color:var(--forest);background:var(--lime-light)}
+.pf-badge.active{background:var(--lime-light);border-color:rgba(82,192,65,.3);color:var(--forest)}
+/* Match score pill on cards */
+.match-pill{background:var(--forest);color:#fff;font-size:10px;font-weight:700;padding:2px 8px;border-radius:10px}
+ 
+/* ══════════════════════════════════
+   RESPONSIVE
+══════════════════════════════════ */
+@media(max-width:1100px){
+  .stats-row{grid-template-columns:repeat(2,1fr)}
+  .map-layout{grid-template-columns:1fr}
+  .post-layout{grid-template-columns:1fr}
+  .alerts-layout{grid-template-columns:1fr}
+  .impact-grid{grid-template-columns:1fr;gap:40px}
+}
+@media(max-width:860px){
+  .auth-left{display:none}
+  .auth-right{width:100%;min-height:100vh}
+  .l-nav-links .l-nav-link{display:none}
+  .l-nav-links .l-nav-link:last-of-type{display:block}
+}
+@media(max-width:768px){
+  .sidebar{display:none}
+  .mob-nav{display:block}
+  .app-topbar{padding:0 16px}
+  .app-pane{padding:16px}
+  .stats-row{grid-template-columns:repeat(2,1fr);gap:10px}
+  .at-live-badge{display:none}
+  #leaflet-map{height:320px}
+}
+@media(max-width:600px){
+  .hero-h1{letter-spacing:-1.5px}
+  .hero-btns{flex-direction:column;align-items:center}
+  .hiw-grid{grid-template-columns:1fr}
+  .hero-stat-row{flex-direction:column;gap:0}
+  .hstat+.hstat{border-left:none;border-top:1px solid var(--border)}
+  .stats-row{grid-template-columns:1fr 1fr}
+}
+</style>
+</head>
+<body>
+ 
+<div class="toast" id="toast"></div>
+ 
+<!-- MODAL BOTTOM SHEET -->
+<div class="overlay" id="modal" onclick="closeModal(event)">
+  <div class="sheet">
+    <div class="sheet-handle"></div>
+    <div class="sheet-inner">
+      <div class="sh-img" id="sh-img-wrap"></div>
+      <div class="sh-t" id="sh-title"></div>
+      <div class="sh-ev" id="sh-event"></div>
+      <div class="sh-rows" id="sh-rows"></div>
+      <button class="sh-cta" onclick="claim()">📍 I'm on my way!</button>
+      <button class="sh-cancel" onclick="closeModalDirect()">Maybe later</button>
+    </div>
+  </div>
+</div>
+ 
+<!-- ═══════════════════════
+     LANDING
+════════════════════════ -->
+<div class="page active" id="page-landing">
+  <nav class="l-nav" id="lnav">
+    <div class="l-logo" onclick="noop()">
+      <div class="l-logo-box">🌿</div>EcoEats
+    </div>
+    <div class="l-nav-links">
+      <span class="l-nav-link" onclick="smScroll('#l-hiw')">How it works</span>
+      <span class="l-nav-link" onclick="smScroll('#l-impact')">Impact</span>
+      <span class="l-nav-link" onclick="smScroll('#l-preview')">App</span>
+      <button class="l-nav-cta" onclick="goPage('auth')">Get started</button>
+    </div>
+  </nav>
+ 
+  <section class="hero">
+    <div class="hero-bg"></div>
+    <div class="eyebrow"><div class="pdot"></div> Live at ASU · 4 active listings</div>
+    <h1 class="hero-h1">Free food,<br><em>zero</em> <span class="uw">waste</span></h1>
+    <p class="hero-sub">Event leftovers, rescued in seconds. Real-time alerts when free food appears near you on campus.</p>
+    <div class="hero-btns">
+      <button class="btn-p" onclick="goPage('auth')">Get free food now →</button>
+      <button class="btn-s" onclick="demoApp()">See live demo</button>
+    </div>
+    <div class="hero-stat-row">
+      <div class="hstat"><div class="hstat-n" id="h-lbs">0</div><div class="hstat-l">lbs rescued today</div></div>
+      <div class="hstat"><div class="hstat-n" id="h-meals">0</div><div class="hstat-l">meals served this semester</div></div>
+      <div class="hstat"><div class="hstat-n">26%</div><div class="hstat-l">ASU students food insecure</div></div>
+    </div>
+  </section>
+ 
+  <section class="l-hiw" id="l-hiw">
+    <div class="l-inner">
+      <div class="sl">How it works</div>
+      <div class="st">From leftovers to lunch<br>in 3 minutes</div>
+      <div class="hiw-grid">
+        <div class="hiw-card" data-n="1"><div class="hiw-ico ico-f">🥡</div><div class="hiw-ct">Event hosts post</div><div class="hiw-cd">Staff or club organizers post leftover food in under 60 seconds — food type, location, how long it's available, and a photo.</div></div>
+        <div class="hiw-card" data-n="2"><div class="hiw-ico ico-g">🔔</div><div class="hiw-ct">Students get alerted</div><div class="hiw-cd">Push notifications reach students within walking distance instantly. Filter by dietary needs, building proximity, or urgency.</div></div>
+        <div class="hiw-card" data-n="3"><div class="hiw-ico ico-a">📍</div><div class="hiw-ct">Walk over, eat well</div><div class="hiw-cd">Tap the live pin on the real-time campus map, claim your spot, and head over. Food rescued, waste eliminated.</div></div>
+      </div>
+    </div>
+  </section>
+ 
+  <section class="l-impact" id="l-impact">
+    <div class="impact-grid">
+      <div class="imp-l">
+        <div class="sl">The problem</div>
+        <div class="st" style="color:#fff">A campus that wastes and hungers <em style="color:var(--lime)">at the same time.</em></div>
+        <div class="ss">US college campuses throw out 22 million pounds of food every year. ASU alone has 70,000+ students — and 1 in 4 are food insecure.</div>
+        <div class="imp-nums">
+          <div class="incard"><div class="inv">22M</div><div class="inl">lbs wasted on US campuses per year</div></div>
+          <div class="incard"><div class="inv">26%</div><div class="inl">ASU students food insecure</div></div>
+          <div class="incard"><div class="inv">142</div><div class="inl">lbs wasted per student per year</div></div>
+          <div class="incard"><div class="inv">76%</div><div class="inl">food-insecure students won't ask for help</div></div>
+        </div>
+      </div>
+      <div class="imp-r">
+        <div class="imp-q">"The food exists. The hungry students exist. All that's missing is a <span>real-time bridge</span> between them."</div>
+        <div class="imp-qa">
+          <div class="qa-av">🌿</div>
+          <div><div class="qa-name">Maitreyee</div><div class="qa-role">Founder, EcoEats · ASU Walton Centre</div></div>
+        </div>
+      </div>
+    </div>
+  </section>
+ 
+  <section class="l-preview" id="l-preview">
+    <div class="l-inner" style="text-align:center">
+      <div class="sl" style="display:block">The app</div>
+      <div class="st" style="margin:0 auto 14px;max-width:480px">Everything you need,<br>right in your pocket</div>
+      <div class="ss" style="margin:0 auto 48px;max-width:460px;text-align:center">Real-time listings, live Leaflet map, instant push alerts, and a 60-second posting flow with photo upload.</div>
+      <div class="phone-wrap">
+        <div class="phone-screen">
+          <div class="ph-notch"></div>
+          <div class="ph-topbar"><div class="ph-logo">🌿 EcoEats</div><div class="ph-live"><div class="ph-ld"></div>4 live</div></div>
+          <div class="ph-cards">
+            <div class="ph-card phc-r"><div class="ph-em">🍕</div><div class="ph-inf"><div class="ph-t">Pizza + Breadsticks</div><div class="ph-l">📍 MU 207 · SASE meeting</div></div><div class="ph-badge phb-r">8 min</div></div>
+            <div class="ph-card phc-a"><div class="ph-em">🍱</div><div class="ph-inf"><div class="ph-t">Catered Box Lunches</div><div class="ph-l">📍 COOR 5th · Staff</div></div><div class="ph-badge phb-a">22 min</div></div>
+            <div class="ph-card phc-g"><div class="ph-em">🌮</div><div class="ph-inf"><div class="ph-t">Taco Spread</div><div class="ph-l">📍 BYAC 150 · Startup Club</div></div><div class="ph-badge phb-g">1 hr</div></div>
+          </div>
+          <div class="ph-nav">
+            <div class="ph-ni a"><div class="ph-ni-ic">🏠</div>Home</div>
+            <div class="ph-ni"><div class="ph-ni-ic">🗺️</div>Map</div>
+            <div class="ph-ni"><div class="ph-ni-ic">➕</div>Post</div>
+            <div class="ph-ni"><div class="ph-ni-ic">🔔</div>Alerts</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+ 
+  <section class="l-fcta">
+    <div class="l-fcta-inner">
+      <div class="sl" style="text-align:center">Ready?</div>
+      <div class="st" style="text-align:center;margin-bottom:14px">Join the food rescue movement at ASU</div>
+      <div class="ss" style="text-align:center;margin:0 auto 36px;max-width:420px">Whether you're hungry or hosting, EcoEats takes 60 seconds to set up.</div>
+      <div style="display:flex;gap:12px;justify-content:center;flex-wrap:wrap">
+        <button class="btn-p" onclick="goPage('auth')">Sign up free →</button>
+        <button class="btn-s" onclick="demoApp()">Try the demo</button>
+      </div>
+    </div>
+  </section>
+ 
+  <footer class="l-footer">
+    <div class="lf-logo">🌿 EcoEats</div>
+    <div class="lf-note">Built at ASU · Walton Centre for Planetary Health · Prototype 2026</div>
+    <span class="lf-link" onclick="goPage('auth')">Log in</span>
+  </footer>
+</div><!-- /landing -->
+ 
+<!-- ═══════════════════════
+     AUTH
+════════════════════════ -->
+<div class="page" id="page-auth">
+  <div class="auth-left">
+    <div class="al-brand"><div class="al-brand-box">🌿</div>EcoEats</div>
+    <div class="al-q">Free food is <span>30 seconds away.</span> Zero guilt, zero waste.</div>
+    <div class="al-proof">
+      <div class="ap-item"><div class="ap-ico">🔔</div><div class="ap-txt"><strong>Real-time push alerts</strong> the moment food is posted near you</div></div>
+      <div class="ap-item"><div class="ap-ico">🗺️</div><div class="ap-txt"><strong>Live campus map</strong> with real GPS pins for every active listing</div></div>
+      <div class="ap-item"><div class="ap-ico">📸</div><div class="ap-txt"><strong>Photo-first listings</strong> so you know exactly what you're getting</div></div>
+      <div class="ap-item"><div class="ap-ico">♻️</div><div class="ap-txt"><strong>Zero food wasted</strong> when hosts and students are connected in real time</div></div>
+    </div>
+  </div>
+  <div class="auth-right">
+    <div class="ar-back" onclick="goPage('landing')">← Back</div>
+    <div class="ar-form">
+      <div class="ar-title" id="auth-title">Welcome back</div>
+      <div class="ar-sub" id="auth-sub">Sign in to your EcoEats account</div>
+      <div class="ar-tabs">
+        <div class="ar-tab on" id="tab-si" onclick="authMode('signin')">Sign in</div>
+        <div class="ar-tab" id="tab-su" onclick="authMode('signup')">Sign up</div>
+      </div>
+      <!-- SIGN IN -->
+      <div id="form-signin">
+        <div class="fld"><label class="fld-l">ASU Email</label><input class="fld-i" type="email" placeholder="you@asu.edu" id="si-email"></div>
+        <div class="fld"><label class="fld-l">Password</label><input class="fld-i" type="password" placeholder="••••••••" id="si-pass"></div>
+        <div class="forgot">Forgot password?</div>
+        <button class="ar-submit" onclick="doSignIn()">Sign in →</button>
+      </div>
+      <!-- SIGN UP -->
+      <div id="form-signup" style="display:none">
+        <div class="fld-row">
+          <div class="fld"><label class="fld-l">First name</label><input class="fld-i" placeholder="Maitreyee" id="su-first"></div>
+          <div class="fld"><label class="fld-l">Last name</label><input class="fld-i" placeholder="Shah" id="su-last"></div>
+        </div>
+        <div class="fld"><label class="fld-l">ASU Email</label><input class="fld-i" type="email" placeholder="you@asu.edu" id="su-email"></div>
+        <div class="fld" style="margin-bottom:4px"><label class="fld-l">I am a…</label></div>
+        <div class="role-grid">
+          <div class="role-opt sel" id="role-student" onclick="selectRole('student')"><div class="role-em">🎒</div><div class="role-lbl">Student</div></div>
+          <div class="role-opt" id="role-staff" onclick="selectRole('staff')"><div class="role-em">🏢</div><div class="role-lbl">Staff / Faculty</div></div>
+          <div class="role-opt" id="role-club" onclick="selectRole('club')"><div class="role-em">🏅</div><div class="role-lbl">Club / Org</div></div>
+          <div class="role-opt" id="role-other" onclick="selectRole('other')"><div class="role-em">👋</div><div class="role-lbl">Other</div></div>
+        </div>
+        <div class="fld"><label class="fld-l">Password</label><input class="fld-i" type="password" placeholder="Create a password" id="su-pass"></div>
+        <button class="ar-submit" onclick="doSignUp()">Create account →</button>
+      </div>
+      <div class="divider">or</div>
+      <div class="soc-btns">
+        <button class="soc-btn" onclick="doSignIn()"><span>🎓</span> ASU SSO</button>
+        <button class="soc-btn" onclick="doSignIn()"><span style="font-weight:900;color:#4285F4">G</span> Google</button>
+      </div>
+      <div class="ar-switch" id="ar-switch">Don't have an account? <span onclick="authMode('signup')">Sign up free</span></div>
+    </div>
+  </div>
+</div>
+ 
+<!-- ═══════════════════════
+     APP
+════════════════════════ -->
+<div class="page" id="page-app">
+ 
+  <!-- SIDEBAR -->
+  <aside class="sidebar">
+    <div class="sb-logo">🌿 EcoEats <div class="sb-logo-dot"></div></div>
+    <div class="sb-user">
+      <div class="sb-av">😊</div>
+      <div><div class="sb-uname" id="sb-name">Maitreyee</div><div class="sb-urole" id="sb-role">Student · ASU Tempe</div></div>
+    </div>
+    <div class="sb-nav">
+      <div class="sb-section-label">Menu</div>
+      <div class="sb-item on" id="sbi-home" onclick="switchPane('home')"><div class="sb-item-ico">🏠</div> Home</div>
+      <div class="sb-item" id="sbi-map" onclick="switchPane('map')"><div class="sb-item-ico">🗺️</div> Live Map</div>
+      <div class="sb-item" id="sbi-post" onclick="switchPane('post')"><div class="sb-item-ico">➕</div> Post Food</div>
+      <div class="sb-item" id="sbi-alerts" onclick="switchPane('alerts')">
+        <div class="sb-item-ico">🔔</div> Alerts
+        <div class="sb-badge" id="sb-badge">4</div>
+      </div>
+      <div class="sb-section-label" style="margin-top:8px">Impact</div>
+      <div class="sb-item" id="sbi-impact" onclick="switchPane('impact')"><div class="sb-item-ico">♻️</div> My Impact</div>
+      <div class="sb-item" id="sbi-sustain" onclick="switchPane('sustain')"><div class="sb-item-ico">🌍</div> Sustainability <div class="ai-spark">ESG</div></div>
+      <div class="sb-section-label" style="margin-top:8px">AI Features</div>
+      <div class="sb-item" id="sbi-ai" onclick="toggleAIPanel()"><div class="sb-item-ico">🤖</div> AI Food Scout <div class="ai-spark">NEW</div></div>
+    </div>
+    <div class="sb-bottom">
+      <div class="sb-signout" onclick="doSignOut()">🚪 Sign out</div>
+    </div>
+  </aside>
+ 
+  <!-- MAIN -->
+  <div class="app-main">
+    <div class="app-topbar">
+      <div class="at-title" id="at-title">Home</div>
+      <div class="at-right">
+        <div style="background:var(--amber-bg);border:1px solid rgba(212,147,12,.3);color:var(--amber);font-size:10px;font-weight:700;padding:4px 10px;border-radius:20px;letter-spacing:.5px">PROTOTYPE</div>
+        <div class="at-live-badge"><div class="pdot"></div> <span id="live-count">4</span> listings live</div>
+        <div class="at-notif-btn" onclick="switchPane('alerts')">🔔<div class="npip"></div></div>
+      </div>
+    </div>
+ 
+    <!-- HOME PANE -->
+    <div class="app-pane on" id="pane-home">
+      <div class="home-welcome">
+        <div class="hw-name">Good afternoon, <span id="hw-name">Maitreyee</span> 👋</div>
+        <div class="hw-sub" id="hw-sub">4 active food listings within walking distance</div>
+      </div>
+      <div class="stats-row">
+        <div class="stat-card sc-green"><div class="sc-n" id="app-lbs">847</div><div class="sc-l">lbs rescued today</div></div>
+        <div class="stat-card"><div class="sc-n" id="app-active">4</div><div class="sc-l">listings live now</div></div>
+        <div class="stat-card"><div class="sc-n">1,247</div><div class="sc-l">total meals rescued</div></div>
+        <div class="stat-card"><div class="sc-n">312</div><div class="sc-l">students notified</div></div>
+      </div>
+      <div class="sec-hd">
+        <div class="sec-hd-t">Available now</div>
+        <div style="display:flex;gap:6px;align-items:center">
+          <div class="pf-badge active" id="filter-all" onclick="setFeedFilter('all')">All</div>
+          <div class="pf-badge" id="filter-match" onclick="setFeedFilter('match')">✨ For me</div>
+          <div class="sec-hd-live" style="margin-left:4px"><div class="pdot"></div> Live</div>
+        </div>
+      </div>
+      <div class="feed" id="feed-container"></div>
+    </div>
+ 
+    <!-- MAP PANE -->
+    <div class="app-pane" id="pane-map">
+      <div class="map-layout">
+        <div>
+          <div class="map-card">
+            <div class="map-hd">
+              <div><div class="map-hd-title">ASU Tempe — Live Food Map</div><div class="map-hd-sub">Tap a pin for details</div></div>
+              <div class="sec-hd-live"><div class="pdot"></div> Updated now</div>
+            </div>
+            <div id="leaflet-map"></div>
+            <div class="map-legend">
+              <div class="ml-item"><div class="ml-dot" style="background:var(--red)"></div> Urgent &lt;15 min</div>
+              <div class="ml-item"><div class="ml-dot" style="background:var(--amber)"></div> Running out</div>
+              <div class="ml-item"><div class="ml-dot" style="background:var(--lime)"></div> Plenty available</div>
+            </div>
+          </div>
+        </div>
+        <div>
+          <div class="sec-hd" style="padding:0;margin-bottom:12px"><div class="sec-hd-t">All locations</div></div>
+          <div class="map-list-card" id="map-list"></div>
+        </div>
+      </div>
+    </div>
+ 
+    <!-- POST PANE -->
+    <div class="app-pane" id="pane-post">
+      <div class="post-layout">
+        <div>
+          <div class="post-hero">
+            <div class="post-hero-em">🥡</div>
+            <div class="post-hero-t">Post leftover food</div>
+            <div class="post-hero-s">Reach 300+ nearby students instantly. Every post rescues real food from landfill and helps a fellow Sun Devil.</div>
+          </div>
+ 
+          <!-- AI LISTING WRITER -->
+          <div class="ai-writer-card">
+            <div class="ai-writer-hd">
+              <div class="ai-writer-badge">✨ AI</div>
+              <div class="ai-writer-title">AI Listing Writer</div>
+            </div>
+            <div class="ai-writer-sub">Describe what you have in plain English — AI will write your full listing, detect dietary info, and fill the form for you.</div>
+            <div class="ai-writer-input-row">
+              <input class="ai-writer-input" id="ai-writer-input" placeholder="e.g. leftover catered sandwiches from a 2hr meeting, some vegan ones too…">
+              <button class="ai-writer-btn" id="ai-writer-btn" onclick="runAIWriter()">✨ Generate</button>
+            </div>
+            <div class="ai-writer-result" id="ai-writer-result">
+              <div id="ai-writer-output"></div>
+              <button class="ai-apply-btn" onclick="applyAIListing()">↓ Apply to form</button>
+            </div>
+          </div>
+          <div class="form-card" id="post-form-card">
+            <div style="margin-bottom:16px">
+              <label class="pfl">📸 Add a photo (recommended)</label>
+              <div class="img-upload-zone" id="upload-zone" onclick="document.getElementById('img-input').click()">
+                <div id="upload-placeholder">
+                  <div class="iuz-ico">📷</div>
+                  <div class="iuz-t">Tap to add a photo</div>
+                  <div class="iuz-s">JPG, PNG · Listings with photos get 3× more claims</div>
+                </div>
+                <img id="preview-img" style="display:none;width:100%;height:180px;object-fit:cover;border-radius:12px">
+                <button class="iuz-remove" id="remove-img" style="display:none" onclick="removeImg(event)">Remove</button>
+              </div>
+              <input type="file" id="img-input" accept="image/*" onchange="handleImg(event)">
+              <div class="ai-photo-result" id="ai-photo-result">
+                <div class="ai-photo-label">✨ AI detected</div>
+                <div id="ai-photo-output"></div>
+              </div>
+            </div>
+            <div style="margin-bottom:4px"><label class="pfl">What food do you have?</label><input class="pfi" id="pf-food" placeholder="e.g. Pizza, sandwiches, pastries..."></div>
+            <div style="margin-bottom:4px"><label class="pfl">Category</label>
+              <div class="pfchips" id="pfchips">
+                <div class="pfchip on">🍕 Pizza</div><div class="pfchip">🥗 Salads</div><div class="pfchip">🍱 Box meals</div>
+                <div class="pfchip">🧁 Pastries</div><div class="pfchip">🌮 Mexican</div><div class="pfchip">🍜 Asian</div>
+                <div class="pfchip">🥤 Drinks</div><div class="pfchip">🍔 Burgers</div>
+              </div>
+            </div>
+            <div class="pf-row">
+              <div style="margin-bottom:4px"><label class="pfl">Building</label>
+                <select class="pfs" id="pf-building">
+                  <option value="">Select…</option>
+                  <option>Memorial Union (MU)</option><option>COOR Hall</option><option>Pima Center</option>
+                  <option>BYAC</option><option>Hayden Library</option><option>Armstrong Hall</option>
+                  <option>Goldwater Center</option><option>Brickyard</option><option>Other</option>
+                </select>
+              </div>
+              <div style="margin-bottom:4px"><label class="pfl">Room / Floor</label><input class="pfi" id="pf-room" placeholder="e.g. Room 207"></div>
+            </div>
+            <div class="pf-row">
+              <div style="margin-bottom:4px"><label class="pfl">Available for</label>
+                <select class="pfs" id="pf-time"><option>15 min</option><option>30 min</option><option selected>45 min</option><option>1 hour</option><option>1.5 hrs</option><option>2+ hrs</option></select>
+              </div>
+              <div style="margin-bottom:4px"><label class="pfl">Serves</label>
+                <select class="pfs" id="pf-qty"><option>~5 people</option><option>~10 people</option><option selected>~20 people</option><option>~30+ people</option></select>
+              </div>
+            </div>
+            <div style="margin-bottom:4px"><label class="pfl">Dietary notes</label><input class="pfi" id="pf-diet" placeholder="Vegan, GF option, contains nuts..."></div>
+            <div style="margin-bottom:4px"><label class="pfl">Your name / organization</label><input class="pfi" id="pf-org" placeholder="e.g. SASE, Walton Centre..."></div>
+ 
+            <!-- AGENT 2: Schedule ahead -->
+            <div class="schedule-toggle-wrap">
+              <div>
+                <div class="schedule-toggle-info">📅 Schedule ahead (recommended)</div>
+                <div class="schedule-toggle-sub">Post before your meeting ends — students start walking early</div>
+              </div>
+              <div class="tog" id="schedule-tog" onclick="toggleSchedule()"></div>
+            </div>
+            <div class="schedule-fields" id="schedule-fields">
+              <div class="prep-time-row">
+                <div><label class="pfl">Food ready at</label><input class="pfi" type="time" id="pf-ready-time" style="margin-bottom:0"></div>
+                <div><label class="pfl">Prep date</label><input class="pfi" type="date" id="pf-ready-date" style="margin-bottom:0"></div>
+              </div>
+            </div>
+ 
+            <!-- AGENT 3: Official event toggle -->
+            <div class="official-event-wrap">
+              <div class="oe-info">
+                <div class="oe-title">🏛️ Official ASU Event</div>
+                <div class="oe-sub">Gets ASU verified badge + included in sustainability report</div>
+              </div>
+              <div class="tog" id="official-tog" onclick="this.classList.toggle('on')"></div>
+            </div>
+ 
+            <!-- AGENT 1: Liability acknowledgment -->
+            <div class="liability-wrap">
+              <div class="liability-title">⚠️ Food Safety Acknowledgment</div>
+              <div class="liability-text">Under the Good Samaritan Food Donation Act, you confirm this food is safe for consumption. EcoEats logs this timestamp for compliance.</div>
+              <label class="liability-row">
+                <input type="checkbox" id="liability-check">
+                <span class="liability-lbl">I confirm this food was prepared today, stored properly at safe temperature, and is safe for consumption.</span>
+              </label>
+            </div>
+ 
+            <button class="pf-submit" onclick="submitPost()">🌱 Post listing now</button>
+          </div>
+          <div class="post-success" id="post-success">
+            <div class="ps-ico">🎉</div>
+            <div class="ps-t">Posted! Alerts sent.</div>
+            <div class="ps-s">Your listing is live on the map and nearby students will be alerted.<br><br>Thank you for rescuing food and fighting waste at ASU 💚</div>
+            <button class="ps-reset" onclick="resetPost()">Post another listing</button>
+          </div>
+        </div>
+        <div>
+          <div class="post-side-card">
+            <div class="psc-t">Why photo matters</div>
+            <div class="psc-row"><div class="psc-ico">📸</div><div class="psc-info"><div class="psc-name">3× more claims</div><div class="psc-val">Photo listings get claimed 3× faster</div></div></div>
+            <div class="psc-row"><div class="psc-ico">⏱</div><div class="psc-info"><div class="psc-name">Avg 4 min to first claim</div><div class="psc-val">With photo vs 14 min without</div></div></div>
+            <div class="psc-row"><div class="psc-ico">🌱</div><div class="psc-info"><div class="psc-name">Zero waste mode</div><div class="psc-val">97% of photo listings fully claimed</div></div></div>
+          </div>
+          <div class="post-side-card">
+            <div class="psc-t">Tips for hosts</div>
+            <div class="psc-row"><div class="psc-ico">📍</div><div class="psc-info"><div class="psc-name">Be specific on location</div><div class="psc-val">Room number beats just "COOR"</div></div></div>
+            <div class="psc-row"><div class="psc-ico">⏰</div><div class="psc-info"><div class="psc-name">Post before the meeting ends</div><div class="psc-val">Students need ~5 min to get there</div></div></div>
+            <div class="psc-row"><div class="psc-ico">🌿</div><div class="psc-info"><div class="psc-name">Label dietary info</div><div class="psc-val">Vegan/GF labels double your reach</div></div></div>
+          </div>
+        </div>
+      </div>
+    </div>
+ 
+    <!-- ALERTS PANE -->
+    <div class="app-pane" id="pane-alerts">
+      <div class="alerts-layout">
+        <div>
+          <div class="sec-hd" style="margin-bottom:12px"><div class="sec-hd-t">Notification preferences</div></div>
+          <div class="prefs-card">
+            <div class="prefs-hd">Alert settings</div>
+            <div class="pref-row"><div class="pref-info"><div class="pref-name">📍 Nearby alerts</div><div class="pref-desc">Food within 5 min walk from you</div></div><div class="tog on" onclick="this.classList.toggle('on')"></div></div>
+            <div class="pref-row"><div class="pref-info"><div class="pref-name">⚡ Urgent alerts</div><div class="pref-desc">Less than 15 min remaining</div></div><div class="tog on" onclick="this.classList.toggle('on')"></div></div>
+            <div class="pref-row"><div class="pref-info"><div class="pref-name">🌱 Vegan / Vegetarian only</div><div class="pref-desc">Plant-based listings only</div></div><div class="tog" onclick="this.classList.toggle('on')"></div></div>
+            <div class="pref-row"><div class="pref-info"><div class="pref-name">🌾 Gluten-free only</div><div class="pref-desc">GF options available</div></div><div class="tog" onclick="this.classList.toggle('on')"></div></div>
+            <div class="pref-row"><div class="pref-info"><div class="pref-name">📱 Push notifications</div><div class="pref-desc" id="push-desc">Enable browser push alerts</div></div><div class="tog" id="push-tog" onclick="requestPush()"></div></div>
+          </div>
+          <div class="sec-hd" style="margin-bottom:12px;margin-top:6px">
+            <div class="sec-hd-t">Recent alerts</div>
+            <div class="sec-hd-link" onclick="clearAlerts()">Clear all</div>
+          </div>
+          <div class="notifs-card" id="notifs-list">
+            <div class="ni unread" onclick="openSheet(0)"><div class="ni-ico">🍕</div><div class="ni-content"><div class="ni-t">Pizza + Breadsticks at MU 207 — SASE meeting, going fast!</div><div class="ni-time">2 min ago · 3 min walk</div></div><div class="undot"></div></div>
+            <div class="ni unread" onclick="openSheet(1)"><div class="ni-ico">🍱</div><div class="ni-content"><div class="ni-t">Vegan box lunches at COOR Hall 5th floor</div><div class="ni-time">14 min ago · 5 min walk</div></div><div class="undot"></div></div>
+            <div class="ni" onclick="openSheet(2)"><div class="ni-ico">🧁</div><div class="ni-content"><div class="ni-t">Pastries + hot coffee at Pima Center lobby</div><div class="ni-time">31 min ago · 2 min walk</div></div></div>
+            <div class="ni unread" onclick="openSheet(3)"><div class="ni-ico">🌮</div><div class="ni-content"><div class="ni-t">Taco spread just posted at BYAC 150 — Entrepreneurship Club</div><div class="ni-time">Just now · 8 min walk</div></div><div class="undot"></div></div>
+            <div class="ni" style="opacity:.5"><div class="ni-ico">🍔</div><div class="ni-content"><div class="ni-t">Burgers at Hayden Library — fully claimed</div><div class="ni-time">2 hrs ago</div></div></div>
+          </div>
+        </div>
+        <div>
+          <div class="impact-card">
+            <div class="ic-t">Your impact this semester</div>
+            <div class="ic-stat"><div class="ic-sl">Meals claimed</div><div class="ic-sv">14</div></div>
+            <div class="ic-stat"><div class="ic-sl">lbs of food rescued</div><div class="ic-sv">28.4</div></div>
+            <div class="ic-stat"><div class="ic-sl">CO₂ saved (lbs)</div><div class="ic-sv">12.1</div></div>
+            <div class="ic-stat"><div class="ic-sl">Money saved</div><div class="ic-sv">$186</div></div>
+            <div class="ic-stat"><div class="ic-sl">EcoEats rank</div><div class="ic-sv">#47 of 312</div></div>
+          </div>
+        </div>
+      </div>
+    </div>
+ 
+    <!-- IMPACT PANE -->
+    <div class="app-pane" id="pane-impact">
+      <div style="max-width:700px">
+        <div class="hw-name" style="margin-bottom:22px">Your <span>Impact</span> 🌍</div>
+        <div class="stats-row" style="grid-template-columns:repeat(3,1fr);margin-bottom:22px">
+          <div class="stat-card sc-green"><div class="sc-n">14</div><div class="sc-l">meals claimed</div></div>
+          <div class="stat-card"><div class="sc-n">28.4</div><div class="sc-l">lbs rescued</div></div>
+          <div class="stat-card"><div class="sc-n">$186</div><div class="sc-l">estimated saved</div></div>
+        </div>
+        <div class="form-card" style="margin-bottom:16px">
+          <div class="psc-t" style="font-size:15px;font-weight:700;margin-bottom:16px;color:var(--ink)">Your claim history</div>
+          <div id="claim-history"></div>
+        </div>
+        <div class="form-card">
+          <div class="psc-t" style="font-size:15px;font-weight:700;margin-bottom:16px;color:var(--ink)">ASU Campus leaderboard (top rescuers)</div>
+          <div id="leaderboard"></div>
+        </div>
+      </div>
+    </div>
+ 
+  </div><!-- /app-main -->
+ 
+  <!-- MOBILE NAV -->
+  <div class="mob-nav">
+    <div class="mob-nav-inner">
+      <div class="mn-item on" id="mni-home" onclick="switchPane('home')"><div class="mn-item-ic">🏠</div>Home</div>
+      <div class="mn-item" id="mni-map" onclick="switchPane('map')"><div class="mn-item-ic">🗺️</div>Map</div>
+      <div class="mn-item" id="mni-post" onclick="switchPane('post')"><div class="mn-item-ic">➕</div>Post</div>
+      <div class="mn-item" id="mni-alerts" onclick="switchPane('alerts')"><div class="mn-pip mn-item-ic">🔔</div>Alerts</div>
+    </div>
+  </div>
+ 
+</div><!-- /app -->
+ 
+<!-- ══ AGENT 3: SUSTAINABILITY PANE (injected into app-main via JS) ══ -->
+<template id="tpl-sustain">
+  <div style="max-width:900px">
+    <div class="hw-name" style="margin-bottom:6px">Sustainability <span>Dashboard</span> 🌍</div>
+    <div style="font-size:14px;color:var(--ink3);margin-bottom:24px">EcoEats · ASU Tempe · Academic Year 2025–26</div>
+ 
+    <!-- ESG METRICS -->
+    <div class="esg-grid">
+      <div class="esg-card esg-green"><div class="esg-val" id="esg-lbs">1,247</div><div class="esg-label">lbs food rescued</div></div>
+      <div class="esg-card"><div class="esg-val">623</div><div class="esg-label">kg CO₂ avoided</div></div>
+      <div class="esg-card"><div class="esg-val">$8,420</div><div class="esg-label">food value rescued</div></div>
+      <div class="esg-card"><div class="esg-val">312</div><div class="esg-label">students fed</div></div>
+      <div class="esg-card esg-green"><div class="esg-val">97%</div><div class="esg-label">avg claim rate</div></div>
+      <div class="esg-card"><div class="esg-val">4.2 min</div><div class="esg-label">avg time to first claim</div></div>
+    </div>
+ 
+    <!-- ARAMARK PARTNER DASHBOARD -->
+    <div class="partner-card">
+      <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:4px">
+        <div>
+          <div class="partner-card-t">Aramark × EcoEats Partner Dashboard</div>
+          <div class="partner-card-s">Data your catering partner can use in ASU contract renewal · March 2026</div>
+        </div>
+        <div style="background:var(--lime);color:var(--forest);font-size:10px;font-weight:700;padding:4px 10px;border-radius:20px;white-space:nowrap">✓ Verified Partner</div>
+      </div>
+      <div class="partner-metrics">
+        <div class="pm-card"><div class="pm-val">847 lbs</div><div class="pm-lbl">rescued from Aramark events this month</div></div>
+        <div class="pm-card"><div class="pm-val">0 landfill</div><div class="pm-lbl">from EcoEats-listed events</div></div>
+        <div class="pm-card"><div class="pm-val">ASU #1</div><div class="pm-lbl">food waste reduction metric vs peer schools</div></div>
+        <div class="pm-card"><div class="pm-val">ESG A+</div><div class="pm-lbl">sustainability score this semester</div></div>
+      </div>
+      <button class="report-btn" onclick="generateReport()">📄 Download Monthly ESG Report (PDF)</button>
+    </div>
+ 
+    <!-- MONTHLY BREAKDOWN -->
+    <div class="monthly-report-card">
+      <div class="mrc-t">
+        Monthly breakdown
+        <span style="font-size:12px;font-weight:400;color:var(--ink3)">March 2026</span>
+      </div>
+      <div class="mrc-row"><span class="mrc-k">Total listings posted</span><span class="mrc-v">89 <span class="trend-up">↑ 12%</span></span></div>
+      <div class="mrc-row"><span class="mrc-k">Official ASU events</span><span class="mrc-v">34</span></div>
+      <div class="mrc-row"><span class="mrc-k">Student orgs</span><span class="mrc-v">55</span></div>
+      <div class="mrc-row"><span class="mrc-k">Food rescued (lbs)</span><span class="mrc-v">847 <span class="trend-up">↑ 23%</span></span></div>
+      <div class="mrc-row"><span class="mrc-k">Unique students served</span><span class="mrc-v">312 <span class="trend-up">↑ 8%</span></span></div>
+      <div class="mrc-row"><span class="mrc-k">Avg claim time</span><span class="mrc-v">4.2 min <span class="trend-up">↓ 1.1 min</span></span></div>
+      <div class="mrc-row"><span class="mrc-k">Good Samaritan Act compliant listings</span><span class="mrc-v">100%</span></div>
+      <div class="mrc-row"><span class="mrc-k">CO₂ equivalent avoided</span><span class="mrc-v">89 kg</span></div>
+    </div>
+ 
+    <!-- TOP HOSTS -->
+    <div class="form-card">
+      <div class="psc-t" style="font-size:15px;font-weight:700;margin-bottom:14px">Top verified hosts this month</div>
+      <div id="top-hosts-list"></div>
+    </div>
+  </div>
+</template>
+ 
+<!-- ══ AGENT 4: ONBOARDING MODAL ══ -->
+<div class="onboard-overlay" id="onboard-overlay">
+  <div class="onboard-card">
+    <div class="ob-progress">
+      <div class="ob-pip on" id="ob-pip-0"></div>
+      <div class="ob-pip" id="ob-pip-1"></div>
+      <div class="ob-pip" id="ob-pip-2"></div>
+    </div>
+ 
+    <!-- Step 0: Welcome -->
+    <div class="ob-step on" id="ob-step-0">
+      <div class="ob-emoji">🌿</div>
+      <div class="ob-title">Welcome to EcoEats</div>
+      <div class="ob-sub">Let's personalize your experience so you only see food you'll actually want. Takes 30 seconds.</div>
+      <button class="ob-next" onclick="obNext(1)">Get started →</button>
+      <div class="ob-skip" onclick="skipOnboard()">Skip for now</div>
+    </div>
+ 
+    <!-- Step 1: Dietary preferences -->
+    <div class="ob-step" id="ob-step-1">
+      <div class="ob-emoji">🥗</div>
+      <div class="ob-title">Any dietary needs?</div>
+      <div class="ob-sub">We'll filter alerts so you only see food that works for you.</div>
+      <div class="ob-options" id="ob-diet-opts">
+        <div class="ob-opt" onclick="obToggle(this,'vegan')" data-val="vegan"><div class="ob-opt-em">🌱</div><div class="ob-opt-l">Vegan</div></div>
+        <div class="ob-opt" onclick="obToggle(this,'vegetarian')" data-val="vegetarian"><div class="ob-opt-em">🥦</div><div class="ob-opt-l">Vegetarian</div></div>
+        <div class="ob-opt" onclick="obToggle(this,'gluten-free')" data-val="gluten-free"><div class="ob-opt-em">🌾</div><div class="ob-opt-l">Gluten-free</div></div>
+        <div class="ob-opt" onclick="obToggle(this,'halal')" data-val="halal"><div class="ob-opt-em">☪️</div><div class="ob-opt-l">Halal</div></div>
+        <div class="ob-opt" onclick="obToggle(this,'no-nuts')" data-val="no-nuts"><div class="ob-opt-em">🥜</div><div class="ob-opt-l">Nut-free</div></div>
+        <div class="ob-opt" onclick="obToggle(this,'none')" data-val="none"><div class="ob-opt-em">😋</div><div class="ob-opt-l">No restrictions</div></div>
+      </div>
+      <button class="ob-next" onclick="obNext(2)">Next →</button>
+    </div>
+ 
+    <!-- Step 2: Notification style -->
+    <div class="ob-step" id="ob-step-2">
+      <div class="ob-emoji">🔔</div>
+      <div class="ob-title">How do you want alerts?</div>
+      <div class="ob-sub">We'll respect your preferences — no spam ever.</div>
+      <div class="ob-options">
+        <div class="ob-opt sel" onclick="obSingle(this,'notif-pref','all')" data-val="all"><div class="ob-opt-em">⚡</div><div class="ob-opt-l">All nearby food</div></div>
+        <div class="ob-opt" onclick="obSingle(this,'notif-pref','urgent')" data-val="urgent"><div class="ob-opt-em">🔴</div><div class="ob-opt-l">Urgent only</div></div>
+        <div class="ob-opt" onclick="obSingle(this,'notif-pref','digest')" data-val="digest"><div class="ob-opt-em">📋</div><div class="ob-opt-l">Daily digest</div></div>
+        <div class="ob-opt" onclick="obSingle(this,'notif-pref','off')" data-val="off"><div class="ob-opt-em">🔕</div><div class="ob-opt-l">Off for now</div></div>
+      </div>
+      <button class="ob-next" onclick="finishOnboard()">Start rescuing food 🌿</button>
+    </div>
+  </div>
+</div>
+ 
+<!-- AI FOOD SCOUT FAB -->
+<button class="ai-fab" onclick="toggleAIPanel()" title="AI Food Scout">
+  <div class="ai-fab-pulse"></div>
+  🤖
+</button>
+ 
+<!-- AI FOOD SCOUT PANEL -->
+<div class="ai-panel" id="ai-panel">
+  <div class="ai-panel-hd">
+    <div class="ai-panel-av">🤖</div>
+    <div>
+      <div class="ai-panel-name">EcoEats AI Scout</div>
+      <div class="ai-panel-sub">Powered by Claude · Ask me anything</div>
+    </div>
+    <button class="ai-panel-close" onclick="toggleAIPanel()">✕</button>
+  </div>
+  <div class="ai-msgs" id="ai-msgs">
+    <div class="ai-msg bot">Hi! I'm your AI Food Scout 🌿 I can help you find food that matches your diet, tell you what's freshest, or suggest what to grab before it runs out. What are you looking for?</div>
+  </div>
+  <div class="ai-chips" id="ai-chips">
+    <div class="ai-chip" onclick="aiQuickAsk('What vegan food is available right now?')">🌱 Vegan options</div>
+    <div class="ai-chip" onclick="aiQuickAsk('What food has the most time left?')">⏳ Most time left</div>
+    <div class="ai-chip" onclick="aiQuickAsk('What\'s closest to Hayden Library?')">📍 Near Hayden</div>
+    <div class="ai-chip" onclick="aiQuickAsk('I\'m gluten intolerant, what can I eat?')">🌾 Gluten-free</div>
+  </div>
+  <div class="ai-input-row">
+    <input class="ai-input" id="ai-input" placeholder="Ask about food near you…" onkeydown="if(event.key==='Enter') sendAIMsg()">
+    <button class="ai-send" onclick="sendAIMsg()">➤</button>
+  </div>
+</div>
+ 
+<script>
+// ════════════════════════════════
+// FOOD DATABASE (localStorage-backed)
+// ════════════════════════════════
+const DEFAULT_FOODS = [
+  {id:'f1',emoji:'🍕',title:'Pizza + Breadsticks',event:'SASE General Body Meeting',loc:'Memorial Union 207',building:'MU',time:'8 min left',qty:'Feeds ~20 people',dietary:'Contains gluten & dairy',status:'urgent',urgency:88,lat:33.4218,lng:-111.9394,img:null,social:12,preparedAt:Date.now()-30*60000,postedAt:Date.now()-8*60000,verified:true,official:false,rep:{name:'SASE ASU',score:4.9,count:23},scheduled:false},
+  {id:'f2',emoji:'🍱',title:'Catered Box Lunches',event:'Walton Centre Staff Meeting',loc:'COOR Hall 5th Floor',building:'COOR',time:'22 min left',qty:'Feeds ~15 people',dietary:'Vegan & GF options',status:'warm',urgency:55,lat:33.4215,lng:-111.9355,img:null,social:5,preparedAt:Date.now()-45*60000,postedAt:Date.now()-22*60000,verified:true,official:true,rep:{name:'Walton Centre',score:5.0,count:41},scheduled:false},
+  {id:'f3',emoji:'🧁',title:'Pastries + Hot Coffee',event:"Dean's Office Breakfast",loc:'Pima Center 1st Floor',building:'Pima',time:'45 min left',qty:'Feeds ~25 people',dietary:'Contains gluten & dairy',status:'fresh',urgency:28,lat:33.4231,lng:-111.9408,img:null,social:3,preparedAt:Date.now()-20*60000,postedAt:Date.now()-5*60000,verified:true,official:true,rep:{name:"Dean's Office",score:4.7,count:12},scheduled:false},
+  {id:'f4',emoji:'🌮',title:'Taco Spread',event:'Entrepreneurship Club Networking',loc:'BYAC 150',building:'BYAC',time:'1 hr left',qty:'Feeds ~30 people',dietary:'Veg option, spicy available',status:'fresh',urgency:11,lat:33.4207,lng:-111.9342,img:null,social:2,preparedAt:Date.now()-10*60000,postedAt:Date.now()-2*60000,verified:false,official:false,rep:{name:'E-Club ASU',score:4.4,count:8},scheduled:false}
+];
+ 
+function getDB(){
+  try{const d=localStorage.getItem('ecoeats_db');return d?JSON.parse(d):null}catch(e){return null}
+}
+function saveDB(db){
+  try{localStorage.setItem('ecoeats_db',JSON.stringify(db))}catch(e){}
+}
+function initDB(){
+  let db=getDB();
+  if(!db){
+    db={foods:[...DEFAULT_FOODS],claims:[],user:{name:'Maitreyee',role:'Student · ASU Tempe'},totalLbs:847,totalMeals:1247};
+    saveDB(db);
+  }
+  return db;
+}
+let DB=initDB();
+let currentFood=0;
+let leafletMap=null;
+let mapMarkers=[];
+ 
+// ════════════════════════════════
+// ROUTING
+// ════════════════════════════════
+function goPage(name){
+  document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
+  document.getElementById('page-'+name).classList.add('active');
+  window.scrollTo(0,0);
+  if(name==='app') initApp();
+}
+function noop(){}
+function demoApp(){
+  document.getElementById('hw-name').textContent='Guest';
+  document.getElementById('sb-name').textContent='Guest';
+  goPage('app');
+}
+ 
+// ════════════════════════════════
+// NAV
+// ════════════════════════════════
+window.addEventListener('scroll',()=>{
+  const n=document.getElementById('lnav');
+  if(n) n.classList.toggle('up',window.scrollY>20);
+});
+function smScroll(sel){
+  const el=document.querySelector(sel);
+  if(el) el.scrollIntoView({behavior:'smooth'});
+}
+ 
+// ════════════════════════════════
+// AUTH
+// ════════════════════════════════
+let _authMode='signin';
+function authMode(m){
+  _authMode=m;
+  const si=document.getElementById('tab-si'),su=document.getElementById('tab-su');
+  const fs=document.getElementById('form-signin'),fsu=document.getElementById('form-signup');
+  if(m==='signin'){
+    si.classList.add('on');su.classList.remove('on');
+    fs.style.display='block';fsu.style.display='none';
+    document.getElementById('auth-title').textContent='Welcome back';
+    document.getElementById('auth-sub').textContent='Sign in to your EcoEats account';
+    document.getElementById('ar-switch').innerHTML="Don't have an account? <span onclick=\"authMode('signup')\">Sign up free</span>";
+  }else{
+    su.classList.add('on');si.classList.remove('on');
+    fsu.style.display='block';fs.style.display='none';
+    document.getElementById('auth-title').textContent='Create account';
+    document.getElementById('auth-sub').textContent='Join the food rescue movement at ASU';
+    document.getElementById('ar-switch').innerHTML="Already have an account? <span onclick=\"authMode('signin')\">Sign in</span>";
+  }
+}
+function selectRole(r){
+  document.querySelectorAll('.role-opt').forEach(e=>e.classList.remove('sel'));
+  document.getElementById('role-'+r).classList.add('sel');
+}
+function doSignIn(){
+  const email=document.getElementById('si-email').value;
+  const name=email?email.split('@')[0].replace(/[^a-zA-Z]/g,' ').trim().split(' ').map(w=>w.charAt(0).toUpperCase()+w.slice(1)).join(' '):'Maitreyee';
+  setUser(name,'Student · ASU Tempe');
+  goPage('app');
+  showToast('Welcome back, '+name+'! 👋');
+}
+function doSignUp(){
+  const first=document.getElementById('su-first').value||'Maitreyee';
+  const last=document.getElementById('su-last').value||'';
+  const name=(first+' '+last).trim();
+  setUser(name,'Student · ASU Tempe');
+  goPage('app');
+  showToast('Welcome to EcoEats, '+first+'! 🌿');
+}
+function setUser(name,role){
+  DB.user={name,role};saveDB(DB);
+  // Null-safe — app page may not be active yet when setUser is called
+  const sbName=document.getElementById('sb-name');
+  const sbRole=document.getElementById('sb-role');
+  if(sbName) sbName.textContent=name;
+  if(sbRole) sbRole.textContent=role;
+}
+function doSignOut(){goPage('landing');showToast('Signed out. See you soon! 👋')}
+ 
+// ════════════════════════════════
+// APP INIT
+// ════════════════════════════════
+function initApp(){
+  DB=initDB();
+  const u=DB.user;
+  const name=u?.name||'there';
+  const role=u?.role||'Student · ASU Tempe';
+  // Safe updates — never destroy the #hw-name span
+  const hwNameEl=document.getElementById('hw-name');
+  const sbNameEl=document.getElementById('sb-name');
+  const sbRoleEl=document.getElementById('sb-role');
+  const hwSubEl=document.getElementById('hw-sub');
+  const hwWrap=document.querySelector('.hw-name');
+  if(hwNameEl) hwNameEl.textContent=name;
+  if(sbNameEl) sbNameEl.textContent=name;
+  if(sbRoleEl) sbRoleEl.textContent=role;
+  // Greeting prefix — update only the text before the span, don't replace the span
+  const h=new Date().getHours();
+  const gr=h<12?'Good morning':h<17?'Good afternoon':'Good evening';
+  const icon=h<12?'☀️':h<17?'👋':'🌙';
+  if(hwWrap){
+    hwWrap.innerHTML=gr+', <span id="hw-name" style="color:var(--forest)">'+name+'</span> '+icon;
+  }
+  if(hwSubEl) hwSubEl.textContent=DB.foods.length+' active food listings within walking distance';
+  const liveCountEl=document.getElementById('live-count');
+  const appActiveEl=document.getElementById('app-active');
+  if(liveCountEl) liveCountEl.textContent=DB.foods.length;
+  if(appActiveEl) appActiveEl.textContent=DB.foods.length;
+  renderFeed();
+  renderMapList();
+  renderClaimHistory();
+  renderLeaderboard();
+}
+ 
+// ════════════════════════════════
+// PANE SWITCHING
+// ════════════════════════════════
+const PANES=['home','map','post','alerts','impact','sustain'];
+const PANE_TITLES={home:'Home',map:'Live Map',post:'Post Food',alerts:'Alerts',impact:'My Impact',sustain:'Sustainability Dashboard'};
+function switchPane(name){
+  PANES.forEach(p=>{
+    const pane=document.getElementById('pane-'+p);
+    const sbi=document.getElementById('sbi-'+p);
+    const mni=document.getElementById('mni-'+p);
+    if(pane) pane.classList.toggle('on',p===name);
+    if(sbi) sbi.classList.toggle('on',p===name);
+    if(mni) mni.classList.toggle('on',p===name);
+  });
+  const title=document.getElementById('at-title');
+  if(title) title.textContent=PANE_TITLES[name]||name;
+  if(name==='map') setTimeout(initMap,80);
+  if(name==='sustain') renderSustainPane(); // creates + shows pane
+}
+ 
+// ════════════════════════════════
+// FEED RENDERING
+// ════════════════════════════════
+function renderFeed(){
+  const container=document.getElementById('feed-container');
+  if(!container) return;
+  container.innerHTML='';
+  DB.foods.forEach((f,i)=>{
+    const urgColor=f.status==='urgent'?'var(--red)':f.status==='warm'?'var(--amber)':'var(--lime)';
+    const badgeCls=f.status==='urgent'?'fcb-r':f.status==='warm'?'fcb-a':'fcb-g';
+    const urgLabel=f.status==='urgent'?'Going fast!':f.status==='warm'?'Plenty left':'Lots available';
+    const urgLabelColor=f.status==='urgent'?'var(--red)':f.status==='warm'?'var(--amber)':'var(--leaf)';
+    const imgContent=f.img
+      ?`<img src="${f.img}" alt="${f.title}" style="width:100%;height:100%;object-fit:cover">`
+      :`<div class="fc-img-placeholder">${f.emoji}</div>`;
+    container.innerHTML+=`
+    <div class="fc fc-${f.status}" onclick="openSheet(${i})">
+      <div class="fc-img-wrap">
+        ${imgContent}
+        <div class="fc-urgency-stripe" style="background:${urgColor}"></div>
+        <div class="fc-time-badge ${badgeCls}">${f.time==='8 min left'?'⚡':f.time==='22 min left'?'⏱':'✓'} ${f.time}</div>
+      </div>
+      <div class="fc-body">
+        <div class="fc-row1">
+          <div class="fc-left-info">
+            <div class="fc-title">${f.title}</div>
+            <div class="fc-event">${f.event}</div>
+          </div>
+        </div>
+        <div class="fc-bar-wrap">
+          <div class="fc-bar-labels"><span>Urgency</span><span style="color:${urgLabelColor};font-weight:600">${urgLabel}</span></div>
+          <div class="fc-bar"><div class="fc-bar-fill" style="width:${f.urgency}%;background:${urgColor}"></div></div>
+        </div>
+        <div class="fc-row2">
+          <div class="fc-meta">
+            <div class="fc-loc">📍 ${f.loc}</div>
+            <div class="fc-tags">${f.dietary.includes('Vegan')?'<div class="fc-tag tag-v">🌱 Vegan</div>':''}${f.dietary.includes('GF')||f.dietary.includes('gluten-free')?'<div class="fc-tag tag-g">GF</div>':''}</div>
+          </div>
+          <button class="grab-btn" onclick="event.stopPropagation();openSheet(${i})">Grab it →</button>
+        </div>
+        ${f.social?`<div class="fc-social"><div class="fc-avs"><div class="fc-av">😊</div><div class="fc-av">🙂</div><div class="fc-av">😄</div></div><div class="fc-soc-txt">${f.social} students heading here</div></div>`:''}
+      </div>
+    </div>`;
+  });
+}
+ 
+// ════════════════════════════════
+// LEAFLET MAP
+// ════════════════════════════════
+function initMap(){
+  const mapEl=document.getElementById('leaflet-map');
+  if(!mapEl) return;
+  // Force explicit dimensions so Leaflet can measure the container
+  mapEl.style.height='480px';
+  mapEl.style.width='100%';
+  if(leafletMap){
+    setTimeout(()=>leafletMap.invalidateSize(),50);
+    return;
+  }
+  leafletMap=L.map('leaflet-map',{zoomControl:true}).setView([33.4215,-111.9375],16);
+  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{
+    attribution:'© <a href="https://openstreetmap.org">OpenStreetMap</a> contributors',
+    maxZoom:19,
+    crossOrigin:true
+  }).addTo(leafletMap);
+  // ASU boundary overlay
+  L.rectangle([[33.4195,-111.9420],[33.4245,-111.9330]],{color:'rgba(82,192,65,.5)',weight:1.5,fillColor:'rgba(82,192,65,.04)',fillOpacity:1}).addTo(leafletMap);
+  addMapMarkers();
+  // Critical: force Leaflet to recalculate size after DOM settle
+  setTimeout(()=>leafletMap.invalidateSize(),100);
+  setTimeout(()=>leafletMap.invalidateSize(),400);
+}
+ 
+function markerIcon(status){
+  const colors={urgent:'#C83030',warm:'#D4930C',fresh:'#1F8040'};
+  const c=colors[status]||colors.fresh;
+  return L.divIcon({
+    className:'',
+    html:`<div style="width:36px;height:36px;background:${c};border-radius:50%;border:3px solid #fff;box-shadow:0 3px 12px rgba(0,0,0,.3);display:flex;align-items:center;justify-content:center;font-size:16px;cursor:pointer">${DB.foods.find((f,i)=>f.status===status)?'':''}</div>`,
+    iconSize:[36,36],iconAnchor:[18,18]
+  });
+}
+ 
+function addMapMarkers(){
+  mapMarkers.forEach(m=>m.remove());mapMarkers=[];
+  const statusColor={urgent:'#C83030',warm:'#D4930C',fresh:'#1F8040'};
+  DB.foods.forEach((f,i)=>{
+    const c=statusColor[f.status]||statusColor.fresh;
+    const icon=L.divIcon({
+      className:'',
+      html:`<div style="background:${c};width:40px;height:40px;border-radius:50%;border:3px solid #fff;box-shadow:0 4px 14px rgba(0,0,0,.25);display:flex;align-items:center;justify-content:center;font-size:18px;cursor:pointer">${f.emoji}</div>`,
+      iconSize:[40,40],iconAnchor:[20,20]
+    });
+    const marker=L.marker([f.lat,f.lng],{icon}).addTo(leafletMap);
+    marker.bindPopup(`<div style="font-family:'Plus Jakarta Sans',sans-serif;min-width:160px"><div style="font-weight:700;font-size:14px;margin-bottom:4px">${f.emoji} ${f.title}</div><div style="font-size:12px;color:#666;margin-bottom:8px">📍 ${f.loc}</div><div style="font-size:11px;font-weight:700;color:${c};margin-bottom:8px">⏱ ${f.time}</div><button onclick="window.openSheet(${i});document.querySelector('.overlay').classList.add('on')" style="background:${statusColor.fresh};color:#fff;border:none;border-radius:8px;padding:7px 14px;font-size:12px;font-weight:700;cursor:pointer;font-family:inherit;width:100%">View details</button></div>`);
+    marker.on('click',()=>marker.openPopup());
+    mapMarkers.push(marker);
+  });
+}
+ 
+function renderMapList(){
+  const el=document.getElementById('map-list');
+  if(!el) return;
+  el.innerHTML='';
+  const badgeCls={urgent:'badge-urgent',warm:'badge-warm',fresh:'badge-fresh'};
+  DB.foods.forEach((f,i)=>{
+    const bc=f.status==='urgent'?'background:var(--red-bg);color:var(--red)':f.status==='warm'?'background:var(--amber-bg);color:var(--amber)':'background:var(--lime-light);color:var(--leaf)';
+    el.innerHTML+=`<div class="mli" onclick="openSheet(${i})"><div class="mli-em">${f.emoji}</div><div class="mli-info"><div class="mli-t">${f.title}</div><div class="mli-l">📍 ${f.loc}</div></div><div class="mli-badge" style="${bc}">${f.time}</div></div>`;
+  });
+}
+ 
+// ════════════════════════════════
+// MODAL / SHEET
+// ════════════════════════════════
+function openSheet(idx){
+  currentFood=idx;
+  const f=DB.foods[idx];
+  const imgWrap=document.getElementById('sh-img-wrap');
+  if(f.img){
+    imgWrap.innerHTML=`<img src="${f.img}" style="width:100%;height:200px;object-fit:cover;border-radius:var(--r-lg)">`;
+  }else{
+    imgWrap.className='sh-img';imgWrap.style.cssText='display:flex;align-items:center;justify-content:center;font-size:64px;height:160px;background:var(--bg2);border-radius:var(--r-lg);margin-bottom:18px';
+    imgWrap.textContent=f.emoji;
+  }
+  document.getElementById('sh-title').textContent=f.title;
+  document.getElementById('sh-event').textContent=f.event+' · '+f.loc;
+  document.getElementById('sh-rows').innerHTML=`
+    <div class="sh-row"><span class="sh-k">📍 Location</span><span class="sh-v">${f.loc}</span></div>
+    <div class="sh-row"><span class="sh-k">⏱ Available for</span><span class="sh-v">${f.time}</span></div>
+    <div class="sh-row"><span class="sh-k">🍽️ Quantity</span><span class="sh-v">${f.qty}</span></div>
+    <div class="sh-row"><span class="sh-k">🌿 Dietary</span><span class="sh-v">${f.dietary}</span></div>
+    <div class="sh-row"><span class="sh-k">👥 Heading there</span><span class="sh-v">${(f.social||0)+' students'}</span></div>
+  `;
+  document.getElementById('modal').classList.add('on');
+}
+function closeModal(e){if(e.target.id==='modal') closeModalDirect()}
+function closeModalDirect(){document.getElementById('modal').classList.remove('on')}
+function claim(){
+  const f=DB.foods[currentFood];
+  closeModalDirect();
+  // persist claim
+  if(!DB.claims) DB.claims=[];
+  DB.claims.unshift({food:f.title,loc:f.loc,time:new Date().toISOString(),lbs:Math.round(f.urgency/10)+1});
+  f.social=(f.social||0)+1;
+  saveDB(DB);
+  renderClaimHistory();
+  showToast('📍 Heading to '+f.loc+'! Enjoy your meal 🌿');
+}
+window.openSheet=openSheet;
+ 
+// ════════════════════════════════
+// POST FORM
+// ════════════════════════════════
+document.querySelectorAll('#pfchips .pfchip').forEach(c=>c.addEventListener('click',()=>c.classList.toggle('on')));
+ 
+function handleImg(e){
+  const file=e.target.files[0];if(!file) return;
+  const reader=new FileReader();
+  reader.onload=ev=>{
+    const zone=document.getElementById('upload-zone');
+    const ph=document.getElementById('upload-placeholder');
+    const prev=document.getElementById('preview-img');
+    const rem=document.getElementById('remove-img');
+    ph.style.display='none';
+    prev.src=ev.target.result;prev.style.display='block';
+    rem.style.display='block';
+    zone.classList.add('has-img');
+    window._uploadedImg=ev.target.result;
+    // Trigger AI analysis
+    analyzePhotoWithAI(ev.target.result);
+  };
+  reader.readAsDataURL(file);
+}
+function removeImg(e){
+  e.stopPropagation();
+  document.getElementById('preview-img').style.display='none';
+  document.getElementById('preview-img').src='';
+  document.getElementById('remove-img').style.display='none';
+  document.getElementById('upload-placeholder').style.display='block';
+  document.getElementById('upload-zone').classList.remove('has-img');
+  document.getElementById('img-input').value='';
+  window._uploadedImg=null;
+}
+function submitPost(){
+  const food=document.getElementById('pf-food').value;
+  const building=document.getElementById('pf-building').value;
+  if(!food&&!building){showToast('⚠️ Please add food name and location');return}
+  // Add to DB
+  const newItem={
+    id:'f'+Date.now(),
+    emoji:getEmojiForFood(food),
+    title:food||'Food available',
+    event:document.getElementById('pf-org').value||'Campus event',
+    loc:(building||'Campus')+' '+(document.getElementById('pf-room').value||''),
+    building:building||'Other',
+    time:document.getElementById('pf-time').value+' left',
+    qty:document.getElementById('pf-qty').value,
+    dietary:document.getElementById('pf-diet').value||'No dietary notes',
+    status:'fresh',urgency:10,
+    lat:33.4215+((Math.random()-.5)*.005),
+    lng:-111.9375+((Math.random()-.5)*.01),
+    img:window._uploadedImg||null,
+    social:0
+  };
+  DB.foods.unshift(newItem);
+  DB.totalLbs+=18;DB.totalMeals+=1;
+  saveDB(DB);
+  renderFeed();renderMapList();
+  if(leafletMap) addMapMarkers();
+  document.getElementById('app-active').textContent=DB.foods.length;
+  document.getElementById('live-count').textContent=DB.foods.length;
+  document.getElementById('post-form-card').style.display='none';
+  document.getElementById('post-success').classList.add('on');
+}
+function getEmojiForFood(name){
+  if(!name) return '🍱';
+  const n=name.toLowerCase();
+  if(n.includes('pizza')) return '🍕';if(n.includes('taco')||n.includes('mexican')) return '🌮';
+  if(n.includes('sushi')||n.includes('asian')||n.includes('ramen')) return '🍜';
+  if(n.includes('burger')) return '🍔';if(n.includes('sandwich')) return '🥪';
+  if(n.includes('salad')) return '🥗';if(n.includes('coffee')||n.includes('drink')) return '☕';
+  if(n.includes('pastry')||n.includes('cake')||n.includes('muffin')) return '🧁';
+  return '🍱';
+}
+function resetPost(){
+  document.getElementById('post-form-card').style.display='block';
+  document.getElementById('post-success').classList.remove('on');
+  ['pf-food','pf-room','pf-diet','pf-org'].forEach(id=>document.getElementById(id).value='');
+  removeImg({stopPropagation:()=>{}});
+}
+ 
+// ════════════════════════════════
+// CLAIMS / LEADERBOARD
+// ════════════════════════════════
+function renderClaimHistory(){
+  const el=document.getElementById('claim-history');if(!el) return;
+  const claims=DB.claims||[];
+  if(claims.length===0){el.innerHTML='<div style="color:var(--ink3);font-size:13px;padding:12px 0">No claims yet — go grab some food! 🌿</div>';return}
+  el.innerHTML=claims.slice(0,8).map(c=>`
+    <div class="psc-row"><div class="psc-ico">🍽️</div><div class="psc-info"><div class="psc-name">${c.food}</div><div class="psc-val">📍 ${c.loc} · ${new Date(c.time).toLocaleDateString()}</div></div><div style="font-size:12px;color:var(--leaf);font-weight:700">+${c.lbs} lbs</div></div>
+  `).join('');
+}
+function renderLeaderboard(){
+  const el=document.getElementById('leaderboard');if(!el) return;
+  const lb=[
+    {name:'Priya S.',meals:34,rank:1},{name:'Carlos M.',meals:28,rank:2},{name:'Anika R.',meals:22,rank:3},
+    {name:DB.user?.name?.split(' ')[0]||'You',meals:14,rank:47,isYou:true},{name:'Jason T.',meals:11,rank:5}
+  ];
+  el.innerHTML=lb.map(l=>`
+    <div class="psc-row" style="${l.isYou?'background:var(--lime-light);border-radius:var(--r);padding:10px 12px;':''}">
+      <div style="width:28px;height:28px;border-radius:50%;background:${l.rank<=3?'var(--forest)':'var(--bg2)'};color:${l.rank<=3?'#fff':'var(--ink3)'};display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;flex-shrink:0">${l.rank<=3?['🥇','🥈','🥉'][l.rank-1]:l.rank}</div>
+      <div class="psc-info"><div class="psc-name">${l.name}${l.isYou?' (you)':''}</div><div class="psc-val">${l.meals} meals rescued</div></div>
+      <div style="font-size:11px;color:var(--ink3)">${Math.round(l.meals*2)} lbs</div>
+    </div>
+  `).join('');
+}
+ 
+// ════════════════════════════════
+// ALERTS
+// ════════════════════════════════
+function clearAlerts(){
+  document.querySelectorAll('.ni.unread').forEach(n=>n.classList.remove('unread'));
+  document.querySelectorAll('.undot').forEach(d=>d.remove());
+  document.querySelectorAll('.npip').forEach(p=>p.style.display='none');
+  document.getElementById('sb-badge').style.display='none';
+  showToast('All notifications cleared');
+}
+ 
+// ════════════════════════════════
+// PUSH NOTIFICATIONS
+// ════════════════════════════════
+function requestPush(){
+  if(!('Notification' in window)){showToast('Notifications not supported in this browser');return}
+  Notification.requestPermission().then(perm=>{
+    const tog=document.getElementById('push-tog');
+    const desc=document.getElementById('push-desc');
+    if(perm==='granted'){
+      tog.classList.add('on');
+      desc.textContent='Push alerts enabled ✓';
+      showToast('🔔 Push notifications enabled!');
+      new Notification('EcoEats 🌿',{body:'You\'re set! We\'ll alert you when free food appears nearby.',icon:'data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><text y=".9em" font-size="90">🌿</text></svg>'});
+    }else{
+      desc.textContent='Permission denied — enable in browser settings';
+      showToast('⚠️ Notification permission denied');
+    }
+  });
+}
+ 
+// ════════════════════════════════
+// TOAST
+// ════════════════════════════════
+let _toastTimer;
+function showToast(msg){
+  const t=document.getElementById('toast');
+  t.textContent=msg;t.classList.add('on');
+  clearTimeout(_toastTimer);
+  _toastTimer=setTimeout(()=>t.classList.remove('on'),3000);
+}
+ 
+// ════════════════════════════════
+// HERO COUNTERS
+// ════════════════════════════════
+function animN(el,target,dur){
+  let v=0;const step=target/(dur/40);
+  const t=setInterval(()=>{v=Math.min(v+step,target);el.textContent=Math.round(v).toLocaleString();if(v>=target) clearInterval(t)},40);
+}
+setTimeout(()=>{
+  const l=document.getElementById('h-lbs'),m=document.getElementById('h-meals');
+  if(l) animN(l,847,1400);if(m) animN(m,1247,1600);
+},500);
+ 
+// ════════════════════════════════
+// LIVE SIMULATION
+// ════════════════════════════════
+setTimeout(()=>showToast('🔔 New: Taco spread just posted at BYAC!'),7000);
+// Pre-warm map so it's ready when user navigates to it
+setTimeout(()=>{
+  const mapPane=document.getElementById('pane-map');
+  if(mapPane){
+    mapPane.style.display='block';
+    mapPane.style.visibility='hidden';
+    mapPane.style.position='absolute';
+    mapPane.style.pointerEvents='none';
+    initMap();
+    setTimeout(()=>{
+      mapPane.style.display='';
+      mapPane.style.visibility='';
+      mapPane.style.position='';
+      mapPane.style.pointerEvents='';
+    },600);
+  }
+},1200);
+ 
+// ════════════════════════════════
+// AI HELPERS
+// ════════════════════════════════
+async function callClaude(messages, system, maxTokens=600){
+  const res = await fetch('https://api.anthropic.com/v1/messages',{
+    method:'POST',
+    headers:{'Content-Type':'application/json'},
+    body:JSON.stringify({
+      model:'claude-sonnet-4-20250514',
+      max_tokens: maxTokens,
+      system: system,
+      messages: messages
+    })
+  });
+  const data = await res.json();
+  if(data.content && data.content[0]) return data.content[0].text;
+  throw new Error('No response');
+}
+ 
+function getFoodContext(){
+  return DB.foods.map((f,i)=>`[${i}] ${f.emoji} ${f.title} at ${f.loc} — ${f.time} — ${f.qty} — Dietary: ${f.dietary} — Status: ${f.status}`).join('\n');
+}
+ 
+// ════════════════════════════════
+// AI FOOD SCOUT CHAT
+// ════════════════════════════════
+let aiPanelOpen = false;
+let chatHistory = [];
+ 
+function toggleAIPanel(){
+  aiPanelOpen = !aiPanelOpen;
+  document.getElementById('ai-panel').classList.toggle('on', aiPanelOpen);
+  if(aiPanelOpen) document.getElementById('ai-input').focus();
+}
+ 
+function aiQuickAsk(q){
+  document.getElementById('ai-chips').style.display='none';
+  appendAIMsg(q,'user');
+  chatHistory.push({role:'user',content:q});
+  doAIChat();
+}
+ 
+function sendAIMsg(){
+  const inp = document.getElementById('ai-input');
+  const q = inp.value.trim();
+  if(!q) return;
+  inp.value = '';
+  document.getElementById('ai-chips').style.display='none';
+  appendAIMsg(q,'user');
+  chatHistory.push({role:'user',content:q});
+  doAIChat();
+}
+ 
+function appendAIMsg(text, role){
+  const msgs = document.getElementById('ai-msgs');
+  const div = document.createElement('div');
+  div.className = 'ai-msg ' + role;
+  div.textContent = text;
+  msgs.appendChild(div);
+  msgs.scrollTop = msgs.scrollHeight;
+  return div;
+}
+ 
+function showTyping(){
+  const msgs = document.getElementById('ai-msgs');
+  const div = document.createElement('div');
+  div.className = 'ai-typing';
+  div.id = 'ai-typing-indicator';
+  div.innerHTML = '<span></span><span></span><span></span>';
+  msgs.appendChild(div);
+  msgs.scrollTop = msgs.scrollHeight;
+}
+ 
+function hideTyping(){
+  const t = document.getElementById('ai-typing-indicator');
+  if(t) t.remove();
+}
+ 
+async function doAIChat(){
+  showTyping();
+  const system = `You are EcoEats AI Scout, a friendly assistant embedded in the EcoEats campus food rescue app at Arizona State University. Your job is to help students find free leftover food from campus events.
+ 
+Current live food listings:
+${getFoodContext()}
+ 
+Keep responses SHORT (2-4 sentences max), helpful, conversational and emoji-friendly 🌿. Recommend specific listings by name when relevant. If someone asks about dietary needs, check the dietary field. Always encourage them to grab food quickly if it's running low. You care deeply about reducing food waste and student wellbeing.`;
+ 
+  try {
+    const reply = await callClaude(chatHistory, system);
+    hideTyping();
+    chatHistory.push({role:'assistant',content:reply});
+    appendAIMsg(reply,'bot');
+  } catch(e) {
+    hideTyping();
+    appendAIMsg("Sorry, I'm having trouble connecting right now. Check the Home tab for live listings! 🌿", 'bot');
+  }
+}
+ 
+// ════════════════════════════════
+// AI LISTING WRITER
+// ════════════════════════════════
+let aiGeneratedListing = null;
+ 
+async function runAIWriter(){
+  const input = document.getElementById('ai-writer-input').value.trim();
+  if(!input){ showToast('⚠️ Describe your food first'); return; }
+ 
+  const btn = document.getElementById('ai-writer-btn');
+  btn.disabled = true;
+  btn.innerHTML = '⏳ Writing…';
+  const result = document.getElementById('ai-writer-result');
+  const output = document.getElementById('ai-writer-output');
+  result.classList.remove('on');
+ 
+  const system = `You are a listing writer for EcoEats, a campus food rescue app at ASU. Given a casual description of leftover food, generate a structured JSON listing. Respond ONLY with valid JSON, no markdown, no backticks. Format:
+{
+  "title": "short catchy food name (max 5 words)",
+  "dietary": "comma-separated dietary notes (check for: Vegan, Vegetarian, GF option, Contains nuts, Contains dairy, Contains gluten, Halal, Spicy)",
+  "description": "one engaging sentence about the food (max 20 words)",
+  "emoji": "single most relevant emoji",
+  "qty": "estimate like ~10 people or ~25 people",
+  "urgency": "low|medium|high"
+}`;
+ 
+  try {
+    const raw = await callClaude([{role:'user',content:input}], system, 300);
+    const clean = raw.replace(/```json|```/g,'').trim();
+    aiGeneratedListing = JSON.parse(clean);
+ 
+    output.innerHTML = `
+      <div style="display:flex;flex-direction:column;gap:6px">
+        <div><strong>${aiGeneratedListing.emoji} ${aiGeneratedListing.title}</strong></div>
+        <div style="color:var(--ink3)">${aiGeneratedListing.description}</div>
+        <div style="display:flex;gap:6px;flex-wrap:wrap;margin-top:2px">
+          <span style="background:var(--lime-light);color:var(--leaf);padding:2px 8px;border-radius:10px;font-size:11px;font-weight:600">🍽️ ${aiGeneratedListing.qty}</span>
+          <span style="background:var(--bg2);color:var(--ink3);padding:2px 8px;border-radius:10px;font-size:11px">🌿 ${aiGeneratedListing.dietary}</span>
+        </div>
+      </div>`;
+    result.classList.add('on');
+    showToast('✨ AI listing ready — click Apply to fill the form');
+  } catch(e) {
+    output.innerHTML = '<span style="color:var(--red)">Could not generate listing. Try a more detailed description.</span>';
+    result.classList.add('on');
+  }
+ 
+  btn.disabled = false;
+  btn.innerHTML = '✨ Generate';
+}
+ 
+function applyAIListing(){
+  if(!aiGeneratedListing) return;
+  const l = aiGeneratedListing;
+  const foodEl = document.getElementById('pf-food');
+  const dietEl = document.getElementById('pf-diet');
+  const qtyEl = document.getElementById('pf-qty');
+  if(foodEl) foodEl.value = l.title || '';
+  if(dietEl) dietEl.value = l.dietary || '';
+  // match qty dropdown
+  if(qtyEl && l.qty){
+    const n = parseInt(l.qty);
+    if(n<=5) qtyEl.value='~5 people';
+    else if(n<=10) qtyEl.value='~10 people';
+    else if(n<=20) qtyEl.value='~20 people';
+    else qtyEl.value='~30+ people';
+  }
+  // auto-select matching chip
+  document.querySelectorAll('.pfchip').forEach(c=>{
+    const txt = c.textContent.toLowerCase();
+    const title = (l.title||'').toLowerCase();
+    if(title.includes('pizza')&&txt.includes('pizza')) c.classList.add('on');
+    if((title.includes('salad'))&&txt.includes('salad')) c.classList.add('on');
+    if((title.includes('taco')||title.includes('mexican'))&&txt.includes('mexican')) c.classList.add('on');
+    if((title.includes('pastry')||title.includes('cake'))&&txt.includes('pastri')) c.classList.add('on');
+    if((title.includes('drink')||title.includes('coffee'))&&txt.includes('drink')) c.classList.add('on');
+  });
+  showToast('✅ Form filled by AI! Review and post.');
+  // scroll to form
+  document.getElementById('post-form-card').scrollIntoView({behavior:'smooth',block:'start'});
+}
+ 
+// ════════════════════════════════
+// AI PHOTO ANALYZER
+// ════════════════════════════════
+async function analyzePhotoWithAI(base64Image){
+  const resultEl = document.getElementById('ai-photo-result');
+  const outputEl = document.getElementById('ai-photo-output');
+  resultEl.classList.remove('on');
+  outputEl.innerHTML = '<em style="color:var(--ink3)">✨ Analyzing your photo…</em>';
+  resultEl.classList.add('on');
+ 
+  const system = `You are a food identification AI for EcoEats, a campus food rescue app. Analyze the food image and respond ONLY with valid JSON (no markdown, no backticks):
+{
+  "foodName": "brief name of the food",
+  "dietary": "detected dietary tags: Vegan, Vegetarian, Contains dairy, Contains gluten, Contains meat, GF likely, Spicy — comma-separated, best guess",
+  "confidence": "high|medium|low",
+  "note": "one short helpful note about the food (max 12 words)"
+}`;
+ 
+  try {
+    const res = await fetch('https://api.anthropic.com/v1/messages',{
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({
+        model:'claude-sonnet-4-20250514',
+        max_tokens:300,
+        system: system,
+        messages:[{
+          role:'user',
+          content:[
+            {type:'image',source:{type:'base64',media_type:'image/jpeg',data:base64Image.split(',')[1]||base64Image}},
+            {type:'text',text:'What food is this? Fill in the JSON.'}
+          ]
+        }]
+      })
+    });
+    const data = await res.json();
+    const raw = data.content[0].text.replace(/```json|```/g,'').trim();
+    const parsed = JSON.parse(raw);
+ 
+    outputEl.innerHTML = `
+      <strong>${parsed.foodName}</strong> · ${parsed.confidence} confidence<br>
+      <span style="color:var(--leaf)">🌿 ${parsed.dietary}</span><br>
+      <span style="color:var(--ink3);font-style:italic">${parsed.note}</span>`;
+ 
+    // Auto-fill dietary field
+    const dietEl = document.getElementById('pf-diet');
+    if(dietEl && !dietEl.value) dietEl.value = parsed.dietary;
+    // Auto-fill food name if empty
+    const foodEl = document.getElementById('pf-food');
+    if(foodEl && !foodEl.value) foodEl.value = parsed.foodName;
+ 
+    showToast('📸 AI identified: '+parsed.foodName);
+  } catch(e) {
+    outputEl.innerHTML = '<span style="color:var(--ink3)">Could not analyze photo — fill in manually</span>';
+  }
+}
+ 
+// ════════════════════════════════
+// AGENT 1: SAFETY & COMPLIANCE
+// ════════════════════════════════
+const SAFETY_WINDOW_MS = 2*60*60*1000;
+ 
+function getSafetyStatus(food){
+  const age = Date.now()-(food.preparedAt||food.postedAt||Date.now());
+  const pct = Math.min(age/SAFETY_WINDOW_MS*100,100);
+  if(pct>=100) return{label:'Expired',color:'var(--red)',pct:100,cls:'sf-danger',safe:false};
+  if(pct>=75)  return{label:'Use soon',color:'var(--red)',pct,cls:'sf-danger',safe:true};
+  if(pct>=50)  return{label:'Check time',color:'var(--amber)',pct,cls:'sf-warn',safe:true};
+  return{label:'Food safe ✓',color:'var(--leaf)',pct,cls:'sf-safe',safe:true};
+}
+function safetyBarHTML(food){
+  const s=getSafetyStatus(food);
+  const minsAgo=Math.round((Date.now()-(food.preparedAt||Date.now()))/60000);
+  return`<div class="safety-bar-wrap"><div class="safety-bar-labels"><span class="sf-left">Prepared ${minsAgo} min ago</span><span class="${s.cls}">${s.label}</span></div><div class="safety-bar"><div class="safety-fill" style="width:${s.pct}%;background:${s.color}"></div></div></div>`;
+}
+function runExpiryCheck(){
+  let changed=false;
+  DB.foods=DB.foods.filter(f=>{const age=Date.now()-(f.preparedAt||f.postedAt||Date.now());if(age>SAFETY_WINDOW_MS){changed=true;return false;}return true;});
+  if(changed){saveDB(DB);renderFeed();renderMapList();if(leafletMap)addMapMarkers();}
+}
+setInterval(runExpiryCheck,60000);
+function validateLiability(){
+  const cb=document.getElementById('liability-check');
+  if(cb&&!cb.checked){showToast('⚠️ Please confirm the food safety acknowledgment');return false;}
+  return true;
+}
+ 
+// ════════════════════════════════
+// AGENT 2: TIMING & PREDICTION
+// ════════════════════════════════
+let userReservations={};
+function toggleSchedule(){
+  const tog=document.getElementById('schedule-tog');
+  tog.classList.toggle('on');
+  const fields=document.getElementById('schedule-fields');
+  fields.classList.toggle('on',tog.classList.contains('on'));
+  if(tog.classList.contains('on')){
+    const now=new Date(Date.now()+30*60000);
+    const te=document.getElementById('pf-ready-time');
+    const de=document.getElementById('pf-ready-date');
+    if(te)te.value=now.toTimeString().slice(0,5);
+    if(de)de.value=now.toISOString().slice(0,10);
+  }
+}
+function claimWithReservation(idx){
+  const f=DB.foods[idx];if(!f)return;
+  const expiry=Date.now()+12*60000;
+  userReservations[f.id]=expiry;
+  f.social=(f.social||0)+1;
+  saveDB(DB);renderFeed();closeModalDirect();
+  showToast(`📍 Reserved! Head to ${f.loc} within 12 min 🏃`);
+  startCountdown(f.id,f.loc,expiry);
+}
+function startCountdown(foodId,loc,expiry){
+  const b=document.createElement('div');
+  b.id='res-'+foodId;
+  b.style.cssText='position:fixed;bottom:90px;left:50%;transform:translateX(-50%);background:var(--amber);color:#fff;padding:10px 20px;border-radius:20px;font-size:13px;font-weight:700;z-index:500;box-shadow:0 4px 20px rgba(0,0,0,.2);white-space:nowrap';
+  document.body.appendChild(b);
+  const t=setInterval(()=>{
+    const left=Math.max(0,Math.round((expiry-Date.now())/1000));
+    const m=Math.floor(left/60),s=left%60;
+    b.textContent=`⏱ Reserved: ${m}:${String(s).padStart(2,'0')} to reach ${loc}`;
+    if(left<=0){clearInterval(t);b.remove();delete userReservations[foodId];showToast('⚠️ Reservation expired');}
+  },1000);
+}
+ 
+// ════════════════════════════════
+// AGENT 3: SUSTAINABILITY DASHBOARD
+// ════════════════════════════════
+function renderSustainPane(){
+  let pane=document.getElementById('pane-sustain');
+  if(!pane){
+    pane=document.createElement('div');
+    pane.className='app-pane';
+    pane.id='pane-sustain';
+    const tpl=document.getElementById('tpl-sustain');
+    if(tpl) pane.innerHTML=tpl.innerHTML;
+    // Append to app-main content area (NOT insertBefore mob-nav which is a sibling)
+    const main=document.querySelector('.app-main');
+    if(main) main.appendChild(pane);
+    renderTopHosts();
+  }
+  // Hide all other panes, show this one
+  PANES.forEach(p=>{
+    const existing=document.getElementById('pane-'+p);
+    if(existing) existing.classList.remove('on');
+  });
+  pane.classList.add('on');
+}
+function renderTopHosts(){
+  const el=document.getElementById('top-hosts-list');if(!el)return;
+  const hosts=[
+    {name:'Walton Centre for Planetary Health',official:true,lbs:247,meals:124,score:5.0,count:41},
+    {name:"Dean's Office — College of Engineering",official:true,lbs:198,meals:99,score:4.7,count:12},
+    {name:'SASE ASU Chapter',official:false,lbs:156,meals:78,score:4.9,count:23},
+    {name:'Entrepreneurship + Innovation',official:false,lbs:134,meals:67,score:4.4,count:8},
+    {name:'Graduate Student Government',official:false,lbs:112,meals:56,score:4.6,count:15},
+  ];
+  el.innerHTML=hosts.map((h,i)=>`<div class="psc-row"><div style="width:26px;height:26px;border-radius:50%;background:${i<3?'var(--forest)':'var(--bg2)'};color:${i<3?'#fff':'var(--ink3)'};display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;flex-shrink:0">${i<3?['🥇','🥈','🥉'][i]:i+1}</div><div class="psc-info" style="flex:1;margin:0 10px"><div class="psc-name">${h.name} ${h.official?'<span class="official-pin">Official ASU</span>':'<span class="verified-badge">✓ Verified</span>'}</div><div class="psc-val">⭐ ${h.score} (${h.count} posts) · ${h.lbs} lbs · ${h.meals} meals</div></div><div style="font-size:12px;font-weight:700;color:var(--leaf)">${h.lbs} lbs</div></div>`).join('');
+}
+function generateReport(){
+  showToast('📄 Generating ESG report…');
+  const report=`EcoEats Monthly ESG Report — ASU Tempe — March 2026\n${'='.repeat(50)}\nFood rescued: 847 lbs\nCO₂ avoided: 89 kg\nStudents served: 312\nListings posted: 89 (34 official ASU events)\nCompliance: 100% Good Samaritan Act\nAvg claim time: 4.2 minutes\nClaim rate: 97%\n${'='.repeat(50)}\nGenerated by EcoEats · Walton Centre for Planetary Health`;
+  const blob=new Blob([report],{type:'text/plain'});
+  const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='EcoEats_ESG_March2026.txt';a.click();
+}
+ 
+// ════════════════════════════════
+// AGENT 4: PERSONALIZATION
+// ════════════════════════════════
+let userPrefs={diet:[],notifPref:'all',onboarded:false};
+let feedFilter='all';
+let obSel={};
+function loadPrefs(){try{const p=localStorage.getItem('ecoeats_prefs');if(p)userPrefs={...userPrefs,...JSON.parse(p)};}catch(e){}}
+function savePrefs(){try{localStorage.setItem('ecoeats_prefs',JSON.stringify(userPrefs));}catch(e){}}
+loadPrefs();
+function showOnboarding(){if(!userPrefs.onboarded)setTimeout(()=>document.getElementById('onboard-overlay').classList.add('on'),900);}
+function obNext(step){
+  document.querySelectorAll('.ob-step').forEach(s=>s.classList.remove('on'));
+  document.getElementById('ob-step-'+step).classList.add('on');
+  document.querySelectorAll('.ob-pip').forEach((p,i)=>p.classList.toggle('on',i<=step));
+}
+function obToggle(el,val){
+  el.classList.toggle('sel');
+  if(!obSel.diet)obSel.diet=new Set();
+  el.classList.contains('sel')?obSel.diet.add(val):obSel.diet.delete(val);
+}
+function obSingle(el,group,val){
+  el.closest('.ob-options').querySelectorAll('.ob-opt').forEach(e=>e.classList.remove('sel'));
+  el.classList.add('sel');obSel[group]=val;
+}
+function finishOnboard(){
+  userPrefs.diet=obSel.diet?Array.from(obSel.diet):[];
+  userPrefs.notifPref=obSel['notif-pref']||'all';
+  userPrefs.onboarded=true;savePrefs();
+  document.getElementById('onboard-overlay').classList.remove('on');
+  showToast('🌿 Feed personalized for you!');renderFeed();
+}
+function skipOnboard(){userPrefs.onboarded=true;savePrefs();document.getElementById('onboard-overlay').classList.remove('on');}
+function setFeedFilter(f){
+  feedFilter=f;
+  document.getElementById('filter-all').classList.toggle('active',f==='all');
+  document.getElementById('filter-match').classList.toggle('active',f==='match');
+  renderFeed();
+}
+function foodMatchesPrefs(food){
+  if(!userPrefs.diet||userPrefs.diet.length===0||userPrefs.diet.includes('none'))return true;
+  const d=food.dietary.toLowerCase();
+  if(userPrefs.diet.includes('vegan')&&!d.includes('vegan'))return false;
+  if(userPrefs.diet.includes('gluten-free')&&!d.includes('gf')&&!d.includes('gluten-free'))return false;
+  if(userPrefs.diet.includes('no-nuts')&&d.includes('nut'))return false;
+  return true;
+}
+function getMatchScore(food){
+  if(!userPrefs.diet||userPrefs.diet.length===0||userPrefs.diet.includes('none'))return 95+Math.floor(Math.random()*5);
+  return foodMatchesPrefs(food)?92+Math.floor(Math.random()*8):62+Math.floor(Math.random()*18);
+}
+ 
+// ════════════════════════════════
+// OVERRIDE: renderFeed with all 4 agents
+// ════════════════════════════════
+renderFeed=function(){
+  const container=document.getElementById('feed-container');if(!container)return;
+  container.innerHTML='';
+  let foods=DB.foods;
+  if(feedFilter==='match'&&userPrefs.onboarded)foods=foods.filter(foodMatchesPrefs);
+  if(!foods.length){
+    container.innerHTML='<div style="text-align:center;padding:40px 0;color:var(--ink3)"><div style="font-size:36px;margin-bottom:12px">🌿</div><div style="font-weight:600;margin-bottom:6px;color:var(--ink)">No matching listings right now</div><div style="font-size:13px">Try "All" view or check back soon</div></div>';
+    return;
+  }
+  foods.forEach(f=>{
+    const realIdx=DB.foods.indexOf(f);
+    const s=getSafetyStatus(f);
+    if(!s.safe)return;
+    const urgColor=f.status==='urgent'?'var(--red)':f.status==='warm'?'var(--amber)':'var(--lime)';
+    const badgeCls=f.status==='urgent'?'fcb-r':f.status==='warm'?'fcb-a':'fcb-g';
+    const imgContent=f.img?`<img src="${f.img}" alt="${f.title}" style="width:100%;height:100%;object-fit:cover">`:`<div class="fc-img-placeholder">${f.emoji}</div>`;
+    const matchPill=feedFilter==='match'?`<div style="position:absolute;bottom:10px;left:10px"><div class="match-pill">✨ ${getMatchScore(f)}% match</div></div>`:'';
+    const verifiedHtml=f.verified?`<span class="verified-badge">✓ Verified</span>`:'';
+    const officialHtml=f.official?`<span class="official-pin" style="margin-left:4px">Official ASU</span>`:'';
+    const repHtml=f.rep&&f.rep.score?`<span class="rep-score">⭐ ${f.rep.score}<span class="rep-count">(${f.rep.count})</span></span>`:'';
+    const reserved=userReservations[f.id];
+    container.innerHTML+=`<div class="fc fc-${f.status}" onclick="openSheet(${realIdx})">
+      <div class="fc-img-wrap">${imgContent}<div class="fc-urgency-stripe" style="background:${urgColor}"></div><div class="fc-time-badge ${badgeCls}">${f.status==='urgent'?'⚡':f.status==='warm'?'⏱':'✓'} ${f.time}</div>${matchPill}${reserved?'<div style="position:absolute;top:10px;left:10px"><span class="eta-badge">⏱ Reserved</span></div>':''}</div>
+      <div class="fc-body">
+        <div class="fc-row1"><div class="fc-left-info"><div class="fc-title" style="display:flex;align-items:center;flex-wrap:wrap;gap:4px">${f.title}${verifiedHtml}${officialHtml}</div><div class="fc-event" style="display:flex;align-items:center;flex-wrap:wrap;gap:4px">${f.event}${repHtml}</div></div></div>
+        ${safetyBarHTML(f)}
+        <div class="fc-bar-wrap"><div class="fc-bar-labels"><span>Urgency</span><span style="color:${urgColor};font-weight:600">${f.status==='urgent'?'Going fast!':f.status==='warm'?'Plenty left':'Lots available'}</span></div><div class="fc-bar"><div class="fc-bar-fill" style="width:${f.urgency}%;background:${urgColor}"></div></div></div>
+        <div class="fc-row2"><div class="fc-meta"><div class="fc-loc">📍 ${f.loc}</div><div class="fc-tags">${f.dietary.includes('Vegan')?'<div class="fc-tag tag-v">🌱 Vegan</div>':''}${(f.dietary.includes('GF')||f.dietary.includes('gluten-free'))?'<div class="fc-tag tag-g">GF</div>':''}</div></div><button class="grab-btn" onclick="event.stopPropagation();openSheet(${realIdx})">Grab it →</button></div>
+        ${f.social?`<div class="fc-social"><div class="fc-avs"><div class="fc-av">😊</div><div class="fc-av">🙂</div><div class="fc-av">😄</div></div><div class="fc-soc-txt">${f.social} students heading here</div></div>`:''}
+      </div>
+    </div>`;
+  });
+};
+ 
+// OVERRIDE: claim with reservation
+claim=function(){claimWithReservation(currentFood);};
+ 
+// OVERRIDE: submitPost with all validations
+submitPost=function(){
+  if(!validateLiability())return;
+  const food=document.getElementById('pf-food').value;
+  const building=document.getElementById('pf-building').value;
+  if(!food&&!building){showToast('⚠️ Please add food name and location');return;}
+  const isOfficial=document.getElementById('official-tog').classList.contains('on');
+  const isScheduled=document.getElementById('schedule-tog').classList.contains('on');
+  const newItem={id:'f'+Date.now(),emoji:getEmojiForFood(food),title:food||'Food available',event:document.getElementById('pf-org').value||'Campus event',loc:(building||'Campus')+' '+(document.getElementById('pf-room').value||''),building:building||'Other',time:document.getElementById('pf-time').value+' left',qty:document.getElementById('pf-qty').value,dietary:document.getElementById('pf-diet').value||'No dietary notes',status:'fresh',urgency:10,lat:33.4215+((Math.random()-.5)*.005),lng:-111.9375+((Math.random()-.5)*.01),img:window._uploadedImg||null,social:0,preparedAt:Date.now(),postedAt:Date.now(),verified:false,official:isOfficial,scheduled:isScheduled,rep:{name:document.getElementById('pf-org').value||'Anonymous',score:null,count:0}};
+  DB.foods.unshift(newItem);DB.totalLbs+=18;DB.totalMeals+=1;saveDB(DB);
+  renderFeed();renderMapList();if(leafletMap)addMapMarkers();
+  document.getElementById('app-active').textContent=DB.foods.length;
+  document.getElementById('live-count').textContent=DB.foods.length;
+  document.getElementById('post-form-card').style.display='none';
+  document.getElementById('post-success').classList.add('on');
+};
+ 
+// OVERRIDE: initApp to show onboarding
+const _baseInitApp=initApp;
+initApp=function(){
+  try{_baseInitApp();}catch(e){console.warn('initApp base error:',e);}
+  showOnboarding();
+};
+</script>
+</body>
+</html>
+ 
