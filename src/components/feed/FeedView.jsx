@@ -23,8 +23,11 @@ export default function FeedView() {
     <div className="flex flex-col h-full">
       {/* Fixed header */}
       <div className="bg-cream/90 backdrop-blur-sm sticky top-0 z-10 pt-safe">
-        <div className="flex items-center justify-between px-4 py-3">
-          <h1 className="font-display font-bold text-xl text-forest-700">Nearby Food</h1>
+        <div className="flex items-end justify-between px-4 pt-4 pb-2">
+          <div>
+            <p className="font-body text-[11px] font-medium text-gray-400 uppercase tracking-widest mb-0.5">Nearby</p>
+            <h1 className="font-display font-extrabold text-3xl text-forest-700 leading-none">What's free</h1>
+          </div>
           <button
             onClick={handleRefresh}
             className={`p-2 rounded-full hover:bg-forest-50 transition-all min-h-touch min-w-[44px] flex items-center justify-center ${refreshing ? 'animate-spin' : ''}`}
