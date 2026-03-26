@@ -11,6 +11,7 @@ import SplashScreen from './components/auth/SplashScreen'
 import AuthFlow from './components/auth/AuthFlow'
 import RoleSelector from './components/auth/RoleSelector'
 import Onboarding from './components/auth/Onboarding'
+import Landing from './pages/Landing'
 import { ListingCardSkeleton } from './components/ui/Skeleton'
 
 // Code-split pages
@@ -34,6 +35,7 @@ function AppRouter() {
   const { user, profile, loading } = useAuth()
   const [splashDone, setSplashDone] = useState(false)
   const [selectedRole, setSelectedRole] = useState(null)
+  const [authMode, setAuthMode] = useState(null) // null | 'signin' | 'signup'
 
   if (!splashDone) {
     return <SplashScreen onDone={() => setSplashDone(true)} />
@@ -47,9 +49,22 @@ function AppRouter() {
     )
   }
 
-  // Not logged in
+  // Not logged in — show landing or auth
   if (!user) {
-    return <AuthFlow />
+    if (!authMode) {
+      return (
+        <Landing
+          onSignIn={() => setAuthMode('signin')}
+          onGetStarted={() => setAuthMode('signup')}
+        />
+      )
+    }
+    return (
+      <AuthFlow
+        defaultMode={authMode}
+        onBack={() => setAuthMode(null)}
+      />
+    )
   }
 
   // Logged in but no profile (needs role + onboarding)

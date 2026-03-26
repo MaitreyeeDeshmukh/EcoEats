@@ -1,5 +1,5 @@
 import { useLocation, useNavigate } from 'react-router-dom'
-import { House, MapTrifold, Plus, ChartBar, Bookmark } from '@phosphor-icons/react'
+import { House, MapTrifold, Plus, ChartBar, Bookmark, UserCircle } from '@phosphor-icons/react'
 import { useAuth } from '../../contexts/AuthContext'
 
 export default function BottomNav() {
@@ -15,6 +15,7 @@ export default function BottomNav() {
       ? { path: '/post', icon: Plus, label: 'Post', accent: true }
       : { path: '/claims', icon: Bookmark, label: 'Claims' },
     { path: '/impact', icon: ChartBar, label: 'Impact' },
+    { path: '/profile', icon: UserCircle, label: 'Profile' },
   ]
 
   return (

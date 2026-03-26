@@ -18,9 +18,6 @@ export default function TopBar() {
         </div>
         <span className="font-display font-bold text-forest-700 text-lg">EcoEats</span>
         {/* PROTOTYPE badge */}
-        <span className="bg-amber-400 text-white text-[10px] font-bold font-body px-1.5 py-0.5 rounded-full uppercase tracking-wide">
-          PROTOTYPE
-        </span>
       </div>
 
       {/* Avatar → profile */}

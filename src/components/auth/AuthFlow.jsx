@@ -1,11 +1,11 @@
 import { useState } from 'react'
-import { Leaf, Eye, EyeSlash } from '@phosphor-icons/react'
+import { Leaf, Eye, EyeSlash, ArrowLeft } from '@phosphor-icons/react'
 import Button from '../ui/Button'
 import { signUpWithEmail, signInWithEmail, signInWithGoogle } from '../../services/auth'
 import { useToast } from '../../contexts/ToastContext'
 
-export default function AuthFlow() {
-  const [mode, setMode] = useState('signin') // 'signin' | 'signup'
+export default function AuthFlow({ defaultMode = 'signin', onBack }) {
+  const [mode, setMode] = useState(defaultMode) // 'signin' | 'signup'
   const [name, setName] = useState('')
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
@@ -59,8 +59,15 @@ export default function AuthFlow() {
 
   return (
     <div className="min-h-dvh bg-cream flex flex-col px-6 pt-safe">
+      {/* Back button */}
+      {onBack && (
+        <button onClick={onBack} className="mt-4 -ml-1 flex items-center gap-1 text-forest-700 font-body text-sm self-start">
+          <ArrowLeft size={18} />
+          Back
+        </button>
+      )}
       {/* Header */}
-      <div className="flex flex-col items-center pt-12 pb-8 gap-3">
+      <div className="flex flex-col items-center pt-8 pb-8 gap-3">
         <div className="w-14 h-14 bg-forest-700 rounded-2xl flex items-center justify-center shadow-card">
           <Leaf size={28} weight="fill" className="text-lime" />
         </div>
