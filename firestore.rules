@@ -1,0 +1,76 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // ─── Users ───────────────────────────────────────────────
+    match /users/{uid} {
+      // Anyone authenticated can read profiles
+      allow read: if request.auth != null;
+      // Only the user can write their own profile
+      allow write: if request.auth != null && request.auth.uid == uid;
+    }
+
+    // ─── Listings ─────────────────────────────────────────────
+    match /listings/{listingId} {
+      // Authenticated users can read all listings
+      allow read: if request.auth != null;
+
+      // Only authenticated hosts can create listings
+      allow create: if request.auth != null
+        && request.resource.data.hostId == request.auth.uid
+        && isHost(request.auth.uid);
+
+      // Host can update/cancel their own listing
+      // Students can claim (update claimedBy, quantityRemaining, status)
+      allow update: if request.auth != null && (
+        // Host editing own listing
+        resource.data.hostId == request.auth.uid
+        ||
+        // Student claiming — only allowed fields change
+        (
+          request.resource.data.hostId == resource.data.hostId &&
+          request.resource.data.title == resource.data.title &&
+          request.resource.data.quantityRemaining <= resource.data.quantityRemaining
+        )
+      );
+
+      // Only the host can delete
+      allow delete: if request.auth != null && resource.data.hostId == request.auth.uid;
+    }
+
+    // ─── Claims ───────────────────────────────────────────────
+    match /claims/{claimId} {
+      // Student can read their own claims; host can read claims on their listings
+      allow read: if request.auth != null && (
+        resource.data.studentId == request.auth.uid ||
+        isListingHost(resource.data.listingId, request.auth.uid)
+      );
+
+      // Only authenticated students can create claims
+      allow create: if request.auth != null
+        && request.resource.data.studentId == request.auth.uid;
+
+      // Student can update their own claim (pickup confirm); host can mark no-show
+      allow update: if request.auth != null && (
+        resource.data.studentId == request.auth.uid ||
+        isListingHost(resource.data.listingId, request.auth.uid)
+      );
+    }
+
+    // ─── Reports ──────────────────────────────────────────────
+    match /reports/{reportId} {
+      allow read: if false; // Admin only
+      allow create: if request.auth != null
+        && request.resource.data.reporterId == request.auth.uid;
+    }
+
+    // ─── Helper functions ─────────────────────────────────────
+    function isHost(uid) {
+      return get(/databases/$(database)/documents/users/$(uid)).data.role == 'host';
+    }
+
+    function isListingHost(listingId, uid) {
+      return get(/databases/$(database)/documents/listings/$(listingId)).data.hostId == uid;
+    }
+  }
+}
