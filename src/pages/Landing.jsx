@@ -1,69 +1,116 @@
-import { Leaf, HandHeart, MapPin, Lightning } from '@phosphor-icons/react'
+import { ArrowRight, Leaf } from '@phosphor-icons/react'
 
 export default function Landing({ onSignIn, onGetStarted }) {
   return (
-    <div className="min-h-dvh bg-cream flex flex-col">
-      {/* Hero */}
-      <div className="flex flex-col items-center text-center px-6 pt-16 pb-10">
-        <div className="w-20 h-20 bg-forest-700 rounded-3xl flex items-center justify-center shadow-card mb-5">
-          <Leaf size={40} weight="fill" className="text-lime" />
+    <div className="min-h-dvh bg-cream flex flex-col overflow-x-hidden">
+
+      {/* Nav */}
+      <nav className="flex items-center justify-between px-6 pt-8 pb-2">
+        <div className="flex items-center gap-2">
+          <div className="w-7 h-7 bg-forest-700 rounded-lg flex items-center justify-center">
+            <Leaf size={14} weight="fill" className="text-lime" />
+          </div>
+          <span className="font-display font-bold text-forest-700 text-base tracking-tight">EcoEats</span>
         </div>
-        <h1 className="font-display font-bold text-4xl text-forest-700 mb-2">EcoEats</h1>
-        <p className="text-gray-500 font-body text-base mb-1">rescue food. feed people.</p>
-        <p className="text-gray-400 font-body text-sm max-w-xs">
-          Connect campus departments with excess food to students who need it — before it goes to waste.
+        <button
+          onClick={onSignIn}
+          className="font-body text-sm font-medium text-forest-700 underline underline-offset-4"
+        >
+          Sign in
+        </button>
+      </nav>
+
+      {/* Hero — editorial big text */}
+      <div className="px-6 pt-10 pb-8">
+        <p className="font-body text-xs font-medium text-gray-400 uppercase tracking-widest mb-4">
+          Campus Food Network
         </p>
+        <h1 className="font-display font-extrabold text-[3.25rem] leading-[1.0] tracking-tight text-forest-700">
+          your campus feeds you.
+        </h1>
+        <p className="font-body text-base text-gray-500 mt-5 leading-relaxed max-w-xs">
+          Departments, clubs, and events share their food with the campus community — find what's near you, always free.
+        </p>
+
+        {/* Primary CTA */}
+        <button
+          onClick={onGetStarted}
+          className="mt-8 flex items-center gap-3 bg-forest-700 text-white px-6 py-4 rounded-full font-body font-semibold text-sm active:scale-95 transition-transform"
+        >
+          Get started
+          <ArrowRight size={16} weight="bold" />
+        </button>
       </div>
 
-      {/* Feature cards */}
-      <div className="px-5 flex flex-col gap-3 mb-10">
+      {/* Divider */}
+      <div className="mx-6 h-px bg-gray-200" />
+
+      {/* Stats row */}
+      <div className="flex items-center divide-x divide-gray-200 mx-6 py-6">
         {[
-          {
-            icon: HandHeart,
-            title: 'Hosts share surplus food',
-            desc: 'Post leftovers from events, meetings, or catering in seconds.',
-            color: 'bg-forest-100 text-forest-700',
-          },
-          {
-            icon: MapPin,
-            title: 'Students find it nearby',
-            desc: 'Browse a live feed or map to claim food before it expires.',
-            color: 'bg-lime/30 text-forest-700',
-          },
-          {
-            icon: Lightning,
-            title: 'Track your impact',
-            desc: 'See how many meals rescued and CO₂ saved — together.',
-            color: 'bg-amber-100 text-amber-700',
-          },
-        ].map(({ icon: Icon, title, desc, color }) => (
-          <div key={title} className="bg-white rounded-card shadow-card p-4 flex items-start gap-4">
-            <div className={`w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0 ${color}`}>
-              <Icon size={20} weight="fill" />
-            </div>
-            <div>
-              <p className="font-display font-bold text-gray-900 text-sm">{title}</p>
-              <p className="text-xs text-gray-500 font-body mt-0.5">{desc}</p>
-            </div>
+          { val: '100%', label: 'Free' },
+          { val: '0', label: 'Waste' },
+          { val: '∞', label: 'Impact' },
+        ].map(({ val, label }) => (
+          <div key={label} className="flex-1 text-center first:pl-0 last:pr-0 px-4">
+            <p className="font-display font-extrabold text-2xl text-forest-700">{val}</p>
+            <p className="font-body text-xs text-gray-400 mt-0.5">{label}</p>
           </div>
         ))}
       </div>
 
-      {/* CTAs */}
-      <div className="px-5 flex flex-col gap-3 mt-auto pb-10">
+      {/* Divider */}
+      <div className="mx-6 h-px bg-gray-200" />
+
+      {/* Numbered philosophy sections */}
+      <div className="px-6 pt-8 pb-4 flex flex-col gap-0">
+        {[
+          {
+            num: '01',
+            title: 'Share extra food',
+            desc: 'Post food from your event in seconds. Set a pickup window and watch it go.',
+          },
+          {
+            num: '02',
+            title: 'Find it near you',
+            desc: 'Browse the live feed or map. Claim what looks good before time runs out.',
+          },
+          {
+            num: '03',
+            title: 'Good for everyone',
+            desc: 'Less waste, more full stomachs. Every meal shared is a small win for the planet.',
+          },
+        ].map(({ num, title, desc }, i, arr) => (
+          <div key={num}>
+            <div className="flex items-start gap-4 py-6">
+              <span className="font-display font-bold text-xs text-gray-300 mt-1 w-6 shrink-0">{num}</span>
+              <div>
+                <p className="font-display font-bold text-lg text-forest-700 leading-snug">{title}</p>
+                <p className="font-body text-sm text-gray-500 mt-1.5 leading-relaxed">{desc}</p>
+              </div>
+            </div>
+            {i < arr.length - 1 && <div className="h-px bg-gray-100" />}
+          </div>
+        ))}
+      </div>
+
+      {/* Bottom CTA block */}
+      <div className="mx-6 mt-4 mb-10 bg-forest-700 rounded-[20px] p-6 flex flex-col gap-4">
+        <p className="font-display font-extrabold text-2xl text-white leading-tight">
+          Ready to eat well?
+        </p>
+        <p className="font-body text-sm text-white/60 leading-relaxed">
+          Join thousands of students and departments already on EcoEats.
+        </p>
         <button
           onClick={onGetStarted}
-          className="w-full h-[52px] bg-forest-700 text-white rounded-card font-body font-semibold text-base shadow-card active:scale-[0.98] transition-transform"
+          className="flex items-center justify-center gap-2 bg-lime text-forest-700 h-[52px] rounded-full font-body font-bold text-sm active:scale-95 transition-transform"
         >
-          Get Started — It's Free
-        </button>
-        <button
-          onClick={onSignIn}
-          className="w-full h-[52px] bg-white border border-gray-200 text-forest-700 rounded-card font-body font-semibold text-base shadow-card active:scale-[0.98] transition-transform"
-        >
-          Sign In
+          Create free account
+          <ArrowRight size={16} weight="bold" />
         </button>
       </div>
+
     </div>
   )
 }
