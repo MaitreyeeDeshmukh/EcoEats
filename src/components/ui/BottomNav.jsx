@@ -1,19 +1,14 @@
 import { useLocation, useNavigate } from 'react-router-dom'
-import { House, MapTrifold, Plus, ChartBar, Bookmark, UserCircle } from '@phosphor-icons/react'
-import { useAuth } from '../../contexts/AuthContext'
+import { House, MapTrifold, Plus, ChartBar, UserCircle } from '@phosphor-icons/react'
 
 export default function BottomNav() {
   const { pathname } = useLocation()
   const navigate = useNavigate()
-  const { profile } = useAuth()
-  const isHost = profile?.role === 'host'
 
   const tabs = [
     { path: '/feed', icon: House, label: 'Feed' },
     { path: '/map', icon: MapTrifold, label: 'Map' },
-    isHost
-      ? { path: '/post', icon: Plus, label: 'Post', accent: true }
-      : { path: '/claims', icon: Bookmark, label: 'Claims' },
+    { path: '/post', icon: Plus, label: 'Post', accent: true },
     { path: '/impact', icon: ChartBar, label: 'Impact' },
     { path: '/profile', icon: UserCircle, label: 'Profile' },
   ]

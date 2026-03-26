@@ -9,7 +9,6 @@ import BottomNav from './components/ui/BottomNav'
 import TopBar from './components/ui/TopBar'
 import SplashScreen from './components/auth/SplashScreen'
 import AuthFlow from './components/auth/AuthFlow'
-import RoleSelector from './components/auth/RoleSelector'
 import Onboarding from './components/auth/Onboarding'
 import Landing from './pages/Landing'
 import { ListingCardSkeleton } from './components/ui/Skeleton'
@@ -34,7 +33,6 @@ function PageFallback() {
 function AppRouter() {
   const { user, profile, loading } = useAuth()
   const [splashDone, setSplashDone] = useState(false)
-  const [selectedRole, setSelectedRole] = useState(null)
   const [authMode, setAuthMode] = useState(null) // null | 'signin' | 'signup'
 
   if (!splashDone) {
@@ -67,12 +65,9 @@ function AppRouter() {
     )
   }
 
-  // Logged in but no profile (needs role + onboarding)
+  // Logged in but no profile yet — run onboarding
   if (!profile) {
-    if (!selectedRole) {
-      return <RoleSelector onSelect={setSelectedRole} />
-    }
-    return <Onboarding role={selectedRole} onDone={() => setSelectedRole(null)} />
+    return <Onboarding onDone={() => {}} />
   }
 
   // Fully authenticated — show app
@@ -88,9 +83,7 @@ function AppRouter() {
                 <Route path="/" element={<Navigate to="/feed" replace />} />
                 <Route path="/feed" element={<Feed />} />
                 <Route path="/map" element={<Map />} />
-                <Route path="/post" element={
-                  profile.role === 'host' ? <Post /> : <Navigate to="/feed" replace />
-                } />
+                <Route path="/post" element={<Post />} />
                 <Route path="/claims" element={<Claims />} />
                 <Route path="/impact" element={<Impact />} />
                 <Route path="/profile" element={<Profile />} />

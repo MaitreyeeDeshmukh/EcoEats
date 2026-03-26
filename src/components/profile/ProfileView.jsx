@@ -1,9 +1,8 @@
 import { useState } from 'react'
 import {
-  SignOut, PencilSimple, Check, X, Leaf, Clock, Star, ShieldCheck,
+  SignOut, PencilSimple, Check, X, Star, Plus,
 } from '@phosphor-icons/react'
 import Badge from '../ui/Badge'
-import Button from '../ui/Button'
 import { Skeleton } from '../ui/Skeleton'
 import { useAuth } from '../../contexts/AuthContext'
 import { useToast } from '../../contexts/ToastContext'
@@ -11,9 +10,8 @@ import { useClaims } from '../../hooks/useClaims'
 import { logOut } from '../../services/auth'
 import { doc, setDoc } from 'firebase/firestore'
 import { db } from '../../services/firebase'
-import { subscribeToHostListings } from '../../services/listings'
+import { useNavigate } from 'react-router-dom'
 import { useState as useLocalState, useEffect } from 'react'
-import { ASU_BUILDINGS } from '../../utils/asuBuildings'
 
 const DIETARY_OPTIONS = ['vegan', 'vegetarian', 'halal', 'gluten-free', 'nut-free', 'dairy-free']
 
@@ -139,14 +137,8 @@ export default function ProfileView() {
   const { user, profile, loading } = useAuth()
   const { toast } = useToast()
   const { claims } = useClaims()
-  const [hostListings, setHostListings] = useLocalState([])
   const [signingOut, setSigningOut] = useState(false)
-
-  useEffect(() => {
-    if (!user || profile?.role !== 'host') return
-    const unsub = subscribeToHostListings(user.uid, setHostListings)
-    return unsub
-  }, [user, profile?.role])
+  const navigate = useNavigate()
 
   async function handleSignOut() {
     setSigningOut(true)
@@ -176,23 +168,11 @@ export default function ProfileView() {
     )
   }
 
-  const isHost = profile?.role === 'host'
-
   return (
     <div className="flex flex-col bg-cream pt-safe pb-safe overflow-y-auto scroll-hide">
       {/* Header */}
-      <div className="px-4 pt-4 pb-2 flex items-center justify-between">
+      <div className="px-4 pt-4 pb-2">
         <h1 className="font-display font-bold text-2xl text-forest-700">Profile</h1>
-        <Button
-          variant="ghost"
-          size="sm"
-          loading={signingOut}
-          onClick={handleSignOut}
-          className="text-red-500 hover:bg-red-50"
-        >
-          <SignOut size={18} />
-          Sign Out
-        </Button>
       </div>
 
       {/* User card */}
@@ -203,19 +183,17 @@ export default function ProfileView() {
             {profile?.name || user?.displayName || 'EcoEats User'}
           </p>
           <p className="text-sm text-gray-500 font-body truncate">{user?.email}</p>
-          <div className="flex items-center gap-2 mt-1">
-            <Badge variant={isHost ? 'green' : 'lime'}>
-              {isHost ? '🌿 Host' : '🎓 Student'}
-            </Badge>
-            {profile?.reputationScore >= 90 && (
-              <Badge variant="amber">
-                <ShieldCheck size={10} className="inline mr-0.5" />
-                Trusted
-              </Badge>
-            )}
-          </div>
         </div>
       </div>
+
+      {/* Post Food CTA */}
+      <button
+        onClick={() => navigate('/post')}
+        className="mx-4 mb-4 h-[52px] flex items-center justify-center gap-2 bg-forest-700 text-white rounded-card font-body font-semibold text-base shadow-card active:scale-[0.98] transition-transform"
+      >
+        <Plus size={20} weight="bold" />
+        Post Food to Share
+      </button>
 
       {/* Impact stats */}
       {profile?.impactStats && (
@@ -236,42 +214,31 @@ export default function ProfileView() {
         </div>
       )}
 
-      {/* Preferences */}
-      {!isHost && (
-        <div className="mx-4 bg-white rounded-card shadow-card p-4 mb-4">
-          <DietaryEditor
-            prefs={profile?.dietaryPrefs || []}
-            onSave={saveDietaryPrefs}
-          />
-        </div>
-      )}
-
-      {isHost && profile?.hostBuilding && (
-        <div className="mx-4 bg-white rounded-card shadow-card p-4 mb-4">
-          <p className="text-sm font-medium text-gray-700 font-body mb-1">Building / Campus</p>
-          <p className="text-sm text-gray-900 font-body">
-            {ASU_BUILDINGS.find((b) => b.id === profile.hostBuilding)?.name || profile.hostBuilding}
-          </p>
-        </div>
-      )}
-
-      {/* History */}
+      {/* Dietary preferences */}
       <div className="mx-4 bg-white rounded-card shadow-card p-4 mb-4">
-        <p className="font-display font-bold text-gray-900 mb-3">
-          {isHost ? 'Your Listings' : 'Claim History'}
-        </p>
-        {isHost ? (
-          hostListings.length === 0 ? (
-            <p className="text-sm text-gray-400 font-body text-center py-3">No listings yet</p>
-          ) : (
-            hostListings.slice(0, 10).map((l) => <HistoryItem key={l.id} item={l} isHost />)
-          )
+        <DietaryEditor
+          prefs={profile?.dietaryPrefs || []}
+          onSave={saveDietaryPrefs}
+        />
+      </div>
+
+      {/* Sign Out */}
+      <button
+        onClick={handleSignOut}
+        disabled={signingOut}
+        className="mx-4 mb-4 h-[52px] flex items-center justify-center gap-2 bg-white border-2 border-red-200 text-red-500 rounded-card font-body font-semibold text-base active:scale-[0.98] transition-transform disabled:opacity-60"
+      >
+        <SignOut size={20} />
+        {signingOut ? 'Signing out…' : 'Sign Out'}
+      </button>
+
+      {/* Claim History */}
+      <div className="mx-4 bg-white rounded-card shadow-card p-4 mb-4">
+        <p className="font-display font-bold text-gray-900 mb-3">Claim History</p>
+        {claims.length === 0 ? (
+          <p className="text-sm text-gray-400 font-body text-center py-3">No claims yet</p>
         ) : (
-          claims.length === 0 ? (
-            <p className="text-sm text-gray-400 font-body text-center py-3">No claims yet</p>
-          ) : (
-            claims.slice(0, 10).map((c) => <HistoryItem key={c.id} item={c} isHost={false} />)
-          )
+          claims.slice(0, 10).map((c) => <HistoryItem key={c.id} item={c} isHost={false} />)
         )}
       </div>
     </div>

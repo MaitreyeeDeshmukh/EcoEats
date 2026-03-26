@@ -3,10 +3,6 @@ import { onAuthChange, getUserProfile, updateLastSeen } from '../services/auth'
 import { doc, onSnapshot } from 'firebase/firestore'
 import { db } from '../services/firebase'
 
-const DEMO_MODE = import.meta.env.VITE_DEMO_MODE === 'true' && !new URLSearchParams(window.location.search).has('nodemo')
-const DEMO_USER = { uid: 'demo-user', email: 'demo@asu.edu', displayName: 'Demo User' }
-const DEMO_PROFILE = { uid: 'demo-user', displayName: 'Demo User', role: 'recipient', email: 'demo@asu.edu', impactScore: 12 }
-
 const AuthContext = createContext(null)
 
 const initialState = {
@@ -37,12 +33,6 @@ export function AuthProvider({ children }) {
   const [state, dispatch] = useReducer(authReducer, initialState)
 
   useEffect(() => {
-    if (DEMO_MODE) {
-      dispatch({ type: 'SET_USER', user: DEMO_USER })
-      dispatch({ type: 'SET_PROFILE', profile: DEMO_PROFILE })
-      return
-    }
-
     let profileUnsub = null
 
     const authUnsub = onAuthChange(async (firebaseUser) => {
