@@ -18,7 +18,7 @@ function StatCard({ icon, label, value, sub, color = 'forest' }) {
         {icon}
       </div>
       <div>
-        <p className="font-display font-bold text-2xl text-gray-900">{value}</p>
+        <div className="font-display font-bold text-2xl text-gray-900">{value}</div>
         <p className="text-xs font-medium text-gray-500 font-body">{label}</p>
         {sub && <p className="text-xs text-gray-400 font-body mt-0.5">{sub}</p>}
       </div>
