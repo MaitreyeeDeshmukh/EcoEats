@@ -37,7 +37,7 @@ export default function SignupPage() {
       await signUpWithEmail(form.email, form.password, form.name.trim())
       navigate('/explore', { replace: true })
     } catch (err) {
-      setServerError(getAuthErrorMessage(err.code))
+      setServerError(getAuthErrorMessage(err.message))
     } finally {
       setLoading(false)
     }
@@ -50,7 +50,7 @@ export default function SignupPage() {
       await signInWithGoogle()
       navigate('/explore', { replace: true })
     } catch (err) {
-      setServerError(getAuthErrorMessage(err.code))
+      setServerError(getAuthErrorMessage(err.message))
     } finally {
       setGoogleLoading(false)
     }

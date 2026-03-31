@@ -44,7 +44,7 @@ export default function OrderPage() {
     getOrderById(id)
       .then(data => {
         if (!data) { setError('Order not found.'); return }
-        if (data.userId !== user.uid) { setError('You do not have access to this order.'); return }
+        if (data.userId !== user.id) { setError('You do not have access to this order.'); return }
         setOrder(data)
 
         // Geocode delivery address

@@ -96,7 +96,7 @@ export default function CartPage() {
 
   async function handleSaveNewAddress(addr) {
     try {
-      await addSavedAddress(user.uid, addr)
+      await addSavedAddress(user.id, addr)
       refreshProfile()
       setSelectedAddress(addr)
       setShowAddressForm(false)
@@ -114,7 +114,7 @@ export default function CartPage() {
 
     try {
       const orderId = await createOrder({
-        userId: user.uid,
+        userId: user.id,
         restaurantId,
         restaurantName,
         items: items.map(i => ({

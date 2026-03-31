@@ -1,86 +1,67 @@
-import {
-  collection,
-  doc,
-  addDoc,
-  getDoc,
-  getDocs,
-  query,
-  where,
-  orderBy,
-  limit,
-  serverTimestamp,
-  runTransaction,
-} from 'firebase/firestore'
-import { db } from './firebase'
+import { supabase } from './supabase'
 import { updateUserStatsAfterOrder } from './users'
 import { calculateCarbonSaved } from '../utils/carbonCalculator'
+import { normalizeOrder } from '../utils/normalize'
 
 export async function createOrder(orderData) {
   const carbonSaved = calculateCarbonSaved(orderData.totalCarbonFootprint)
-
-  const ref = await addDoc(collection(db, 'orders'), {
-    ...orderData,
-    carbonSavedVsAverage: carbonSaved,
-    paymentMethod: 'cod',
-    paymentStatus: 'pending',
+  const { data, error } = await supabase.from('orders').insert({
+    user_id: orderData.userId,
+    restaurant_id: orderData.restaurantId,
+    restaurant_name: orderData.restaurantName,
+    items: orderData.items,
+    subtotal: orderData.subtotal,
+    delivery_fee: orderData.deliveryFee,
+    taxes: orderData.taxes,
+    total: orderData.total,
     status: 'pending',
-    createdAt: serverTimestamp(),
-    updatedAt: serverTimestamp(),
-  })
-
+    delivery_address: orderData.deliveryAddress,
+    estimated_delivery_time: orderData.estimatedDeliveryTime,
+    total_carbon_footprint: orderData.totalCarbonFootprint,
+    carbon_saved_vs_average: carbonSaved,
+    payment_method: 'cod',
+    payment_status: 'pending',
+  }).select().single()
+  if (error) throw error
   await updateUserStatsAfterOrder(orderData.userId, carbonSaved)
-
-  return ref.id
+  return data.id
 }
 
 export async function getOrderById(id) {
-  const snap = await getDoc(doc(db, 'orders', id))
-  return snap.exists() ? { id: snap.id, ...snap.data() } : null
+  const { data, error } = await supabase.from('orders').select('*').eq('id', id).single()
+  if (error) return null
+  return normalizeOrder(data)
 }
 
-export async function getUserOrders(uid, lim = 20) {
-  const q = query(
-    collection(db, 'orders'),
-    where('userId', '==', uid),
-    orderBy('createdAt', 'desc'),
-    limit(lim)
-  )
-  const snap = await getDocs(q)
-  return snap.docs.map(d => ({ id: d.id, ...d.data() }))
+export async function getUserOrders(uid, limit = 20) {
+  const { data, error } = await supabase.from('orders').select('*')
+    .eq('user_id', uid).order('created_at', { ascending: false }).limit(limit)
+  if (error) throw error
+  return (data || []).map(normalizeOrder)
 }
 
 export async function getUserOrdersByMonth(uid) {
-  const sixMonthsAgo = new Date()
-  sixMonthsAgo.setMonth(sixMonthsAgo.getMonth() - 6)
-
-  const q = query(
-    collection(db, 'orders'),
-    where('userId', '==', uid),
-    where('status', '==', 'delivered'),
-    orderBy('createdAt', 'desc'),
-    limit(100)
-  )
-  const snap = await getDocs(q)
-  const orders = snap.docs.map(d => ({ id: d.id, ...d.data() }))
-
+  const { data, error } = await supabase.from('orders')
+    .select('created_at, carbon_saved_vs_average')
+    .eq('user_id', uid).eq('status', 'delivered')
+    .order('created_at', { ascending: false }).limit(100)
+  if (error) throw error
   const monthlyData = {}
-  orders.forEach(order => {
-    if (!order.createdAt) return
-    const date = order.createdAt.toDate()
+  ;(data || []).forEach(order => {
+    const date = new Date(order.created_at)
     const key = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`
     if (!monthlyData[key]) monthlyData[key] = { carbon: 0, orders: 0 }
-    monthlyData[key].carbon += order.carbonSavedVsAverage || 0
+    monthlyData[key].carbon += order.carbon_saved_vs_average || 0
     monthlyData[key].orders += 1
   })
-
   return monthlyData
 }
 
 export async function getPlatformStats() {
-  const q = query(collection(db, 'orders'), limit(500))
-  const snap = await getDocs(q)
-  const orders = snap.docs.map(d => d.data())
-  const totalOrders = orders.length
-  const totalCarbonSaved = orders.reduce((sum, o) => sum + (o.carbonSavedVsAverage || 0), 0)
-  return { totalOrders, totalCarbonSaved }
+  const { data, error } = await supabase.from('orders').select('carbon_saved_vs_average').limit(500)
+  if (error) return { totalOrders: 0, totalCarbonSaved: 0 }
+  return {
+    totalOrders: data.length,
+    totalCarbonSaved: data.reduce((sum, o) => sum + (o.carbon_saved_vs_average || 0), 0),
+  }
 }

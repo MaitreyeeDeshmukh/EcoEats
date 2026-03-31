@@ -38,7 +38,7 @@ export default function LoginPage() {
       await signInWithEmail(form.email, form.password)
       navigate(from, { replace: true })
     } catch (err) {
-      setServerError(getAuthErrorMessage(err.code))
+      setServerError(getAuthErrorMessage(err.message))
     } finally {
       setLoading(false)
     }
@@ -51,7 +51,7 @@ export default function LoginPage() {
       await signInWithGoogle()
       navigate(from, { replace: true })
     } catch (err) {
-      setServerError(getAuthErrorMessage(err.code))
+      setServerError(getAuthErrorMessage(err.message))
     } finally {
       setGoogleLoading(false)
     }

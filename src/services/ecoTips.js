@@ -1,8 +1,7 @@
-import { collection, getDocs, limit, query } from 'firebase/firestore'
-import { db } from './firebase'
+import { supabase } from './supabase'
 
-export async function getEcoTips(lim = 5) {
-  const q = query(collection(db, 'ecoTips'), limit(lim))
-  const snap = await getDocs(q)
-  return snap.docs.map(d => ({ id: d.id, ...d.data() }))
+export async function getEcoTips(limit = 5) {
+  const { data, error } = await supabase.from('eco_tips').select('*').limit(limit)
+  if (error) throw error
+  return data || []
 }

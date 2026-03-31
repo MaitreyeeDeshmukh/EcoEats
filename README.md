@@ -1,9 +1,8 @@
-# EcoEats 🌿
+# EcoEats
 
 **Sustainable food delivery — order from eco-certified restaurants, see the carbon footprint of every meal.**
 
-🔗 **GitHub**: https://github.com/MaitreyeeDeshmukh/EcoEats
-🌐 **Live app**: https://your-firebase-project-id.web.app *(deploy steps below)*
+**GitHub**: https://github.com/MaitreyeeDeshmukh/EcoEats
 
 ---
 
@@ -20,7 +19,8 @@
 | Layer | Tech |
 |---|---|
 | Frontend | React 19, Vite, Tailwind CSS |
-| Backend | Firebase Firestore, Auth, Storage, Hosting (free Spark plan) |
+| Backend | Supabase (Postgres, Auth, RLS) |
+| Hosting | Vercel (auto-deploy from GitHub) |
 | Maps | React Leaflet + OpenStreetMap (no API key) |
 | Geocoding | Nominatim API (free, no API key) |
 | PWA | vite-plugin-pwa + Workbox |
@@ -39,47 +39,45 @@ cd EcoEats
 npm install
 ```
 
-### 2. Create a Firebase project
+### 2. Create a Supabase project
 
-1. Go to https://console.firebase.google.com → **Create project**
-2. Enable these services:
-   - **Authentication** → Sign-in methods: Email/Password + Google
-   - **Firestore Database** → Start in production mode
-   - **Storage** → Default bucket
-   - **Hosting**
+1. Go to https://supabase.com → **New project**
+2. Choose a region close to India (e.g. Singapore)
+3. Wait for provisioning to complete
 
-### 3. Add your Firebase config
+### 3. Run the database schema
+
+In Supabase Dashboard → **SQL Editor** → **New query**, paste and run the contents of:
+
+```
+supabase/schema.sql
+```
+
+This creates all tables, RLS policies, indexes, and the auto-profile trigger.
+
+### 4. Add your environment variables
 
 Create a `.env.local` file in the project root:
 
 ```env
-VITE_FIREBASE_API_KEY=your_api_key
-VITE_FIREBASE_AUTH_DOMAIN=your_project.firebaseapp.com
-VITE_FIREBASE_PROJECT_ID=your_project_id
-VITE_FIREBASE_STORAGE_BUCKET=your_project.appspot.com
-VITE_FIREBASE_MESSAGING_SENDER_ID=your_sender_id
-VITE_FIREBASE_APP_ID=your_app_id
+VITE_SUPABASE_URL=https://your-project-id.supabase.co
+VITE_SUPABASE_ANON_KEY=your-anon-key
 ```
 
-> Find these values in Firebase Console → Project Settings → Your apps → Web app config.
-
-### 4. Deploy Firestore rules and indexes
-
-```bash
-firebase login
-firebase use --add          # select your project
-firebase deploy --only firestore
-```
+Find these in: Supabase Dashboard → Project Settings → API.
 
 ### 5. Seed the database (run once)
 
-> Temporarily set Firestore rules to allow all writes, run seed, then re-deploy secure rules.
-
 ```bash
-node src/scripts/seedFirestore.js
+SUPABASE_URL=https://your-project-id.supabase.co \
+SUPABASE_SERVICE_KEY=your-service-role-key \
+node src/scripts/seedSupabase.js
 ```
 
-This seeds: **8 Pune restaurants**, **40+ menu items** with carbon data, **5 eco tips**.
+The service role key bypasses RLS and is safe to use locally. Find it in:
+Supabase Dashboard → Project Settings → API → **service_role** key.
+
+This seeds: **8 Pune restaurants**, **35+ menu items** with carbon data, **5 eco tips**.
 
 ### 6. Run locally
 
@@ -89,14 +87,23 @@ npm run dev
 
 App runs at http://localhost:5173
 
-### 7. Build and deploy to Firebase Hosting
+### 7. Deploy to Vercel
 
-```bash
-npm run build
-firebase deploy --only hosting
-```
+1. Push this repo to GitHub
+2. Go to https://vercel.com → **Add New Project** → import the GitHub repo
+3. Add environment variables in Vercel Dashboard → Settings → Environment Variables:
+   - `VITE_SUPABASE_URL`
+   - `VITE_SUPABASE_ANON_KEY`
+4. Deploy — Vercel auto-deploys on every push to `main`
 
-Your live URL will be: **https://your-project-id.web.app**
+Your live URL will be: **https://ecoeats.vercel.app** (or your custom domain)
+
+### 8. Enable Google OAuth (optional)
+
+In Supabase Dashboard → Authentication → Providers → Google:
+1. Enable Google provider
+2. Add your Google OAuth client ID and secret
+3. Add `https://your-project-id.supabase.co/auth/v1/callback` as an authorized redirect URI in Google Cloud Console
 
 ---
 
@@ -140,11 +147,13 @@ src/
     features/    RestaurantCard, MenuItemCard, CartItem, OrderStatusTracker, EcoBadge, ReviewCard
   pages/         One file per route (lazy-loaded)
   context/       AuthContext, CartContext, ToastContext
-  hooks/         useAuth, useCart, useOrders, useRestaurants, useToast
-  services/      auth.js, restaurants.js, menuItems.js, orders.js, reviews.js, users.js
-  utils/         carbonCalculator.js, formatters.js, validators.js, geocode.js
+  hooks/         useOrders, useRestaurants, useToast
+  services/      auth.js, restaurants.js, menuItems.js, orders.js, reviews.js, users.js, supabase.js
+  utils/         carbonCalculator.js, formatters.js, validators.js, geocode.js, normalize.js
   constants/     routes.js, categories.js
-  scripts/       seedFirestore.js
+  scripts/       seedSupabase.js
+supabase/
+  schema.sql     Full DB schema with RLS policies
 ```
 
 ---

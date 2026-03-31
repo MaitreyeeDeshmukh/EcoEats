@@ -1,41 +1,29 @@
-import {
-  collection,
-  doc,
-  getDoc,
-  getDocs,
-  query,
-  where,
-  orderBy,
-  limit,
-} from 'firebase/firestore'
-import { db } from './firebase'
+import { supabase } from './supabase'
+import { normalizeRestaurant } from '../utils/normalize'
 
-export async function getRestaurants({ category, limit: lim = 20 } = {}) {
-  let q = query(collection(db, 'restaurants'), limit(lim))
-  if (category && category !== 'all') {
-    q = query(collection(db, 'restaurants'), where('category', '==', category), limit(lim))
-  }
-  const snap = await getDocs(q)
-  return snap.docs.map(d => ({ id: d.id, ...d.data() }))
+export async function getRestaurants({ category } = {}) {
+  let query = supabase.from('restaurants').select('*').limit(30)
+  if (category && category !== 'all') query = query.eq('category', category)
+  const { data, error } = await query
+  if (error) throw error
+  return (data || []).map(normalizeRestaurant)
 }
 
 export async function getFeaturedRestaurants() {
-  const q = query(
-    collection(db, 'restaurants'),
-    where('isEcoCertified', '==', true),
-    orderBy('ecoRating', 'desc'),
-    limit(6)
-  )
-  const snap = await getDocs(q)
-  return snap.docs.map(d => ({ id: d.id, ...d.data() }))
+  const { data, error } = await supabase
+    .from('restaurants').select('*').eq('is_eco_certified', true)
+    .order('eco_rating', { ascending: false }).limit(6)
+  if (error) throw error
+  return (data || []).map(normalizeRestaurant)
 }
 
 export async function getRestaurantById(id) {
-  const snap = await getDoc(doc(db, 'restaurants', id))
-  return snap.exists() ? { id: snap.id, ...snap.data() } : null
+  const { data, error } = await supabase.from('restaurants').select('*').eq('id', id).single()
+  if (error) return null
+  return normalizeRestaurant(data)
 }
 
 export async function getRestaurantStats() {
-  const snap = await getDocs(collection(db, 'restaurants'))
-  return { totalRestaurants: snap.size }
+  const { count } = await supabase.from('restaurants').select('*', { count: 'exact', head: true })
+  return { totalRestaurants: count || 0 }
 }

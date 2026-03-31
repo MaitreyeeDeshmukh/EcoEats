@@ -35,9 +35,9 @@ export default defineConfig({
             },
           },
           {
-            urlPattern: /^https:\/\/firestore\.googleapis\.com\/.*/i,
+            urlPattern: /^https:\/\/.*\.supabase\.co\/.*/i,
             handler: 'NetworkFirst',
-            options: { cacheName: 'firestore-cache' },
+            options: { cacheName: 'supabase-cache' },
           },
           {
             urlPattern: /^https:\/\/source\.unsplash\.com\/.*/i,
@@ -55,7 +55,7 @@ export default defineConfig({
     rollupOptions: {
       output: {
         manualChunks(id) {
-          if (id.includes('firebase')) return 'firebase'
+          if (id.includes('supabase')) return 'supabase'
           if (id.includes('leaflet') || id.includes('react-leaflet')) return 'leaflet'
           if (id.includes('react-dom') || id.includes('react-router')) return 'vendor'
         },

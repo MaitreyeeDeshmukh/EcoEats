@@ -104,7 +104,7 @@ export default function ImpactPage() {
 
   useEffect(() => {
     if (!user) { navigate('/login', { state: { from: '/impact' } }); return }
-    getUserOrdersByMonth(user.uid)
+    getUserOrdersByMonth(user.id)
       .then(raw => {
         const now = new Date()
         const months = Array.from({ length: 6 }, (_, i) => {

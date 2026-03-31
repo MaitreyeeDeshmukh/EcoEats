@@ -1,53 +1,45 @@
-import {
-  doc,
-  getDoc,
-  updateDoc,
-  arrayUnion,
-  arrayRemove,
-  runTransaction,
-  serverTimestamp,
-} from 'firebase/firestore'
-import { db } from './firebase'
+import { supabase } from './supabase'
 
 export async function getUserDocument(uid) {
-  const snap = await getDoc(doc(db, 'users', uid))
-  return snap.exists() ? { id: snap.id, ...snap.data() } : null
+  const { data, error } = await supabase.from('users').select('*').eq('id', uid).single()
+  if (error) return null
+  return data
 }
 
 export async function updateUserName(uid, name) {
-  await updateDoc(doc(db, 'users', uid), { name })
+  const { error } = await supabase.from('users').update({ name }).eq('id', uid)
+  if (error) throw error
 }
 
 export async function updateFavourites(uid, restaurantId, isFav) {
-  const ref = doc(db, 'users', uid)
-  if (isFav) {
-    await updateDoc(ref, { favouriteRestaurants: arrayUnion(restaurantId) })
-  } else {
-    await updateDoc(ref, { favouriteRestaurants: arrayRemove(restaurantId) })
-  }
+  const user = await getUserDocument(uid)
+  const current = user?.favourite_restaurants || []
+  const updated = isFav
+    ? [...new Set([...current, restaurantId])]
+    : current.filter(id => id !== restaurantId)
+  const { error } = await supabase.from('users').update({ favourite_restaurants: updated }).eq('id', uid)
+  if (error) throw error
 }
 
 export async function addSavedAddress(uid, address) {
-  await updateDoc(doc(db, 'users', uid), {
-    savedAddresses: arrayUnion(address),
-  })
+  const user = await getUserDocument(uid)
+  const current = user?.saved_addresses || []
+  const { error } = await supabase.from('users').update({ saved_addresses: [...current, address] }).eq('id', uid)
+  if (error) throw error
 }
 
 export async function removeSavedAddress(uid, address) {
-  await updateDoc(doc(db, 'users', uid), {
-    savedAddresses: arrayRemove(address),
-  })
+  const user = await getUserDocument(uid)
+  const current = user?.saved_addresses || []
+  const { error } = await supabase.from('users').update({ saved_addresses: current.filter(a => a !== address) }).eq('id', uid)
+  if (error) throw error
 }
 
 export async function updateUserStatsAfterOrder(uid, carbonSaved) {
-  await runTransaction(db, async tx => {
-    const ref = doc(db, 'users', uid)
-    const snap = await tx.get(ref)
-    if (!snap.exists()) return
-    const data = snap.data()
-    tx.update(ref, {
-      totalOrdersCount: (data.totalOrdersCount || 0) + 1,
-      totalCarbonSaved: (data.totalCarbonSaved || 0) + carbonSaved,
-    })
-  })
+  const user = await getUserDocument(uid)
+  const { error } = await supabase.from('users').update({
+    total_orders_count: (user?.total_orders_count || 0) + 1,
+    total_carbon_saved: (user?.total_carbon_saved || 0) + carbonSaved,
+  }).eq('id', uid)
+  if (error) throw error
 }

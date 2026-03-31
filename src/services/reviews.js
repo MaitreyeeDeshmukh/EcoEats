@@ -1,35 +1,19 @@
-import {
-  collection,
-  addDoc,
-  getDocs,
-  deleteDoc,
-  doc,
-  query,
-  where,
-  orderBy,
-  limit,
-  serverTimestamp,
-} from 'firebase/firestore'
-import { db } from './firebase'
+import { supabase } from './supabase'
+import { normalizeReview } from '../utils/normalize'
 
-export async function getReviewsByRestaurant(restaurantId, lim = 20) {
-  const q = query(
-    collection(db, 'reviews'),
-    where('restaurantId', '==', restaurantId),
-    orderBy('createdAt', 'desc'),
-    limit(lim)
-  )
-  const snap = await getDocs(q)
-  return snap.docs.map(d => ({ id: d.id, ...d.data() }))
+export async function getReviewsByRestaurant(restaurantId, limit = 20) {
+  const { data, error } = await supabase.from('reviews').select('*')
+    .eq('restaurant_id', restaurantId).order('created_at', { ascending: false }).limit(limit)
+  if (error) throw error
+  return (data || []).map(normalizeReview)
 }
 
-export async function addReview(data) {
-  await addDoc(collection(db, 'reviews'), {
-    ...data,
-    createdAt: serverTimestamp(),
-  })
+export async function addReview(reviewData) {
+  const { error } = await supabase.from('reviews').insert(reviewData)
+  if (error) throw error
 }
 
 export async function deleteReview(reviewId) {
-  await deleteDoc(doc(db, 'reviews', reviewId))
+  const { error } = await supabase.from('reviews').delete().eq('id', reviewId)
+  if (error) throw error
 }

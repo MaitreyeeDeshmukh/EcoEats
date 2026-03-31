@@ -248,7 +248,7 @@ export default function ProfilePage() {
             ) : getInitials(profile.name)}
           </div>
           <div className="min-w-0">
-            <NameEditor name={profile.name} uid={user.uid} onSave={refreshProfile} />
+            <NameEditor name={profile.name} uid={user.id} onSave={refreshProfile} />
             <p className="text-sm text-neutral-500 truncate">{user.email}</p>
           </div>
         </div>
@@ -313,7 +313,7 @@ export default function ProfilePage() {
         {/* Saved addresses */}
         <div className="bg-white rounded-xl border border-neutral-100 p-4 mb-5">
           <h2 className="font-semibold text-neutral-900 mb-4">Saved addresses</h2>
-          <AddressSection profile={profile} uid={user.uid} onRefresh={refreshProfile} />
+          <AddressSection profile={profile} uid={user.id} onRefresh={refreshProfile} />
         </div>
 
         {/* Sign out */}

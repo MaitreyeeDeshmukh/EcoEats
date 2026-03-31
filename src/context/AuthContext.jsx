@@ -1,5 +1,6 @@
 import { createContext, useContext, useEffect, useState } from 'react'
 import { onAuthChange, getUserDocument } from '../services/auth'
+import { normalizeProfile } from '../utils/normalize'
 
 const AuthContext = createContext(null)
 
@@ -9,11 +10,11 @@ export function AuthProvider({ children }) {
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
-    const unsub = onAuthChange(async firebaseUser => {
-      if (firebaseUser) {
-        setUser(firebaseUser)
-        const doc = await getUserDocument(firebaseUser.uid)
-        setProfile(doc)
+    const unsub = onAuthChange(async (supabaseUser) => {
+      if (supabaseUser) {
+        setUser(supabaseUser)
+        const doc = await getUserDocument(supabaseUser.id)
+        setProfile(normalizeProfile(doc))
       } else {
         setUser(null)
         setProfile(null)
@@ -25,7 +26,7 @@ export function AuthProvider({ children }) {
 
   function refreshProfile() {
     if (!user) return
-    getUserDocument(user.uid).then(setProfile)
+    getUserDocument(user.id).then(doc => setProfile(normalizeProfile(doc)))
   }
 
   return (

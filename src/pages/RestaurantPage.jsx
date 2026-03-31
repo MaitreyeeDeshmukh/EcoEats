@@ -92,7 +92,7 @@ export default function RestaurantPage() {
     const next = !isFav
     setIsFav(next)
     try {
-      await updateFavourites(user.uid, id, next)
+      await updateFavourites(user.id, id, next)
       refreshProfile()
       addToast(next ? 'Added to favourites' : 'Removed from favourites', 'success')
     } catch {
