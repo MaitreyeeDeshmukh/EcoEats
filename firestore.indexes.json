@@ -1,43 +1,35 @@
 {
   "indexes": [
     {
-      "collectionGroup": "listings",
+      "collectionGroup": "orders",
       "queryScope": "COLLECTION",
       "fields": [
-        { "fieldPath": "status", "order": "ASCENDING" },
-        { "fieldPath": "postedAt", "order": "DESCENDING" }
+        { "fieldPath": "userId", "order": "ASCENDING" },
+        { "fieldPath": "createdAt", "order": "DESCENDING" }
       ]
     },
     {
-      "collectionGroup": "listings",
+      "collectionGroup": "menuItems",
       "queryScope": "COLLECTION",
       "fields": [
-        { "fieldPath": "hostId", "order": "ASCENDING" },
-        { "fieldPath": "postedAt", "order": "DESCENDING" }
+        { "fieldPath": "restaurantId", "order": "ASCENDING" },
+        { "fieldPath": "category", "order": "ASCENDING" }
       ]
     },
     {
-      "collectionGroup": "claims",
+      "collectionGroup": "restaurants",
       "queryScope": "COLLECTION",
       "fields": [
-        { "fieldPath": "studentId", "order": "ASCENDING" },
-        { "fieldPath": "claimedAt", "order": "DESCENDING" }
+        { "fieldPath": "category", "order": "ASCENDING" },
+        { "fieldPath": "ecoRating", "order": "DESCENDING" }
       ]
     },
     {
-      "collectionGroup": "claims",
+      "collectionGroup": "reviews",
       "queryScope": "COLLECTION",
       "fields": [
-        { "fieldPath": "listingId", "order": "ASCENDING" },
-        { "fieldPath": "claimedAt", "order": "DESCENDING" }
-      ]
-    },
-    {
-      "collectionGroup": "claims",
-      "queryScope": "COLLECTION",
-      "fields": [
-        { "fieldPath": "status", "order": "ASCENDING" },
-        { "fieldPath": "pickedUpAt", "order": "ASCENDING" }
+        { "fieldPath": "restaurantId", "order": "ASCENDING" },
+        { "fieldPath": "createdAt", "order": "DESCENDING" }
       ]
     }
   ],

@@ -1,32 +1,45 @@
-const variants = {
-  green: 'bg-forest-100 text-forest-700',
-  lime: 'bg-lime/20 text-forest-600',
-  amber: 'bg-amber-100 text-amber-700',
-  red: 'bg-red-100 text-red-600',
-  gray: 'bg-gray-100 text-gray-600',
-  blue: 'bg-blue-100 text-blue-600',
-}
+export default function Badge({ children, variant = 'default', className = '' }) {
+  const variants = {
+    default: 'bg-neutral-100 text-neutral-700',
+    eco: 'bg-brand-100 text-brand-700',
+    pending: 'bg-neutral-100 text-neutral-700',
+    confirmed: 'bg-blue-100 text-blue-700',
+    preparing: 'bg-yellow-100 text-yellow-700',
+    out_for_delivery: 'bg-orange-100 text-orange-700',
+    delivered: 'bg-brand-100 text-brand-700',
+    cancelled: 'bg-red-100 text-red-700',
+  }
 
-const DIETARY_COLORS = {
-  vegan: 'bg-emerald-100 text-emerald-700',
-  vegetarian: 'bg-green-100 text-green-700',
-  halal: 'bg-teal-100 text-teal-700',
-  'gluten-free': 'bg-orange-100 text-orange-700',
-  'nut-free': 'bg-yellow-100 text-yellow-700',
-  'dairy-free': 'bg-sky-100 text-sky-700',
-}
-
-export default function Badge({ children, variant = 'green', dietary, className = '' }) {
-  const colorClass = dietary ? (DIETARY_COLORS[dietary] || variants.green) : variants[variant]
   return (
     <span
-      className={[
-        'inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium font-body',
-        colorClass,
-        className,
-      ].join(' ')}
+      className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium ${variants[variant] || variants.default} ${className}`}
     >
       {children}
+    </span>
+  )
+}
+
+export function VegDot({ isVeg, isVegan }) {
+  if (isVegan) {
+    return (
+      <span className="inline-flex items-center gap-1 text-xs text-green-700">
+        <span className="w-2 h-2 rounded-full bg-green-500 inline-block" />
+        Vegan
+      </span>
+    )
+  }
+  if (isVeg) {
+    return (
+      <span className="inline-flex items-center gap-1 text-xs text-green-700">
+        <span className="w-2 h-2 rounded-full bg-green-500 inline-block" />
+        Veg
+      </span>
+    )
+  }
+  return (
+    <span className="inline-flex items-center gap-1 text-xs text-red-700">
+      <span className="w-2 h-2 rounded-full bg-red-500 inline-block" />
+      Non-veg
     </span>
   )
 }

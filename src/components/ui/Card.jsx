@@ -1,13 +1,10 @@
-export default function Card({ children, className = '', onClick, ...props }) {
+export default function Card({ children, className = '', onClick, hoverable = false }) {
   return (
     <div
-      className={[
-        'bg-white rounded-card shadow-card',
-        onClick ? 'cursor-pointer active:scale-[0.98] transition-transform' : '',
-        className,
-      ].join(' ')}
+      className={`bg-white rounded-xl shadow-sm border border-neutral-100 ${
+        hoverable || onClick ? 'hover:shadow-md transition-shadow duration-200 cursor-pointer' : ''
+      } ${className}`}
       onClick={onClick}
-      {...props}
     >
       {children}
     </div>

@@ -1,45 +1,30 @@
-import { useEffect, useRef } from 'react'
-import { X, CheckCircle, Warning, Info, XCircle } from '@phosphor-icons/react'
-import { useToast } from '../../contexts/ToastContext'
+import { useEffect } from 'react'
+import { X, CheckCircle, Warning, Info } from '@phosphor-icons/react'
+import { useToast } from '../../context/ToastContext'
 
-const ICONS = {
-  success: <CheckCircle size={20} weight="fill" className="text-green-500" />,
-  error: <XCircle size={20} weight="fill" className="text-red-500" />,
-  warning: <Warning size={20} weight="fill" className="text-amber-500" />,
-  info: <Info size={20} weight="fill" className="text-blue-500" />,
-}
+function ToastItem({ toast, onRemove }) {
+  const icons = {
+    success: <CheckCircle size={20} weight="fill" />,
+    error: <Warning size={20} weight="fill" />,
+    info: <Info size={20} weight="fill" />,
+  }
 
-function ToastItem({ toast }) {
-  const { dismiss } = useToast()
-  const ref = useRef(null)
-
-  useEffect(() => {
-    const el = ref.current
-    if (!el) return
-    // Swipe-to-dismiss
-    let startX = 0
-    const onTouchStart = (e) => { startX = e.touches[0].clientX }
-    const onTouchEnd = (e) => {
-      if (Math.abs(e.changedTouches[0].clientX - startX) > 80) dismiss(toast.id)
-    }
-    el.addEventListener('touchstart', onTouchStart)
-    el.addEventListener('touchend', onTouchEnd)
-    return () => {
-      el.removeEventListener('touchstart', onTouchStart)
-      el.removeEventListener('touchend', onTouchEnd)
-    }
-  }, [toast.id, dismiss])
+  const colors = {
+    success: 'bg-brand-500',
+    error: 'bg-red-500',
+    info: 'bg-neutral-800',
+  }
 
   return (
     <div
-      ref={ref}
-      className="flex items-start gap-3 bg-white rounded-card shadow-card-hover px-4 py-3 min-w-[280px] max-w-[360px] animate-slide-up"
+      className={`flex items-center gap-3 px-4 py-3 rounded-xl text-white text-sm shadow-lg ${colors[toast.type] || colors.info} animate-in slide-in-from-right`}
+      style={{ animation: 'slideInRight 0.3s ease' }}
     >
-      <div className="flex-shrink-0 mt-0.5">{ICONS[toast.type] || ICONS.info}</div>
-      <p className="flex-1 text-sm font-body text-gray-800 leading-snug">{toast.message}</p>
+      {icons[toast.type]}
+      <span className="flex-1">{toast.message}</span>
       <button
-        onClick={() => dismiss(toast.id)}
-        className="flex-shrink-0 text-gray-400 hover:text-gray-600 min-h-touch min-w-[24px] flex items-center justify-center"
+        onClick={() => onRemove(toast.id)}
+        className="opacity-80 hover:opacity-100 transition-opacity ml-1"
       >
         <X size={16} />
       </button>
@@ -48,15 +33,15 @@ function ToastItem({ toast }) {
 }
 
 export default function ToastContainer() {
-  const { toasts } = useToast()
+  const { toasts, removeToast } = useToast()
 
   if (toasts.length === 0) return null
 
   return (
-    <div className="fixed top-4 left-1/2 -translate-x-1/2 z-50 flex flex-col gap-2 items-center w-full px-4 pointer-events-none">
-      {toasts.map((t) => (
-        <div key={t.id} className="pointer-events-auto">
-          <ToastItem toast={t} />
+    <div className="fixed top-4 right-4 z-50 flex flex-col gap-2 max-w-sm w-full pointer-events-none">
+      {toasts.map(toast => (
+        <div key={toast.id} className="pointer-events-auto">
+          <ToastItem toast={toast} onRemove={removeToast} />
         </div>
       ))}
     </div>

@@ -5,7 +5,6 @@ import {
   GoogleAuthProvider,
   signOut,
   onAuthStateChanged,
-  updateProfile,
 } from 'firebase/auth'
 import { doc, setDoc, getDoc, serverTimestamp } from 'firebase/firestore'
 import { auth, db } from './firebase'
@@ -13,9 +12,13 @@ import { auth, db } from './firebase'
 const googleProvider = new GoogleAuthProvider()
 googleProvider.setCustomParameters({ prompt: 'select_account' })
 
+export function onAuthChange(callback) {
+  return onAuthStateChanged(auth, callback)
+}
+
 export async function signUpWithEmail(email, password, name) {
   const cred = await createUserWithEmailAndPassword(auth, email, password)
-  await updateProfile(cred.user, { displayName: name })
+  await createUserDocument(cred.user, { name })
   return cred.user
 }
 
@@ -26,6 +29,12 @@ export async function signInWithEmail(email, password) {
 
 export async function signInWithGoogle() {
   const cred = await signInWithPopup(auth, googleProvider)
+  const exists = await getUserDocument(cred.user.uid)
+  if (!exists) {
+    await createUserDocument(cred.user, {
+      name: cred.user.displayName || 'EcoEats User',
+    })
+  }
   return cred.user
 }
 
@@ -33,27 +42,36 @@ export async function logOut() {
   await signOut(auth)
 }
 
-export function onAuthChange(callback) {
-  return onAuthStateChanged(auth, callback)
-}
-
-export async function createUserProfile(uid, data) {
-  const ref = doc(db, 'users', uid)
-  await setDoc(ref, {
-    ...data,
+export async function createUserDocument(user, extra = {}) {
+  await setDoc(doc(db, 'users', user.uid), {
+    name: extra.name || user.displayName || 'EcoEats User',
+    email: user.email,
+    photoURL: user.photoURL || null,
     createdAt: serverTimestamp(),
-    lastSeen: serverTimestamp(),
-    impactStats: { mealsRescued: 0, co2Saved: 0, pointsEarned: 0 },
-    reputationScore: 100,
+    ecoScore: 0,
+    totalOrdersCount: 0,
+    totalCarbonSaved: 0,
+    savedAddresses: [],
+    favouriteRestaurants: [],
   })
 }
 
-export async function getUserProfile(uid) {
+export async function getUserDocument(uid) {
   const snap = await getDoc(doc(db, 'users', uid))
-  return snap.exists() ? { uid, ...snap.data() } : null
+  return snap.exists() ? { id: snap.id, ...snap.data() } : null
 }
 
-export async function updateLastSeen(uid) {
-  const ref = doc(db, 'users', uid)
-  await setDoc(ref, { lastSeen: serverTimestamp() }, { merge: true })
+export const AUTH_ERROR_MESSAGES = {
+  'auth/email-already-in-use': 'An account with this email already exists.',
+  'auth/wrong-password': 'Incorrect password. Try again.',
+  'auth/invalid-credential': 'Incorrect email or password. Try again.',
+  'auth/user-not-found': 'No account found with this email.',
+  'auth/too-many-requests': 'Too many attempts. Please wait a few minutes.',
+  'auth/weak-password': 'Password must be at least 6 characters.',
+  'auth/invalid-email': 'Enter a valid email address.',
+  'auth/popup-closed-by-user': 'Sign-in cancelled.',
+}
+
+export function getAuthErrorMessage(code) {
+  return AUTH_ERROR_MESSAGES[code] || 'Something went wrong. Please try again.'
 }
