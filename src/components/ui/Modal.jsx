@@ -1,43 +1,48 @@
-import { useEffect, useCallback } from 'react'
+import { useEffect } from 'react'
 import { X } from '@phosphor-icons/react'
 
 export default function Modal({ open, onClose, title, children, className = '' }) {
-  const handleEscape = useCallback(
-    e => { if (e.key === 'Escape') onClose() },
-    [onClose]
-  )
-
   useEffect(() => {
-    if (open) {
-      document.addEventListener('keydown', handleEscape)
-      document.body.style.overflow = 'hidden'
-    }
-    return () => {
-      document.removeEventListener('keydown', handleEscape)
-      document.body.style.overflow = ''
-    }
-  }, [open, handleEscape])
+    if (open) document.body.style.overflow = 'hidden'
+    else document.body.style.overflow = ''
+    return () => { document.body.style.overflow = '' }
+  }, [open])
 
   if (!open) return null
 
   return (
-    <div
-      className="fixed inset-0 bg-black/40 backdrop-blur-sm flex items-center justify-center z-50 p-4"
-      onClick={e => { if (e.target === e.currentTarget) onClose() }}
-    >
-      <div className={`bg-white rounded-2xl p-6 w-full max-w-md shadow-xl ${className}`}>
-        {title && (
-          <div className="flex items-center justify-between mb-4">
-            <h2 className="text-lg font-semibold text-neutral-900">{title}</h2>
+    <div className="fixed inset-0 z-50 flex items-end justify-center">
+      {/* Backdrop */}
+      <div
+        className="absolute inset-0 bg-black/40 backdrop-blur-sm"
+        onClick={onClose}
+      />
+      {/* Sheet */}
+      <div
+        className={[
+          'relative bg-white w-full max-w-[480px] rounded-t-[24px] shadow-card-hover',
+          'animate-slide-up pb-safe max-h-[90dvh] overflow-y-auto',
+          className,
+        ].join(' ')}
+      >
+        {/* Handle */}
+        <div className="flex justify-center pt-3 pb-1">
+          <div className="w-10 h-1 bg-gray-200 rounded-full" />
+        </div>
+
+        {(title || onClose) && (
+          <div className="flex items-center justify-between px-5 py-3 border-b border-gray-100">
+            {title && <h2 className="font-display font-bold text-lg text-forest-700">{title}</h2>}
             <button
               onClick={onClose}
-              className="p-1 rounded-lg hover:bg-neutral-100 text-neutral-500 transition-colors"
+              className="ml-auto p-2 rounded-full hover:bg-gray-100 min-h-touch min-w-[44px] flex items-center justify-center"
             >
               <X size={20} />
             </button>
           </div>
         )}
-        {children}
+
+        <div className="px-5 py-4">{children}</div>
       </div>
     </div>
   )

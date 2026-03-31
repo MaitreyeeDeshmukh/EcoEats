@@ -1,58 +1,59 @@
-import { supabase } from './supabase'
+import {
+  createUserWithEmailAndPassword,
+  signInWithEmailAndPassword,
+  signInWithPopup,
+  GoogleAuthProvider,
+  signOut,
+  onAuthStateChanged,
+  updateProfile,
+} from 'firebase/auth'
+import { doc, setDoc, getDoc, serverTimestamp } from 'firebase/firestore'
+import { auth, db } from './firebase'
 
-export function onAuthChange(callback) {
-  const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
-    callback(session?.user ?? null)
-  })
-  return () => subscription.unsubscribe()
-}
+const googleProvider = new GoogleAuthProvider()
+googleProvider.setCustomParameters({ prompt: 'select_account' })
 
 export async function signUpWithEmail(email, password, name) {
-  const { data, error } = await supabase.auth.signUp({
-    email,
-    password,
-    options: { data: { full_name: name } },
-  })
-  if (error) throw error
-  return data.user
+  const cred = await createUserWithEmailAndPassword(auth, email, password)
+  await updateProfile(cred.user, { displayName: name })
+  return cred.user
 }
 
 export async function signInWithEmail(email, password) {
-  const { data, error } = await supabase.auth.signInWithPassword({ email, password })
-  if (error) throw error
-  return data.user
+  const cred = await signInWithEmailAndPassword(auth, email, password)
+  return cred.user
 }
 
 export async function signInWithGoogle() {
-  const { error } = await supabase.auth.signInWithOAuth({
-    provider: 'google',
-    options: { redirectTo: `${window.location.origin}/explore` },
-  })
-  if (error) throw error
+  const cred = await signInWithPopup(auth, googleProvider)
+  return cred.user
 }
 
 export async function logOut() {
-  const { error } = await supabase.auth.signOut()
-  if (error) throw error
+  await signOut(auth)
 }
 
-export async function getUserDocument(uid) {
-  const { data, error } = await supabase
-    .from('users')
-    .select('*')
-    .eq('id', uid)
-    .single()
-  if (error) return null
-  return data
+export function onAuthChange(callback) {
+  return onAuthStateChanged(auth, callback)
 }
 
-const AUTH_ERROR_MESSAGES = {
-  'Invalid login credentials': 'Incorrect email or password. Try again.',
-  'Email not confirmed': 'Please verify your email before signing in.',
-  'User already registered': 'An account with this email already exists.',
-  'Password should be at least 6 characters': 'Password must be at least 8 characters.',
+export async function createUserProfile(uid, data) {
+  const ref = doc(db, 'users', uid)
+  await setDoc(ref, {
+    ...data,
+    createdAt: serverTimestamp(),
+    lastSeen: serverTimestamp(),
+    impactStats: { mealsRescued: 0, co2Saved: 0, pointsEarned: 0 },
+    reputationScore: 100,
+  })
 }
 
-export function getAuthErrorMessage(message) {
-  return AUTH_ERROR_MESSAGES[message] || message || 'Something went wrong. Please try again.'
+export async function getUserProfile(uid) {
+  const snap = await getDoc(doc(db, 'users', uid))
+  return snap.exists() ? { uid, ...snap.data() } : null
+}
+
+export async function updateLastSeen(uid) {
+  const ref = doc(db, 'users', uid)
+  await setDoc(ref, { lastSeen: serverTimestamp() }, { merge: true })
 }

@@ -9,11 +9,11 @@ export default defineConfig({
       registerType: 'autoUpdate',
       includeAssets: ['icons/*.png', 'icons/*.svg'],
       manifest: {
-        name: 'EcoEats — Sustainable Food Delivery',
+        name: 'EcoEats — Campus Food Rescue',
         short_name: 'EcoEats',
-        description: 'Order from eco-certified restaurants. See the carbon footprint of every meal.',
-        theme_color: '#16a34a',
-        background_color: '#ffffff',
+        description: 'Rescue food. Feed people.',
+        theme_color: '#1B4332',
+        background_color: '#F8F6F0',
         display: 'standalone',
         orientation: 'portrait',
         start_url: '/',
@@ -24,27 +24,13 @@ export default defineConfig({
       },
       workbox: {
         globPatterns: ['**/*.{js,css,html,ico,png,svg,webp}'],
-        navigateFallback: '/index.html',
         runtimeCaching: [
           {
-            urlPattern: /^https:\/\/[abc]\.tile\.openstreetmap\.org\/.*/i,
+            urlPattern: /^https:\/\/tile\.openstreetmap\.org\/.*/i,
             handler: 'CacheFirst',
             options: {
               cacheName: 'osm-tiles',
               expiration: { maxEntries: 500, maxAgeSeconds: 60 * 60 * 24 * 7 },
-            },
-          },
-          {
-            urlPattern: /^https:\/\/.*\.supabase\.co\/.*/i,
-            handler: 'NetworkFirst',
-            options: { cacheName: 'supabase-cache' },
-          },
-          {
-            urlPattern: /^https:\/\/source\.unsplash\.com\/.*/i,
-            handler: 'CacheFirst',
-            options: {
-              cacheName: 'unsplash-images',
-              expiration: { maxEntries: 100, maxAgeSeconds: 60 * 60 * 24 * 30 },
             },
           },
         ],
@@ -55,7 +41,7 @@ export default defineConfig({
     rollupOptions: {
       output: {
         manualChunks(id) {
-          if (id.includes('supabase')) return 'supabase'
+          if (id.includes('firebase')) return 'firebase'
           if (id.includes('leaflet') || id.includes('react-leaflet')) return 'leaflet'
           if (id.includes('react-dom') || id.includes('react-router')) return 'vendor'
         },
