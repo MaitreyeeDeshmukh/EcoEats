@@ -1,83 +1,121 @@
-# EcoEats
+# EcoEats 🌿
 
-EcoEats is a sustainable food delivery web application that connects users with eco-certified local restaurants while making the environmental impact of every order visible and meaningful.
+**Sustainable food delivery — order from eco-certified restaurants, see the carbon footprint of every meal.**
+
+🔗 **GitHub**: https://github.com/MaitreyeeDeshmukh/EcoEats
+🌐 **Live app**: https://your-firebase-project-id.web.app *(deploy steps below)*
+
+---
 
 ## What It Does
 
 - Browse and order from eco-certified restaurants in Pune
-- See the carbon footprint of every dish before you order
-- Track how much CO₂ you've saved compared to average food delivery
-- View your personal environmental impact over time, with a shareable card
+- See the CO₂ footprint of every dish before you order
+- Track how much carbon you've saved compared to average delivery
+- View your personal environmental impact — download a shareable card
+- Full PWA — works offline, installable on mobile
 
 ## Tech Stack
 
-- **Frontend**: React 19, Vite, Tailwind CSS
-- **Backend**: Firebase (Firestore, Auth, Storage, Hosting) — free Spark plan
-- **Maps**: React Leaflet + OpenStreetMap (no API key required)
-- **Geocoding**: Nominatim API (free, no API key required)
-- **PWA**: vite-plugin-pwa with Workbox
+| Layer | Tech |
+|---|---|
+| Frontend | React 19, Vite, Tailwind CSS |
+| Backend | Firebase Firestore, Auth, Storage, Hosting (free Spark plan) |
+| Maps | React Leaflet + OpenStreetMap (no API key) |
+| Geocoding | Nominatim API (free, no API key) |
+| PWA | vite-plugin-pwa + Workbox |
+| Icons | Phosphor Icons |
+| Carbon card export | html2canvas |
+
+---
 
 ## Getting Started
 
-### Prerequisites
-- Node.js 18+
-- A Firebase project (free Spark plan)
+### 1. Clone the repo
 
-### Setup
+```bash
+git clone https://github.com/MaitreyeeDeshmukh/EcoEats.git
+cd EcoEats
+npm install
+```
 
-1. Clone the repo
-   ```
-   git clone https://github.com/MaitreyeeDeshmukh/EcoEats.git
-   cd EcoEats
-   ```
+### 2. Create a Firebase project
 
-2. Install dependencies
-   ```
-   npm install
-   ```
+1. Go to https://console.firebase.google.com → **Create project**
+2. Enable these services:
+   - **Authentication** → Sign-in methods: Email/Password + Google
+   - **Firestore Database** → Start in production mode
+   - **Storage** → Default bucket
+   - **Hosting**
 
-3. Create a Firebase project at https://console.firebase.google.com
-   Enable: Authentication (Email/Password + Google), Firestore, Storage, Hosting
+### 3. Add your Firebase config
 
-4. Create a `.env` file in the project root:
-   ```
-   VITE_FIREBASE_API_KEY=your_key
-   VITE_FIREBASE_AUTH_DOMAIN=your_project.firebaseapp.com
-   VITE_FIREBASE_PROJECT_ID=your_project_id
-   VITE_FIREBASE_STORAGE_BUCKET=your_project.appspot.com
-   VITE_FIREBASE_MESSAGING_SENDER_ID=your_sender_id
-   VITE_FIREBASE_APP_ID=your_app_id
-   ```
+Create a `.env.local` file in the project root:
 
-5. Deploy Firestore rules and indexes
-   ```
-   firebase deploy --only firestore
-   ```
+```env
+VITE_FIREBASE_API_KEY=your_api_key
+VITE_FIREBASE_AUTH_DOMAIN=your_project.firebaseapp.com
+VITE_FIREBASE_PROJECT_ID=your_project_id
+VITE_FIREBASE_STORAGE_BUCKET=your_project.appspot.com
+VITE_FIREBASE_MESSAGING_SENDER_ID=your_sender_id
+VITE_FIREBASE_APP_ID=your_app_id
+```
 
-6. Seed the database (run once — temporarily set Firestore rules to allow writes first)
-   ```
-   node src/scripts/seedFirestore.js
-   ```
+> Find these values in Firebase Console → Project Settings → Your apps → Web app config.
 
-7. Start dev server
-   ```
-   npm run dev
-   ```
+### 4. Deploy Firestore rules and indexes
 
-8. Build for production
-   ```
-   npm run build
-   ```
+```bash
+firebase login
+firebase use --add          # select your project
+firebase deploy --only firestore
+```
 
-9. Deploy to Firebase Hosting
-   ```
-   firebase deploy --only hosting
-   ```
+### 5. Seed the database (run once)
 
-## Carbon Calculation Methodology
+> Temporarily set Firestore rules to allow all writes, run seed, then re-deploy secure rules.
 
-**Baseline**: Average food delivery order = 2,400g CO₂
-(Accounts for packaging, last-mile transport, and food production)
+```bash
+node src/scripts/seedFirestore.js
+```
+
+This seeds: **8 Pune restaurants**, **40+ menu items** with carbon data, **5 eco tips**.
+
+### 6. Run locally
+
+```bash
+npm run dev
+```
+
+App runs at http://localhost:5173
+
+### 7. Build and deploy to Firebase Hosting
+
+```bash
+npm run build
+firebase deploy --only hosting
+```
+
+Your live URL will be: **https://your-project-id.web.app**
+
+---
+
+## Pages
+
+| Route | Page |
+|---|---|
+| `/` | Landing — hero, how it works, featured restaurants, impact counter |
+| `/explore` | Browse restaurants — search, filters, list/map toggle |
+| `/restaurant/:id` | Menu, eco badge, reviews, add to cart |
+| `/cart` | Cart, address, COD payment, carbon summary |
+| `/order/:id` | Order status tracker, map, carbon impact |
+| `/profile` | Eco score, order history, saved addresses |
+| `/impact` | Monthly CO₂ chart, vs-average comparison, shareable card |
+| `/login` `/signup` | Auth with Google OAuth |
+
+---
+
+## Carbon Calculation
 
 | Food type | CO₂ per dish |
 |---|---|
@@ -85,9 +123,12 @@ EcoEats is a sustainable food delivery web application that connects users with 
 | Mixed vegetarian | 300–600g |
 | Meat dishes | 600–1,100g |
 
-- **Carbon saved** = max(0, 2,400g − order total carbon)
-- **Trees equivalent** = carbon saved ÷ 21,000g (absorbed per tree per year)
-- **Driving equivalent** = carbon saved ÷ 192g (CO₂ per km driven)
+- **Baseline**: 2,400g CO₂ per average delivery order
+- **Saved** = max(0, 2,400 − your order's total carbon)
+- **Trees equivalent** = saved ÷ 21,000g (per tree per year)
+- **Driving avoided** = saved ÷ 192g (CO₂ per km)
+
+---
 
 ## Project Structure
 
@@ -96,16 +137,18 @@ src/
   components/
     ui/          Button, Input, Badge, Card, Modal, Toast, Spinner, Skeleton
     layout/      Navbar, Footer, PageWrapper, MobileDrawer
-    features/    RestaurantCard, MenuItemCard, OrderStatusTracker, EcoBadge, ReviewCard, CartItem
-  pages/         One file per route
-  hooks/         useAuth, useCart, useOrders, useRestaurants, useToast
+    features/    RestaurantCard, MenuItemCard, CartItem, OrderStatusTracker, EcoBadge, ReviewCard
+  pages/         One file per route (lazy-loaded)
   context/       AuthContext, CartContext, ToastContext
+  hooks/         useAuth, useCart, useOrders, useRestaurants, useToast
   services/      auth.js, restaurants.js, menuItems.js, orders.js, reviews.js, users.js
   utils/         carbonCalculator.js, formatters.js, validators.js, geocode.js
   constants/     routes.js, categories.js
   scripts/       seedFirestore.js
 ```
 
+---
+
 ## License
 
-MIT
+MIT — built by Maitreyee Deshmukh
