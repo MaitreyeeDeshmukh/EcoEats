@@ -8,14 +8,13 @@ import { useAuth } from '../../contexts/AuthContext'
 import { useToast } from '../../contexts/ToastContext'
 import { useClaims } from '../../hooks/useClaims'
 import { logOut } from '../../services/auth'
-import { doc, setDoc } from 'firebase/firestore'
-import { db } from '../../services/firebase'
+import { supabase } from '../../services/supabase'
 import { useNavigate } from 'react-router-dom'
 
 const DIETARY_OPTIONS = ['vegan', 'vegetarian', 'halal', 'gluten-free', 'nut-free', 'dairy-free']
 
 function Avatar({ profile, user }) {
-  const initials = (profile?.name || user?.displayName || 'U')
+  const initials = (profile?.name || user?.user_metadata?.full_name || 'U')
     .split(' ').map((w) => w[0]).join('').slice(0, 2).toUpperCase()
 
   return (
@@ -153,14 +152,16 @@ export default function ProfileView() {
   }
 
   async function saveDietaryPrefs(prefs) {
-    await setDoc(doc(db, 'users', user.uid), { dietaryPrefs: prefs }, { merge: true })
+    const { error } = await supabase.from('users').update({ dietary_prefs: prefs }).eq('id', user.id)
+    if (error) throw error
   }
 
   async function switchRole() {
     setSwitchingRole(true)
     const newRole = isOrganizer ? 'student' : 'organizer'
     try {
-      await setDoc(doc(db, 'users', user.uid), { role: newRole }, { merge: true })
+      const { error } = await supabase.from('users').update({ role: newRole }).eq('id', user.id)
+      if (error) throw error
       toast(`Switched to ${newRole === 'organizer' ? 'Event Organizer' : 'Student'} mode`, 'success')
     } catch {
       toast('Could not switch role', 'error')
@@ -185,7 +186,6 @@ export default function ProfileView() {
 
   return (
     <div className="flex flex-col bg-cream pt-safe pb-safe overflow-y-auto scroll-hide">
-      {/* Header */}
       <div className="px-4 pt-4 pb-2">
         <h1 className="font-display font-bold text-2xl text-forest-700">Profile</h1>
       </div>
@@ -195,15 +195,11 @@ export default function ProfileView() {
         <Avatar profile={profile} user={user} />
         <div className="flex-1 min-w-0">
           <p className="font-display font-bold text-gray-900 text-lg truncate">
-            {profile?.name || user?.displayName || 'EcoEats User'}
+            {profile?.name || user?.user_metadata?.full_name || 'EcoEats User'}
           </p>
           <p className="text-sm text-gray-500 font-body truncate">{user?.email}</p>
           <div className="flex items-center gap-1.5 mt-1">
-            {isOrganizer ? (
-              <HandHeart size={13} className="text-forest-700" />
-            ) : (
-              <Student size={13} className="text-forest-600" />
-            )}
+            {isOrganizer ? <HandHeart size={13} className="text-forest-700" /> : <Student size={13} className="text-forest-600" />}
             <span className="text-xs font-medium font-body text-forest-700">
               {isOrganizer ? 'Event Organizer' : 'Student'}
             </span>
@@ -211,20 +207,14 @@ export default function ProfileView() {
         </div>
       </div>
 
-      {/* Role-based primary CTA */}
+      {/* Primary CTA */}
       {isOrganizer ? (
-        <button
-          onClick={() => navigate('/post')}
-          className="mx-4 mb-4 h-[52px] flex items-center justify-center gap-2 bg-forest-700 text-white rounded-card font-body font-semibold text-base shadow-card active:scale-[0.98] transition-transform"
-        >
+        <button onClick={() => navigate('/post')} className="mx-4 mb-4 h-[52px] flex items-center justify-center gap-2 bg-forest-700 text-white rounded-card font-body font-semibold text-base shadow-card active:scale-[0.98] transition-transform">
           <Plus size={20} weight="bold" />
           Post Food to Share
         </button>
       ) : (
-        <button
-          onClick={() => navigate('/claims')}
-          className="mx-4 mb-4 h-[52px] flex items-center justify-center gap-2 bg-forest-700 text-white rounded-card font-body font-semibold text-base shadow-card active:scale-[0.98] transition-transform"
-        >
+        <button onClick={() => navigate('/claims')} className="mx-4 mb-4 h-[52px] flex items-center justify-center gap-2 bg-forest-700 text-white rounded-card font-body font-semibold text-base shadow-card active:scale-[0.98] transition-transform">
           <Check size={20} weight="bold" />
           View My Claims
         </button>
@@ -251,34 +241,23 @@ export default function ProfileView() {
 
       {/* Dietary preferences */}
       <div className="mx-4 bg-white rounded-card shadow-card p-4 mb-4">
-        <DietaryEditor
-          prefs={profile?.dietaryPrefs || []}
-          onSave={saveDietaryPrefs}
-        />
+        <DietaryEditor prefs={profile?.dietaryPrefs || []} onSave={saveDietaryPrefs} />
       </div>
 
       {/* Switch role */}
-      <button
-        onClick={switchRole}
-        disabled={switchingRole}
-        className="mx-4 mb-4 h-[52px] flex items-center justify-center gap-2 bg-white border-2 border-gray-200 text-gray-600 rounded-card font-body font-semibold text-sm active:scale-[0.98] transition-transform disabled:opacity-60"
-      >
+      <button onClick={switchRole} disabled={switchingRole} className="mx-4 mb-4 h-[52px] flex items-center justify-center gap-2 bg-white border-2 border-gray-200 text-gray-600 rounded-card font-body font-semibold text-sm active:scale-[0.98] transition-transform disabled:opacity-60">
         <ArrowsLeftRight size={18} />
         {switchingRole ? 'Switching…' : `Switch to ${isOrganizer ? 'Student' : 'Event Organizer'}`}
       </button>
 
       {/* Sign Out */}
-      <button
-        onClick={handleSignOut}
-        disabled={signingOut}
-        className="mx-4 mb-4 h-[52px] flex items-center justify-center gap-2 bg-white border-2 border-red-200 text-red-500 rounded-card font-body font-semibold text-base active:scale-[0.98] transition-transform disabled:opacity-60"
-      >
+      <button onClick={handleSignOut} disabled={signingOut} className="mx-4 mb-4 h-[52px] flex items-center justify-center gap-2 bg-white border-2 border-red-200 text-red-500 rounded-card font-body font-semibold text-base active:scale-[0.98] transition-transform disabled:opacity-60">
         <SignOut size={20} />
         {signingOut ? 'Signing out…' : 'Sign Out'}
       </button>
 
-      {/* History */}
-      {isOrganizer ? null : (
+      {/* Claim history for students */}
+      {!isOrganizer && (
         <div className="mx-4 bg-white rounded-card shadow-card p-4 mb-4">
           <p className="font-display font-bold text-gray-900 mb-3">Claim History</p>
           {claims.length === 0 ? (

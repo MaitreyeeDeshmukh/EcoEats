@@ -114,8 +114,8 @@ export default function PostForm() {
       }
 
       const listingData = {
-        hostId: user.uid,
-        hostName: profile?.name || user.displayName || 'Anonymous Host',
+        hostId: user.id,
+        hostName: profile?.name || user?.user_metadata?.full_name || 'Anonymous Host',
         hostBuilding: building?.name || '',
         title: form.title.trim(),
         description: form.description.trim(),

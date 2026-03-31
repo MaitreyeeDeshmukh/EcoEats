@@ -1,128 +1,153 @@
-import {
-  collection,
-  doc,
-  addDoc,
-  updateDoc,
-  deleteDoc,
-  getDoc,
-  getDocs,
-  query,
-  where,
-  orderBy,
-  limit,
-  startAfter,
-  onSnapshot,
-  serverTimestamp,
-  increment,
-  runTransaction,
-  Timestamp,
-} from 'firebase/firestore'
-import { db } from './firebase'
+import { supabase } from './supabase'
 
-const LISTINGS_COL = 'listings'
-const PAGE_SIZE = 10
+function normalizeListing(r) {
+  if (!r) return null
+  return {
+    id: r.id,
+    hostId: r.host_id,
+    hostName: r.host_name,
+    hostBuilding: r.host_building,
+    title: r.title,
+    description: r.description,
+    foodItems: r.food_items || [],
+    quantity: r.quantity,
+    quantityRemaining: r.quantity_remaining,
+    dietaryTags: r.dietary_tags || [],
+    imageUrl: r.image_url,
+    location: {
+      buildingName: r.building_name,
+      roomNumber: r.room_number,
+      lat: r.lat,
+      lng: r.lng,
+    },
+    expiryMinutes: r.expiry_minutes,
+    expiresAt: r.expires_at ? { toDate: () => new Date(r.expires_at) } : null,
+    postedAt: r.posted_at ? { toDate: () => new Date(r.posted_at) } : null,
+    status: r.status,
+    claimedBy: r.claimed_by || [],
+  }
+}
 
 export async function createListing(data) {
-  const now = Timestamp.now()
   const expiryMinutes = data.expiryMinutes || 90
-  const expiresAt = new Timestamp(now.seconds + expiryMinutes * 60, now.nanoseconds)
+  const expiresAt = new Date(Date.now() + expiryMinutes * 60 * 1000).toISOString()
 
-  const docRef = await addDoc(collection(db, LISTINGS_COL), {
-    ...data,
-    postedAt: serverTimestamp(),
-    expiresAt,
+  const { data: row, error } = await supabase.from('listings').insert({
+    host_id: data.hostId,
+    host_name: data.hostName,
+    host_building: data.hostBuilding,
+    title: data.title,
+    description: data.description,
+    food_items: data.foodItems || [],
+    quantity: data.quantity,
+    quantity_remaining: data.quantity,
+    dietary_tags: data.dietaryTags || [],
+    image_url: data.imageUrl || null,
+    building_name: data.location?.buildingName,
+    room_number: data.location?.roomNumber,
+    lat: data.location?.lat,
+    lng: data.location?.lng,
+    expiry_minutes: expiryMinutes,
+    expires_at: expiresAt,
     status: 'active',
-    quantityRemaining: data.quantity,
-    claimedBy: [],
-  })
-  return docRef.id
+    claimed_by: [],
+  }).select().single()
+
+  if (error) throw error
+  return row.id
 }
 
 export async function getListingById(id) {
-  const snap = await getDoc(doc(db, LISTINGS_COL, id))
-  return snap.exists() ? { id: snap.id, ...snap.data() } : null
-}
-
-export async function updateListing(id, data) {
-  await updateDoc(doc(db, LISTINGS_COL, id), data)
+  const { data, error } = await supabase.from('listings').select('*').eq('id', id).single()
+  if (error) return null
+  return normalizeListing(data)
 }
 
 export async function cancelListing(id) {
-  await updateDoc(doc(db, LISTINGS_COL, id), { status: 'cancelled' })
+  const { error } = await supabase.from('listings').update({ status: 'cancelled' }).eq('id', id)
+  if (error) throw error
 }
 
 export function subscribeToActiveListings(callback) {
-  const q = query(
-    collection(db, LISTINGS_COL),
-    where('status', '==', 'active'),
-    orderBy('postedAt', 'desc'),
-    limit(PAGE_SIZE)
-  )
-  return onSnapshot(q, (snap) => {
-    const listings = snap.docs.map((d) => ({ id: d.id, ...d.data() }))
-    callback(listings)
-  })
+  // Initial fetch
+  async function fetchActive() {
+    const { data } = await supabase
+      .from('listings')
+      .select('*')
+      .eq('status', 'active')
+      .order('posted_at', { ascending: false })
+      .limit(30)
+    callback((data || []).map(normalizeListing))
+  }
+
+  fetchActive()
+
+  // Real-time updates
+  const channel = supabase
+    .channel('active-listings')
+    .on('postgres_changes', { event: '*', schema: 'public', table: 'listings' }, () => {
+      fetchActive()
+    })
+    .subscribe()
+
+  return () => supabase.removeChannel(channel)
 }
 
 export function subscribeToHostListings(hostId, callback) {
-  const q = query(
-    collection(db, LISTINGS_COL),
-    where('hostId', '==', hostId),
-    orderBy('postedAt', 'desc'),
-    limit(20)
-  )
-  return onSnapshot(q, (snap) => {
-    callback(snap.docs.map((d) => ({ id: d.id, ...d.data() })))
-  })
+  async function fetchHost() {
+    const { data } = await supabase
+      .from('listings')
+      .select('*')
+      .eq('host_id', hostId)
+      .order('posted_at', { ascending: false })
+      .limit(20)
+    callback((data || []).map(normalizeListing))
+  }
+
+  fetchHost()
+
+  const channel = supabase
+    .channel(`host-listings-${hostId}`)
+    .on('postgres_changes', { event: '*', schema: 'public', table: 'listings', filter: `host_id=eq.${hostId}` }, () => {
+      fetchHost()
+    })
+    .subscribe()
+
+  return () => supabase.removeChannel(channel)
 }
 
-export async function fetchMoreListings(lastDoc) {
-  const q = query(
-    collection(db, LISTINGS_COL),
-    where('status', '==', 'active'),
-    orderBy('postedAt', 'desc'),
-    startAfter(lastDoc),
-    limit(PAGE_SIZE)
-  )
-  const snap = await getDocs(q)
-  return snap.docs.map((d) => ({ id: d.id, ...d.data() }))
-}
-
-// Auto-expire listings whose expiresAt < now
 export async function expireOldListings() {
-  const now = Timestamp.now()
-  const q = query(
-    collection(db, LISTINGS_COL),
-    where('status', '==', 'active'),
-    where('expiresAt', '<=', now)
-  )
-  const snap = await getDocs(q)
-  const updates = snap.docs.map((d) => updateDoc(d.ref, { status: 'expired' }))
-  await Promise.all(updates)
+  await supabase.rpc('expire_old_listings').catch(() => {})
 }
 
-// Transactional claim — prevents race conditions
+// Transactional claim using Supabase RPC
 export async function transactionalClaim(listingId, studentId) {
-  const listingRef = doc(db, LISTINGS_COL, listingId)
-  let claimedQty = 0
+  // Fetch current listing
+  const { data: listing, error: fetchErr } = await supabase
+    .from('listings')
+    .select('*')
+    .eq('id', listingId)
+    .single()
 
-  await runTransaction(db, async (tx) => {
-    const snap = await tx.get(listingRef)
-    if (!snap.exists()) throw new Error('Listing not found')
-    const data = snap.data()
-    if (data.status !== 'active') throw new Error('Listing is no longer active')
-    if (data.quantityRemaining <= 0) throw new Error('No portions remaining')
-    if (data.claimedBy?.includes(studentId)) throw new Error('Already claimed')
+  if (fetchErr || !listing) throw new Error('Listing not found')
+  if (listing.status !== 'active') throw new Error('Listing is no longer active')
+  if (listing.quantity_remaining <= 0) throw new Error('No portions remaining')
+  if ((listing.claimed_by || []).includes(studentId)) throw new Error('Already claimed')
 
-    claimedQty = 1
-    const newQty = data.quantityRemaining - 1
-    const updates = {
-      quantityRemaining: increment(-1),
-      claimedBy: [...(data.claimedBy || []), studentId],
-    }
-    if (newQty <= 0) updates.status = 'claimed'
-    tx.update(listingRef, updates)
-  })
+  const newQty = listing.quantity_remaining - 1
+  const newStatus = newQty <= 0 ? 'claimed' : 'active'
+  const newClaimedBy = [...(listing.claimed_by || []), studentId]
 
-  return claimedQty
+  const { error: updateErr } = await supabase
+    .from('listings')
+    .update({
+      quantity_remaining: newQty,
+      status: newStatus,
+      claimed_by: newClaimedBy,
+    })
+    .eq('id', listingId)
+    .eq('quantity_remaining', listing.quantity_remaining) // optimistic lock
+
+  if (updateErr) throw new Error('Claim failed — someone else just claimed it')
+  return 1
 }

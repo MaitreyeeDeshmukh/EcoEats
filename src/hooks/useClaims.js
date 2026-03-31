@@ -14,7 +14,7 @@ export function useClaims() {
       return
     }
 
-    const unsub = subscribeToStudentClaims(user.uid, (data) => {
+    const unsub = subscribeToStudentClaims(user.id, (data) => {
       setClaims(data)
       setLoading(false)
     })

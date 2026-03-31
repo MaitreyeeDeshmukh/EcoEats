@@ -31,8 +31,8 @@ export default function Onboarding({ onDone }) {
   async function handleDone() {
     setLoading(true)
     try {
-      await createUserProfile(user.uid, {
-        name: user.displayName || 'EcoEats User',
+      await createUserProfile(user.id, {
+        name: user?.user_metadata?.full_name || 'EcoEats User',
         email: user.email,
         avatar: user.photoURL || null,
         role,

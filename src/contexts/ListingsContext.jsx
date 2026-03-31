@@ -8,27 +8,17 @@ const initialState = {
   listings: [],
   loading: true,
   error: null,
-  filters: {
-    dietary: [],
-    radiusMiles: 1,
-    maxMinutes: 90,
-  },
+  filters: { dietary: [], radiusMiles: 1, maxMinutes: 90 },
 }
 
 function listingsReducer(state, action) {
   switch (action.type) {
-    case 'SET_LISTINGS':
-      return { ...state, listings: action.listings, loading: false }
-    case 'SET_LOADING':
-      return { ...state, loading: action.loading }
-    case 'SET_ERROR':
-      return { ...state, error: action.error, loading: false }
-    case 'SET_FILTERS':
-      return { ...state, filters: { ...state.filters, ...action.filters } }
-    case 'CLEAR_FILTERS':
-      return { ...state, filters: initialState.filters }
-    default:
-      return state
+    case 'SET_LISTINGS': return { ...state, listings: action.listings, loading: false }
+    case 'SET_LOADING': return { ...state, loading: action.loading }
+    case 'SET_ERROR': return { ...state, error: action.error, loading: false }
+    case 'SET_FILTERS': return { ...state, filters: { ...state.filters, ...action.filters } }
+    case 'CLEAR_FILTERS': return { ...state, filters: initialState.filters }
+    default: return state
   }
 }
 
@@ -47,11 +37,8 @@ export function ListingsProvider({ children }) {
       dispatch({ type: 'SET_LISTINGS', listings })
     })
 
-    // Run expiry check every 60s
     expireOldListings().catch(() => {})
-    expireTimerRef.current = setInterval(() => {
-      expireOldListings().catch(() => {})
-    }, 60_000)
+    expireTimerRef.current = setInterval(() => expireOldListings().catch(() => {}), 60_000)
 
     return () => {
       unsub()
@@ -59,13 +46,8 @@ export function ListingsProvider({ children }) {
     }
   }, [user])
 
-  const setFilters = useCallback((filters) => {
-    dispatch({ type: 'SET_FILTERS', filters })
-  }, [])
-
-  const clearFilters = useCallback(() => {
-    dispatch({ type: 'CLEAR_FILTERS' })
-  }, [])
+  const setFilters = useCallback((filters) => dispatch({ type: 'SET_FILTERS', filters }), [])
+  const clearFilters = useCallback(() => dispatch({ type: 'CLEAR_FILTERS' }), [])
 
   return (
     <ListingsContext.Provider value={{ ...state, setFilters, clearFilters, dispatch }}>

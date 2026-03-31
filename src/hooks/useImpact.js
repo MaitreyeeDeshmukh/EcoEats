@@ -1,6 +1,5 @@
 import { useState, useEffect } from 'react'
-import { collection, query, where, onSnapshot, getCountFromServer } from 'firebase/firestore'
-import { db } from '../services/firebase'
+import { supabase } from '../services/supabase'
 import { calcCo2Saved } from '../utils/impact'
 
 export function useImpact() {
@@ -9,46 +8,39 @@ export function useImpact() {
     mealsAllTime: 0,
     co2Saved: '0',
     activeListings: 0,
-    totalUsers: 0,
     loading: true,
   })
 
   useEffect(() => {
-    // Live active listings count
-    const activeQ = query(collection(db, 'listings'), where('status', '==', 'active'))
-    const unsubActive = onSnapshot(activeQ, (snap) => {
-      setStats((prev) => ({ ...prev, activeListings: snap.size }))
-    })
+    async function fetchStats() {
+      const [activeRes, allTimeRes, todayRes] = await Promise.all([
+        supabase.from('listings').select('id', { count: 'exact', head: true }).eq('status', 'active'),
+        supabase.from('claims').select('id', { count: 'exact', head: true }).eq('status', 'picked_up'),
+        supabase.from('claims').select('id', { count: 'exact', head: true })
+          .eq('status', 'picked_up')
+          .gte('picked_up_at', new Date().toISOString().split('T')[0]),
+      ])
 
-    // Live picked-up claims = meals rescued
-    const pickedQ = query(collection(db, 'claims'), where('status', '==', 'picked_up'))
-    const unsubPickup = onSnapshot(pickedQ, (snap) => {
-      const total = snap.size
-      setStats((prev) => ({
-        ...prev,
-        mealsAllTime: total,
-        co2Saved: calcCo2Saved(total),
+      const mealsAllTime = allTimeRes.count || 0
+      setStats({
+        mealsToday: todayRes.count || 0,
+        mealsAllTime,
+        co2Saved: calcCo2Saved(mealsAllTime),
+        activeListings: activeRes.count || 0,
         loading: false,
-      }))
-    })
-
-    // Today's meals
-    const todayStart = new Date()
-    todayStart.setHours(0, 0, 0, 0)
-    const todayQ = query(
-      collection(db, 'claims'),
-      where('status', '==', 'picked_up'),
-      where('pickedUpAt', '>=', todayStart)
-    )
-    const unsubToday = onSnapshot(todayQ, (snap) => {
-      setStats((prev) => ({ ...prev, mealsToday: snap.size }))
-    })
-
-    return () => {
-      unsubActive()
-      unsubPickup()
-      unsubToday()
+      })
     }
+
+    fetchStats()
+
+    // Re-fetch when listings or claims change
+    const channel = supabase
+      .channel('impact-stats')
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'listings' }, fetchStats)
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'claims' }, fetchStats)
+      .subscribe()
+
+    return () => supabase.removeChannel(channel)
   }, [])
 
   return stats
@@ -59,18 +51,23 @@ export function useLeaderboard() {
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
-    // Top hosts: users with highest mealsRescued in impactStats
-    // We listen to users collection ordered by impactStats.mealsRescued
-    const q = query(collection(db, 'users'), where('role', '==', 'host'))
-    const unsub = onSnapshot(q, (snap) => {
-      const users = snap.docs
-        .map((d) => ({ uid: d.id, ...d.data() }))
-        .sort((a, b) => (b.impactStats?.mealsRescued || 0) - (a.impactStats?.mealsRescued || 0))
-        .slice(0, 10)
-      setLeaders(users)
+    async function fetchLeaders() {
+      const { data } = await supabase
+        .from('users')
+        .select('id, name, avatar_url, impact_stats, role')
+        .eq('role', 'organizer')
+        .order('impact_stats->mealsRescued', { ascending: false })
+        .limit(10)
+
+      setLeaders((data || []).map((u) => ({
+        uid: u.id,
+        name: u.name,
+        avatar: u.avatar_url,
+        impactStats: u.impact_stats || { mealsRescued: 0 },
+      })))
       setLoading(false)
-    })
-    return unsub
+    }
+    fetchLeaders()
   }, [])
 
   return { leaders, loading }

@@ -1,31 +1,23 @@
 import { createContext, useContext, useEffect, useReducer, useCallback } from 'react'
+import { supabase } from '../services/supabase'
 import { onAuthChange, getUserProfile, updateLastSeen } from '../services/auth'
-import { doc, onSnapshot } from 'firebase/firestore'
-import { db } from '../services/firebase'
 
 const AuthContext = createContext(null)
 
 const initialState = {
-  user: null,          // Firebase Auth user
-  profile: null,       // Firestore user doc
+  user: null,
+  profile: null,
   loading: true,
   error: null,
 }
 
 function authReducer(state, action) {
   switch (action.type) {
-    case 'SET_USER':
-      return { ...state, user: action.user, loading: false, error: null }
-    case 'SET_PROFILE':
-      return { ...state, profile: action.profile }
-    case 'CLEAR':
-      return { ...initialState, loading: false }
-    case 'SET_ERROR':
-      return { ...state, error: action.error, loading: false }
-    case 'SET_LOADING':
-      return { ...state, loading: action.loading }
-    default:
-      return state
+    case 'SET_USER': return { ...state, user: action.user, loading: false, error: null }
+    case 'SET_PROFILE': return { ...state, profile: action.profile }
+    case 'CLEAR': return { ...initialState, loading: false }
+    case 'SET_ERROR': return { ...state, error: action.error, loading: false }
+    default: return state
   }
 }
 
@@ -33,47 +25,49 @@ export function AuthProvider({ children }) {
   const [state, dispatch] = useReducer(authReducer, initialState)
 
   useEffect(() => {
-    let profileUnsub = null
+    let profileChannel = null
 
-    const authUnsub = onAuthChange(async (firebaseUser) => {
-      if (profileUnsub) { profileUnsub(); profileUnsub = null }
+    const unsub = onAuthChange(async (supabaseUser) => {
+      // Clean up previous profile subscription
+      if (profileChannel) { supabase.removeChannel(profileChannel); profileChannel = null }
 
-      if (!firebaseUser) {
+      if (!supabaseUser) {
         dispatch({ type: 'CLEAR' })
         return
       }
 
-      dispatch({ type: 'SET_USER', user: firebaseUser })
+      dispatch({ type: 'SET_USER', user: supabaseUser })
 
-      // Live-listen to profile doc
-      profileUnsub = onSnapshot(
-        doc(db, 'users', firebaseUser.uid),
-        (snap) => {
-          if (snap.exists()) {
-            dispatch({ type: 'SET_PROFILE', profile: { uid: firebaseUser.uid, ...snap.data() } })
-          } else {
-            // Profile not yet created (during onboarding)
-            dispatch({ type: 'SET_PROFILE', profile: null })
-          }
-        },
-        () => {
-          dispatch({ type: 'SET_PROFILE', profile: null })
-        }
-      )
+      // Fetch profile
+      const profile = await getUserProfile(supabaseUser.id)
+      dispatch({ type: 'SET_PROFILE', profile })
 
-      // Silently update lastSeen
-      updateLastSeen(firebaseUser.uid).catch(() => {})
+      // Live-listen to profile changes
+      profileChannel = supabase
+        .channel(`profile-${supabaseUser.id}`)
+        .on('postgres_changes', {
+          event: 'UPDATE',
+          schema: 'public',
+          table: 'users',
+          filter: `id=eq.${supabaseUser.id}`,
+        }, async () => {
+          const updated = await getUserProfile(supabaseUser.id)
+          dispatch({ type: 'SET_PROFILE', profile: updated })
+        })
+        .subscribe()
+
+      updateLastSeen(supabaseUser.id).catch(() => {})
     })
 
     return () => {
-      authUnsub()
-      if (profileUnsub) profileUnsub()
+      unsub()
+      if (profileChannel) supabase.removeChannel(profileChannel)
     }
   }, [])
 
   const refreshProfile = useCallback(async () => {
     if (!state.user) return
-    const p = await getUserProfile(state.user.uid)
+    const p = await getUserProfile(state.user.id)
     dispatch({ type: 'SET_PROFILE', profile: p })
   }, [state.user])
 

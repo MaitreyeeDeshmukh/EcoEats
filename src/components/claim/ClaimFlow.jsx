@@ -5,8 +5,7 @@ import Button from '../ui/Button'
 import ReservationTimer from './ReservationTimer'
 import { createClaim, confirmPickup } from '../../services/claims'
 import { transactionalClaim } from '../../services/listings'
-import { doc, updateDoc, increment, setDoc } from 'firebase/firestore'
-import { db } from '../../services/firebase'
+import { supabase } from '../../services/supabase'
 import { useAuth } from '../../contexts/AuthContext'
 import { useToast } from '../../contexts/ToastContext'
 import { useOnlineStatus } from '../../hooks/useOnlineStatus'
@@ -38,13 +37,13 @@ export default function ClaimFlow({ listing, onClose }) {
     setLoading(true)
     try {
       // Transactional claim — only first concurrent claimer wins
-      await transactionalClaim(listing.id, user.uid)
+      await transactionalClaim(listing.id, user.id)
 
       const expiry = new Date(Date.now() + 20 * 60 * 1000)
       const id = await createClaim(
         listing.id,
-        user.uid,
-        profile?.name || user.displayName || 'Student',
+        user.id,
+        profile?.name || user?.user_metadata?.full_name || 'Student',
         quantity
       )
 
@@ -72,15 +71,18 @@ export default function ClaimFlow({ listing, onClose }) {
       await confirmPickup(claimId)
 
       // Update host impact stats
-      await setDoc(
-        doc(db, 'users', listing.hostId),
-        {
-          'impactStats.mealsRescued': increment(quantity),
-          'impactStats.co2Saved': increment(quantity * 0.5),
-          'impactStats.pointsEarned': increment(quantity * POINTS_PER_MEAL),
-        },
-        { merge: true }
-      )
+      const { data: hostData } = await supabase
+        .from('users').select('impact_stats').eq('id', listing.hostId).single()
+      if (hostData) {
+        const prev = hostData.impact_stats || { mealsRescued: 0, co2Saved: 0, pointsEarned: 0 }
+        await supabase.from('users').update({
+          impact_stats: {
+            mealsRescued: (prev.mealsRescued || 0) + quantity,
+            co2Saved: (prev.co2Saved || 0) + quantity * 0.5,
+            pointsEarned: (prev.pointsEarned || 0) + quantity * POINTS_PER_MEAL,
+          },
+        }).eq('id', listing.hostId)
+      }
 
       setPhase(PHASES.PICKED_UP)
     } catch {
@@ -93,7 +95,7 @@ export default function ClaimFlow({ listing, onClose }) {
   async function handleRate() {
     if (claimId && rating > 0) {
       try {
-        await updateDoc(doc(db, 'claims', claimId), { rating })
+        await supabase.from('claims').update({ rating }).eq('id', claimId)
       } catch {}
     }
     toast('Thanks for helping reduce food waste! 🌱', 'success')
@@ -175,7 +177,7 @@ export default function ClaimFlow({ listing, onClose }) {
               {listing.location?.roomNumber && ` · Room ${listing.location.roomNumber}`}
             </p>
             <p className="text-xs text-gray-500 font-body">
-              Tell the host your name: <strong>{profile?.name || user.displayName}</strong>
+              Tell the host your name: <strong>{profile?.name || user?.user_metadata?.full_name}</strong>
             </p>
           </div>
 
