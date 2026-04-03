@@ -1,33 +1,35 @@
-import { supabase } from './supabase'
+import { supabase } from '../lib/supabase'
 
 const RESERVATION_MINUTES = 20
 
-function normalizeClaim(r) {
-  if (!r) return null
+function normalizeClaim(data) {
   return {
-    id: r.id,
-    listingId: r.listing_id,
-    studentId: r.student_id,
-    studentName: r.student_name,
-    quantity: r.quantity,
-    claimedAt: r.claimed_at ? { toDate: () => new Date(r.claimed_at) } : null,
-    pickedUpAt: r.picked_up_at ? { toDate: () => new Date(r.picked_up_at) } : null,
-    status: r.status,
-    reservationExpiresAt: r.reservation_expires_at ? new Date(r.reservation_expires_at) : null,
-    rating: r.rating,
+    id: data.id,
+    listingId: data.listing_id,
+    studentId: data.claimed_by,
+    studentName: data.student_name || '',
+    quantity: data.quantity || 1,
+    status: data.status === 'reserved' ? 'pending' : (data.status || 'pending'),
+    claimedAt: data.claimed_at
+      ? { toDate: () => new Date(data.claimed_at) }
+      : null,
+    reservationExpiresAt: data.reservation_expires_at
+      ? new Date(data.reservation_expires_at)
+      : null,
+    rating: data.rating || 0,
   }
 }
 
 export async function createClaim(listingId, studentId, studentName, quantity) {
-  const expiresAt = new Date(Date.now() + RESERVATION_MINUTES * 60 * 1000).toISOString()
+  const reservationExpiresAt = new Date(Date.now() + RESERVATION_MINUTES * 60 * 1000).toISOString()
 
   const { data, error } = await supabase.from('claims').insert({
     listing_id: listingId,
-    student_id: studentId,
+    claimed_by: studentId,
     student_name: studentName,
     quantity,
-    status: 'pending',
-    reservation_expires_at: expiresAt,
+    status: 'reserved',
+    reservation_expires_at: reservationExpiresAt,
     rating: null,
   }).select().single()
 
@@ -35,45 +37,53 @@ export async function createClaim(listingId, studentId, studentName, quantity) {
   return data.id
 }
 
-export async function confirmPickup(claimId, rating = null) {
+export async function confirmPickup(claimId, _rating = null) {
   const { error } = await supabase.from('claims').update({
     status: 'picked_up',
-    picked_up_at: new Date().toISOString(),
-    rating,
+    resolved_at: new Date().toISOString(),
   }).eq('id', claimId)
   if (error) throw error
 }
 
 export async function markNoShow(claimId) {
-  const { error } = await supabase.from('claims').update({ status: 'no_show' }).eq('id', claimId)
+  const { error } = await supabase.from('claims').update({
+    status: 'no_show',
+    resolved_at: new Date().toISOString(),
+  }).eq('id', claimId)
+  if (error) throw error
+}
+
+export async function submitRating(claimId, rating) {
+  const { error } = await supabase.from('claims').update({ rating }).eq('id', claimId)
   if (error) throw error
 }
 
 export function subscribeToStudentClaims(studentId, callback) {
-  async function fetchClaims() {
+  async function fetch() {
     const { data } = await supabase
       .from('claims')
       .select('*')
-      .eq('student_id', studentId)
+      .eq('claimed_by', studentId)
       .order('claimed_at', { ascending: false })
       .limit(20)
     callback((data || []).map(normalizeClaim))
   }
 
-  fetchClaims()
+  fetch()
 
   const channel = supabase
     .channel(`student-claims-${studentId}`)
-    .on('postgres_changes', { event: '*', schema: 'public', table: 'claims', filter: `student_id=eq.${studentId}` }, () => {
-      fetchClaims()
-    })
+    .on('postgres_changes', {
+      event: '*', schema: 'public', table: 'claims',
+      filter: `claimed_by=eq.${studentId}`,
+    }, fetch)
     .subscribe()
 
   return () => supabase.removeChannel(channel)
 }
 
 export function subscribeToListingClaims(listingId, callback) {
-  async function fetchClaims() {
+  async function fetch() {
     const { data } = await supabase
       .from('claims')
       .select('*')
@@ -82,19 +92,19 @@ export function subscribeToListingClaims(listingId, callback) {
     callback((data || []).map(normalizeClaim))
   }
 
-  fetchClaims()
+  fetch()
 
   const channel = supabase
     .channel(`listing-claims-${listingId}`)
-    .on('postgres_changes', { event: '*', schema: 'public', table: 'claims', filter: `listing_id=eq.${listingId}` }, () => {
-      fetchClaims()
-    })
+    .on('postgres_changes', {
+      event: '*', schema: 'public', table: 'claims',
+      filter: `listing_id=eq.${listingId}`,
+    }, fetch)
     .subscribe()
 
   return () => supabase.removeChannel(channel)
 }
 
 export async function submitReport(data) {
-  // Just log for now — can add a reports table later
-  console.warn('Report submitted:', data)
+  console.warn('submitReport called — reports table not in schema, logging:', data)
 }

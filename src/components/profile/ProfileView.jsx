@@ -7,8 +7,7 @@ import { Skeleton } from '../ui/Skeleton'
 import { useAuth } from '../../contexts/AuthContext'
 import { useToast } from '../../contexts/ToastContext'
 import { useClaims } from '../../hooks/useClaims'
-import { logOut } from '../../services/auth'
-import { supabase } from '../../services/supabase'
+import { logOut, updateUserProfile } from '../../services/auth'
 import { useNavigate } from 'react-router-dom'
 
 const DIETARY_OPTIONS = ['vegan', 'vegetarian', 'halal', 'gluten-free', 'nut-free', 'dairy-free']
@@ -152,16 +151,14 @@ export default function ProfileView() {
   }
 
   async function saveDietaryPrefs(prefs) {
-    const { error } = await supabase.from('users').update({ dietary_prefs: prefs }).eq('id', user.id)
-    if (error) throw error
+    await updateUserProfile(user.uid, { dietaryPrefs: prefs })
   }
 
   async function switchRole() {
     setSwitchingRole(true)
     const newRole = isOrganizer ? 'student' : 'organizer'
     try {
-      const { error } = await supabase.from('users').update({ role: newRole }).eq('id', user.id)
-      if (error) throw error
+      await updateUserProfile(user.uid, { role: newRole })
       toast(`Switched to ${newRole === 'organizer' ? 'Event Organizer' : 'Student'} mode`, 'success')
     } catch {
       toast('Could not switch role', 'error')

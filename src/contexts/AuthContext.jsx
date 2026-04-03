@@ -1,12 +1,12 @@
 import { createContext, useContext, useEffect, useReducer, useCallback } from 'react'
-import { supabase } from '../services/supabase'
-import { onAuthChange, getUserProfile, updateLastSeen } from '../services/auth'
+import { supabase } from '../lib/supabase'
+import { getUserProfile, updateLastSeen } from '../services/auth'
 
 const AuthContext = createContext(null)
 
 const initialState = {
-  user: null,
-  profile: null,
+  user: null,     // normalized auth user (with .uid, .displayName, .photoURL)
+  profile: null,  // users table row (normalized)
   loading: true,
   error: null,
 }
@@ -21,28 +21,40 @@ function authReducer(state, action) {
   }
 }
 
+function normalizeUser(supabaseUser) {
+  if (!supabaseUser) return null
+  return {
+    ...supabaseUser,
+    uid: supabaseUser.id,
+    displayName:
+      supabaseUser.user_metadata?.full_name ||
+      supabaseUser.email?.split('@')[0] ||
+      'User',
+    photoURL: supabaseUser.user_metadata?.avatar_url || null,
+    email: supabaseUser.email,
+  }
+}
+
 export function AuthProvider({ children }) {
   const [state, dispatch] = useReducer(authReducer, initialState)
 
   useEffect(() => {
     let profileChannel = null
 
-    const unsub = onAuthChange(async (supabaseUser) => {
-      // Clean up previous profile subscription
-      if (profileChannel) { supabase.removeChannel(profileChannel); profileChannel = null }
-
+    async function handleSession(supabaseUser) {
       if (!supabaseUser) {
+        if (profileChannel) { supabase.removeChannel(profileChannel); profileChannel = null }
         dispatch({ type: 'CLEAR' })
         return
       }
 
-      dispatch({ type: 'SET_USER', user: supabaseUser })
+      const user = normalizeUser(supabaseUser)
+      dispatch({ type: 'SET_USER', user })
 
-      // Fetch profile
       const profile = await getUserProfile(supabaseUser.id)
       dispatch({ type: 'SET_PROFILE', profile })
 
-      // Live-listen to profile changes
+      if (profileChannel) { supabase.removeChannel(profileChannel) }
       profileChannel = supabase
         .channel(`profile-${supabaseUser.id}`)
         .on('postgres_changes', {
@@ -57,17 +69,25 @@ export function AuthProvider({ children }) {
         .subscribe()
 
       updateLastSeen(supabaseUser.id).catch(() => {})
+    }
+
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      handleSession(session?.user || null)
+    })
+
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      handleSession(session?.user || null)
     })
 
     return () => {
-      unsub()
+      subscription.unsubscribe()
       if (profileChannel) supabase.removeChannel(profileChannel)
     }
   }, [])
 
   const refreshProfile = useCallback(async () => {
     if (!state.user) return
-    const p = await getUserProfile(state.user.id)
+    const p = await getUserProfile(state.user.uid)
     dispatch({ type: 'SET_PROFILE', profile: p })
   }, [state.user])
 

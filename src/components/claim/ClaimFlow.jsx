@@ -3,9 +3,9 @@ import { Star, CheckCircle, MapPin, Clock } from '@phosphor-icons/react'
 import Modal from '../ui/Modal'
 import Button from '../ui/Button'
 import ReservationTimer from './ReservationTimer'
-import { createClaim, confirmPickup } from '../../services/claims'
+import { createClaim, confirmPickup, submitRating } from '../../services/claims'
 import { transactionalClaim } from '../../services/listings'
-import { supabase } from '../../services/supabase'
+import { incrementHostImpactStats } from '../../services/auth'
 import { useAuth } from '../../contexts/AuthContext'
 import { useToast } from '../../contexts/ToastContext'
 import { useOnlineStatus } from '../../hooks/useOnlineStatus'
@@ -36,7 +36,6 @@ export default function ClaimFlow({ listing, onClose }) {
     }
     setLoading(true)
     try {
-      // Transactional claim — only first concurrent claimer wins
       await transactionalClaim(listing.id, user.id)
 
       const expiry = new Date(Date.now() + 20 * 60 * 1000)
@@ -69,21 +68,7 @@ export default function ClaimFlow({ listing, onClose }) {
     setLoading(true)
     try {
       await confirmPickup(claimId)
-
-      // Update host impact stats
-      const { data: hostData } = await supabase
-        .from('users').select('impact_stats').eq('id', listing.hostId).single()
-      if (hostData) {
-        const prev = hostData.impact_stats || { mealsRescued: 0, co2Saved: 0, pointsEarned: 0 }
-        await supabase.from('users').update({
-          impact_stats: {
-            mealsRescued: (prev.mealsRescued || 0) + quantity,
-            co2Saved: (prev.co2Saved || 0) + quantity * 0.5,
-            pointsEarned: (prev.pointsEarned || 0) + quantity * POINTS_PER_MEAL,
-          },
-        }).eq('id', listing.hostId)
-      }
-
+      await incrementHostImpactStats(listing.hostId, quantity)
       setPhase(PHASES.PICKED_UP)
     } catch {
       toast('Could not confirm pickup. Try again.', 'error')
@@ -95,7 +80,7 @@ export default function ClaimFlow({ listing, onClose }) {
   async function handleRate() {
     if (claimId && rating > 0) {
       try {
-        await supabase.from('claims').update({ rating }).eq('id', claimId)
+        await submitRating(claimId, rating)
       } catch {}
     }
     toast('Thanks for helping reduce food waste! 🌱', 'success')
