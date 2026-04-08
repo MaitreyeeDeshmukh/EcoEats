@@ -29,6 +29,7 @@ export interface UserRow {
   dietary_prefs: string[];
   impact_stats: ImpactStats;
   reputation_score: number;
+  host_building: string | null;
   last_seen: string;
   created_at: string;
 }
@@ -42,6 +43,7 @@ export interface UserInsert {
   dietary_prefs?: string[];
   impact_stats?: ImpactStats;
   reputation_score?: number;
+  host_building?: string | null;
 }
 
 export interface UserUpdate {

@@ -1,7 +1,11 @@
+import { ImpactStats } from './database';
+
 export type DietaryTag = 'vegetarian' | 'vegan' | 'halal' | 'kosher' | 'gluten-free';
 export type ListingStatus = 'active' | 'claimed' | 'expired' | 'cancelled';
 export type ClaimStatus = 'pending' | 'picked_up' | 'no_show';
 export type UserRole = 'student' | 'organizer';
+
+export { ImpactStats };
 
 export interface Location {
   lat: number;
@@ -17,9 +21,11 @@ export interface User {
   avatar: string | null;
   role: UserRole;
   dietaryPrefs: DietaryTag[];
-  hostBuilding: string;
+  hostBuilding: string | null;
   impactStats: ImpactStats;
   reputationScore: number;
+  lastSeen: Date;
+  createdAt: Date;
 }
 
 export interface Listing {
@@ -52,12 +58,6 @@ export interface Claim {
   pickedUpAt: Date | null;
   reservationExpiresAt: Date;
   rating: number | null;
-}
-
-export interface ImpactStats {
-  mealsRescued: number;
-  co2Saved: number;
-  pointsEarned: number;
 }
 
 export interface Filters {
