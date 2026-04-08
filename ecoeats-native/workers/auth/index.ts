@@ -10,7 +10,7 @@ export interface Env {
 }
 
 export default {
-  async fetch(request: Request, env: Env): Promise<Response> {
+  async fetch(request: Request, env: Env, ctx: ExecutionContext): Promise<Response> {
     const sendEmail = createEmailSender(env.RESEND_API_KEY);
     
     const auth = betterAuth({
@@ -55,6 +55,14 @@ export default {
       ],
     });
 
-    return auth.handler(request);
+    try {
+      return await auth.handler(request);
+    } catch (error) {
+      console.error('Auth handler error:', error);
+      return new Response(JSON.stringify({ error: 'Internal server error' }), {
+        status: 500,
+        headers: { 'Content-Type': 'application/json' },
+      });
+    }
   },
 };
