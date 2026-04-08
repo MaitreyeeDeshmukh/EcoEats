@@ -1,6 +1,5 @@
 // src/services/auth-client.ts
 import * as SecureStore from 'expo-secure-store';
-import { Platform } from 'react-native';
 
 const AUTH_URL = process.env.EXPO_PUBLIC_AUTH_URL || 'http://localhost:8787';
 const TOKEN_KEY = 'ecoeats_session';
@@ -26,19 +25,38 @@ class AuthClient {
   private listeners: Set<(session: Session | null) => void> = new Set();
 
   async getSession(): Promise<Session | null> {
-    if (this.session) return this.session;
+    if (this.session) {
+      if (this.session.expiresAt <= new Date()) {
+        this.session = null;
+        await SecureStore.deleteItemAsync(TOKEN_KEY);
+        return null;
+      }
+      return this.session;
+    }
 
     const stored = await SecureStore.getItemAsync(TOKEN_KEY);
     if (!stored) return null;
 
     try {
       const parsed = JSON.parse(stored);
-      this.session = {
+      if (!parsed || typeof parsed !== 'object' || !parsed.id || !parsed.userId || !parsed.expiresAt || !parsed.user) {
+        console.warn('Invalid session data structure');
+        await SecureStore.deleteItemAsync(TOKEN_KEY);
+        return null;
+      }
+      const session: Session = {
         ...parsed,
         expiresAt: new Date(parsed.expiresAt),
       };
+      if (session.expiresAt <= new Date()) {
+        await SecureStore.deleteItemAsync(TOKEN_KEY);
+        return null;
+      }
+      this.session = session;
       return this.session;
-    } catch {
+    } catch (error) {
+      console.warn('Failed to parse session:', error);
+      await SecureStore.deleteItemAsync(TOKEN_KEY);
       return null;
     }
   }
@@ -95,8 +113,8 @@ class AuthClient {
           body: JSON.stringify({ refreshToken }),
         });
       }
-    } catch {
-      // Ignore signout errors
+    } catch (error) {
+      console.warn('Sign out request failed:', error);
     }
 
     this.session = null;
