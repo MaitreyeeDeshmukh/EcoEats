@@ -1,5 +1,8 @@
 // src/utils/formatters.ts
 export function formatDistance(meters: number): string {
+  if (!Number.isFinite(meters) || meters < 0) {
+    return '--';
+  }
   if (meters < 1000) {
     return `${Math.round(meters)}m`;
   }

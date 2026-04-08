@@ -2,10 +2,11 @@
 const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
 export function validateEmail(email: string): string | null {
-  if (!email.trim()) {
+  const trimmed = email.trim();
+  if (!trimmed) {
     return 'Email is required';
   }
-  if (!EMAIL_REGEX.test(email)) {
+  if (!EMAIL_REGEX.test(trimmed)) {
     return 'Invalid email format';
   }
   return null;
@@ -32,11 +33,17 @@ export function validateTitle(title: string): string | null {
 }
 
 export function validateQuantity(quantity: number): string | null {
+  if (!Number.isFinite(quantity)) {
+    return 'Quantity must be a valid number';
+  }
   if (quantity < 1) {
     return 'Quantity must be at least 1';
   }
   if (quantity > 100) {
     return 'Quantity cannot exceed 100';
+  }
+  if (!Number.isInteger(quantity)) {
+    return 'Quantity must be a whole number';
   }
   return null;
 }

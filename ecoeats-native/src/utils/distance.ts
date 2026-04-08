@@ -8,6 +8,18 @@ export function calculateDistance(
   from: Coordinates,
   to: Coordinates
 ): number {
+  // Validate coordinates
+  if (!Number.isFinite(from.lat) || !Number.isFinite(from.lng) ||
+      !Number.isFinite(to.lat) || !Number.isFinite(to.lng)) {
+    return NaN;
+  }
+  if (from.lat < -90 || from.lat > 90 || to.lat < -90 || to.lat > 90) {
+    return NaN;
+  }
+  if (from.lng < -180 || from.lng > 180 || to.lng < -180 || to.lng > 180) {
+    return NaN;
+  }
+
   const R = 6371000; // Earth's radius in meters
   const lat1 = (from.lat * Math.PI) / 180;
   const lat2 = (to.lat * Math.PI) / 180;
