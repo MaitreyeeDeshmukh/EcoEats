@@ -35,8 +35,10 @@ export default {
 			plugins: [
 				magicLink({
 					sendMagicLink: async ({ email, token, url }) => {
-						const deepLinkUrl = `ecoeats://auth/callback?token=${token}`;
-						const webUrl = `${url}?token=${token}`;
+						const deepLinkUrl = `ecoeats://auth/callback?token=${encodeURIComponent(token)}`;
+						const webLink = new URL(url);
+						webLink.searchParams.set("token", token);
+						const webUrl = webLink.toString();
 
 						await sendEmail({
 							to: email,

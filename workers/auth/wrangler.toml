@@ -9,11 +9,3 @@ head_sampling_rate = 1
 
 [vars]
 ENVIRONMENT = "development"
-
-[build]
-command = "npm run build"
-
-[secrets]
-SUPABASE_DB_URL
-RESEND_API_KEY
-BETTER_AUTH_SECRET

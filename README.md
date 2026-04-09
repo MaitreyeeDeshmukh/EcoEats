@@ -27,7 +27,7 @@ bun run web     # Web browser
 
 | Layer | Technology |
 |-------|------------|
-| Framework | Expo SDK 52 + Expo Router |
+| Framework | Expo SDK 55 + Expo Router |
 | Language | TypeScript (strict mode) |
 | Styling | NativeWind (Tailwind CSS for RN) |
 | State | Zustand + React Context |
@@ -82,13 +82,13 @@ Run all checks before committing:
 
 ```bash
 # TypeScript type check
-npx tsc --noEmit
+bunx tsc --noEmit
 
 # Biome linting and formatting
-npx biome check .
+bunx biome check .
 
 # Find unused exports
-npx knip
+bunx knip
 ```
 
 ## 🔐 Authentication Flow
@@ -173,61 +173,85 @@ Listings and claims use Supabase Realtime for live updates:
 ## 📝 Notes
 
 - **NativeWind v4**: Uses `className` prop directly (no `styled()` wrapper)
-- **Expo Router**: File-based routing with typed routes
-- **SecureStore**: Tokens stored securely on device
-- **Biome**: Used for linting and formatting (replaced ESLint/Prettier)
+- **TailwindCSS version**: keep on **v3** in this repo (NativeWind Metro integration is v3-only here)
+- **Expo Router**: file-based routing with typed routes
+- **Biome**: linting + formatting (replaces ESLint/Prettier)
 
-## 🚧 Remaining Implementation
+## 🔄 Dependency Upgrade Status
 
-The core migration from React PWA to Expo is complete. The following features still need implementation:
+Dependencies were upgraded and validated using Expo's recommended flow:
 
-### High Priority
+1. `bun update --latest`
+2. `bunx expo install --fix` (re-align to SDK-compatible native versions)
+3. `bunx expo-doctor`
 
-| Feature | Status | Notes |
-|---------|--------|-------|
-| **Map View** | Placeholder | Need platform-specific implementations (iOS: Apple Maps, Android: Google Maps, Web: Leaflet) |
-| **Post Listing Form** | Placeholder | Create listing UI for organizers |
-| **Claim Flow UI** | Services done | Need modal/sheet for claim confirmation and pickup |
+### Important dependency policy
 
-### Medium Priority
+For Expo apps, "latest" means **latest compatible with the current Expo SDK** for native modules.  
+This repo is now on the latest SDK 55-compatible dependency set.
 
-| Feature | Status | Notes |
-|---------|--------|-------|
-| **Impact Dashboard** | Placeholder | Stats visualization with charts |
-| **Filter Bar** | Services done | Dietary/time/radius filters in feed |
-| **Profile Edit** | Services done | Update name, dietary prefs, avatar |
+## ✅ What was re-verified after upgrades
 
-### Low Priority
+- Type-check and lint pass (`bunx tsc --noEmit`, `bunx biome check .`)
+- Expo doctor passes (`bunx expo-doctor`)
+- Web runtime boots on `http://localhost:8081` without runtime overlay errors
+- Browser automation smoke checks pass for unauth + auth-gated routes
 
-| Feature | Status | Notes |
-|---------|--------|-------|
-| **useLocation hook** | Not created | GPS via expo-location |
-| **useOnlineStatus hook** | Not created | Network detection via NetInfo |
-| **Constants** | Hardcoded | routes.ts, categories.ts extraction |
+## 🛡 Edge Cases Addressed
 
-### Testing & Deployment
+| Area | Edge case | Resolution |
+|------|-----------|------------|
+| Auth redirect guard | Route-group path mismatches caused blank/loop states | Guard now checks route groups correctly and redirects via public paths (`/login`, `/`) |
+| Auth callback | Invalid token/errors could surface runtime overlay | Callback now handles errors safely and redirects with toast feedback |
+| Better Auth endpoints | Legacy endpoint/method mismatch risk after dependency upgrades | Client aligned to Better Auth magic-link routes (`/sign-in/magic-link`, `GET /magic-link/verify`, `/sign-out`) |
+| Web session storage | AsyncStorage-on-web instability across environments | Web auth session persistence uses `localStorage` with guarded access |
+| NativeWind/Tailwind | Tailwind v4 breaks Metro in this setup | Tailwind pinned to v3 and documented |
+| Expo config | Invalid app config and missing peer dependency blocked health checks | Fixed app config + installed `react-native-worklets` |
+| Worker email links | Link generation could produce malformed verify URLs | Worker now uses `URL` API and encoded deep-link token |
+| Worker deploy config | Wrangler build command referenced missing script | Removed invalid build config from `wrangler.toml` |
 
-| Phase | Status |
-|-------|--------|
-| iOS Simulator testing | ❌ Not started |
-| Android Emulator testing | ❌ Not started |
-| Web browser testing | ❌ Not started |
-| EAS build configuration | ❌ Not started |
-| App Store submission | ❌ Not started |
-| Google Play submission | ❌ Not started |
+## 🧭 Detailed Plan to Finish MVP Migration
 
-### Implementation Order (Recommended)
+1. **Core screens completion**
+   - Implement map screen (native maps + web map fallback)
+   - Implement post listing creation flow (organizer-only UX + validation)
+   - Implement claims flow UI (claim/pickup/no-show/rating)
+   - Implement impact dashboard with real user stats
+2. **Auth + backend hardening**
+   - Deploy auth worker with production secrets
+   - Verify trusted origins (prod + dev + app scheme)
+   - Validate auth callback URLs for web and deep-link flows
+   - Finalize Supabase RLS/policies for `users`, `listings`, `claims`
+3. **Product parity and UX**
+   - Add filter bar UI and listing details/claim CTA flow
+   - Add profile editing (name/avatar/dietary)
+   - Add empty/error/offline states for all primary tabs
+4. **Release readiness**
+   - Add `eas.json` and build profiles
+   - Replace Google Maps API key placeholders
+   - Run full iOS/Android/Web QA pass + regression checks
+   - Prepare deployment playbook (web + worker + mobile builds)
 
-1. **Map View** - Core feature, enables location-based discovery
-2. **Claim Flow UI** - Completes the claim → pickup → rating loop
-3. **Post Listing Form** - Enables organizers to create listings
-4. **Impact Dashboard** - Gamification and user engagement
-5. **Profile Edit** - User settings
-6. **Platform Testing** - Verify on all 3 platforms
-7. **Store Deployment** - App Store + Google Play
-
-See `docs/superpowers/specs/2026-04-08-expo-migration-design.md` and `docs/superpowers/plans/2026-04-08-expo-migration.md` for full migration details.
+See `docs/superpowers/specs/2026-04-08-expo-migration-design.md` and `docs/superpowers/plans/2026-04-08-expo-migration.md` for the source migration spec/plan.
 
 ## 📄 License
 
 MIT
+
+## ✅ MVP Ready Checklist (Bottom)
+
+- [ ] Deploy auth worker to production (`wrangler deploy`) with all required secrets set
+- [ ] Confirm Better Auth trusted origins for production web domain and app deep-link scheme
+- [ ] Finalize and apply Supabase schema + RLS policies for `users`, `listings`, `claims`
+- [ ] Replace `YOUR_GOOGLE_MAPS_API_KEY` placeholders in `app.json`
+- [ ] Add `eas.json` with dev/preview/prod profiles and verify EAS build setup
+- [ ] Implement **Map** tab (real map + markers + listing interactions)
+- [ ] Implement **Post** tab (create listing form + organizer permissions)
+- [ ] Implement **Claims** tab flow (pending/pickup/no-show/rating UI)
+- [ ] Implement **Impact** tab (stats cards/charts from profile impact data)
+- [ ] Implement feed detail/claim path from `ListingCard` tap
+- [ ] Implement filter bar UI and wire to existing filter store logic
+- [ ] Add profile edit UI for name/avatar/dietary preferences
+- [ ] Add robust offline/error/empty states for all main screens
+- [ ] Run cross-platform QA: web, iOS simulator, Android emulator
+- [ ] Prepare release checklist for web deployment + App Store + Play Store

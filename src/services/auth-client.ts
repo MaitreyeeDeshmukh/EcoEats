@@ -1,29 +1,97 @@
 // src/services/auth-client.ts
 import * as SecureStore from "expo-secure-store";
 import { Platform } from "react-native";
-import AsyncStorage from "@react-native-async-storage/async-storage";
 
 const AUTH_URL = process.env.EXPO_PUBLIC_AUTH_URL || "http://localhost:8787";
 const TOKEN_KEY = "ecoeats_session";
-const REFRESH_TOKEN_KEY = "ecoeats_refresh";
 
-// Storage adapter: AsyncStorage for web, SecureStore for native
+function getMagicLinkCallbackURL(): string {
+	if (Platform.OS === "web" && typeof window !== "undefined") {
+		return `${window.location.origin}/auth/callback`;
+	}
+	return "ecoeats://auth/callback";
+}
+
+function getMagicLinkErrorCallbackURL(): string {
+	if (Platform.OS === "web" && typeof window !== "undefined") {
+		return `${window.location.origin}/login`;
+	}
+	return "ecoeats://login";
+}
+
+async function readErrorMessage(
+	response: Response,
+	fallback: string,
+): Promise<string> {
+	try {
+		const payload = await response.json();
+		if (
+			payload &&
+			typeof payload === "object" &&
+			"message" in payload &&
+			typeof payload.message === "string"
+		) {
+			return payload.message;
+		}
+		if (
+			payload &&
+			typeof payload === "object" &&
+			"error" in payload &&
+			typeof payload.error === "string"
+		) {
+			return payload.error;
+		}
+	} catch (error) {
+		console.warn("Failed to parse auth error response:", error);
+	}
+	return fallback;
+}
+
+const webStorage = {
+	getItem: async (key: string): Promise<string | null> => {
+		if (typeof window === "undefined") return null;
+		try {
+			return window.localStorage.getItem(key);
+		} catch (error) {
+			console.warn("Failed to read localStorage:", error);
+			return null;
+		}
+	},
+	setItem: async (key: string, value: string): Promise<void> => {
+		if (typeof window === "undefined") return;
+		try {
+			window.localStorage.setItem(key, value);
+		} catch (error) {
+			console.warn("Failed to write localStorage:", error);
+		}
+	},
+	deleteItem: async (key: string): Promise<void> => {
+		if (typeof window === "undefined") return;
+		try {
+			window.localStorage.removeItem(key);
+		} catch (error) {
+			console.warn("Failed to delete localStorage:", error);
+		}
+	},
+};
+
+// Storage adapter: localStorage for web, SecureStore for native
 const storage = {
 	getItem: async (key: string): Promise<string | null> => {
 		if (Platform.OS === "web") {
-			return AsyncStorage.getItem(key);
+			return webStorage.getItem(key);
 		}
 		return SecureStore.getItemAsync(key);
 	},
 	setItem: async (key: string, value: string): Promise<void> => {
 		if (Platform.OS === "web") {
-			return AsyncStorage.setItem(key, value);
+			return webStorage.setItem(key, value);
 		}
 		return SecureStore.setItemAsync(key, value);
 	},
 	deleteItem: async (key: string): Promise<void> => {
 		if (Platform.OS === "web") {
-			return AsyncStorage.removeItem(key);
+			return webStorage.deleteItem(key);
 		}
 		return SecureStore.deleteItemAsync(key);
 	},
@@ -93,28 +161,40 @@ class AuthClient {
 	}
 
 	async requestMagicLink(email: string): Promise<void> {
-		const response = await fetch(`${AUTH_URL}/api/auth/magic-link`, {
+		const callbackURL = getMagicLinkCallbackURL();
+		const errorCallbackURL = getMagicLinkErrorCallbackURL();
+		const response = await fetch(`${AUTH_URL}/api/auth/sign-in/magic-link`, {
 			method: "POST",
 			headers: { "Content-Type": "application/json" },
-			body: JSON.stringify({ email }),
+			credentials: "include",
+			body: JSON.stringify({
+				email,
+				callbackURL,
+				errorCallbackURL,
+			}),
 		});
 
 		if (!response.ok) {
-			const error = await response.json();
-			throw new Error(error.message || "Failed to send magic link");
+			throw new Error(
+				await readErrorMessage(response, "Failed to send magic link"),
+			);
 		}
 	}
 
 	async verifyMagicLink(token: string): Promise<Session> {
-		const response = await fetch(`${AUTH_URL}/api/auth/magic-link/verify`, {
-			method: "POST",
-			headers: { "Content-Type": "application/json" },
-			body: JSON.stringify({ token }),
-		});
+		const params = new URLSearchParams({ token });
+		const response = await fetch(
+			`${AUTH_URL}/api/auth/magic-link/verify?${params.toString()}`,
+			{
+				method: "GET",
+				credentials: "include",
+			},
+		);
 
 		if (!response.ok) {
-			const error = await response.json();
-			throw new Error(error.message || "Failed to verify magic link");
+			throw new Error(
+				await readErrorMessage(response, "Failed to verify magic link"),
+			);
 		}
 
 		const data = await response.json();
@@ -127,31 +207,22 @@ class AuthClient {
 		// Store session
 		await storage.setItem(TOKEN_KEY, JSON.stringify(session));
 
-		if (data.refreshToken) {
-			await storage.setItem(REFRESH_TOKEN_KEY, data.refreshToken);
-		}
-
 		this.notifyListeners();
 		return session;
 	}
 
 	async signOut(): Promise<void> {
 		try {
-			const refreshToken = await storage.getItem(REFRESH_TOKEN_KEY);
-			if (refreshToken) {
-				await fetch(`${AUTH_URL}/api/auth/signout`, {
-					method: "POST",
-					headers: { "Content-Type": "application/json" },
-					body: JSON.stringify({ refreshToken }),
-				});
-			}
+			await fetch(`${AUTH_URL}/api/auth/sign-out`, {
+				method: "POST",
+				credentials: "include",
+			});
 		} catch (error) {
 			console.warn("Sign out request failed:", error);
 		}
 
 		this.session = null;
 		await storage.deleteItem(TOKEN_KEY);
-		await storage.deleteItem(REFRESH_TOKEN_KEY);
 		this.notifyListeners();
 	}
 

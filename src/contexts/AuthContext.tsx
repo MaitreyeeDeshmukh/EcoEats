@@ -34,10 +34,17 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
 	useEffect(() => {
 		// Check for stored session on mount
-		authClient.getSession().then((session) => {
-			setSession(session);
-			setLoading(false);
-		});
+		authClient
+			.getSession()
+			.then((session) => {
+				setSession(session);
+			})
+			.catch((error) => {
+				console.error(error);
+			})
+			.finally(() => {
+				setLoading(false);
+			});
 
 		// Subscribe to session changes
 		const unsubscribe = authClient.onSessionChange((session) => {
