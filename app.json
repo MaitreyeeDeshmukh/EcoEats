@@ -6,7 +6,7 @@
 		"orientation": "portrait",
 		"scheme": "ecoeats",
 		"icon": "./assets/icon.png",
-		"userInterfaceStyle": "automatic",
+		"userInterfaceStyle": "light",
 		"newArchEnabled": true,
 		"splash": {
 			"image": "./assets/splash.png",
