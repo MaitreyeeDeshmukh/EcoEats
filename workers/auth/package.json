@@ -5,10 +5,13 @@
 	"scripts": {
 		"dev": "wrangler dev",
 		"deploy": "wrangler deploy",
+		"deploy:staging": "wrangler deploy --env staging",
+		"deploy:prod": "wrangler deploy --env production",
 		"migrate": "npx @better-auth/cli@latest migrate"
 	},
 	"dependencies": {
-		"better-auth": "^1.6.1"
+		"better-auth": "^1.6.1",
+		"hono": "^4.12.12"
 	},
 	"devDependencies": {
 		"@cloudflare/workers-types": "^4.20260409.1",
