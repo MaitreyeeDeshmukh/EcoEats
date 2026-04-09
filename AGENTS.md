@@ -10,10 +10,14 @@ bun run ios     # Run on iOS Simulator
 bun run android # Run on Android Emulator
 bun run web     # Run on web browser
 
-# Verification
-bunx tsc --noEmit # TypeScript check
-bunx biome check . # Linting + formatting
-bunx knip         # Find unused exports
+# Verification (run all before committing)
+bunx tsc --noEmit   # TypeScript check
+bunx biome check .  # Linting + formatting
+bunx knip           # Find unused exports
+
+# Auth worker (separate package)
+cd workers/auth && bun run dev     # Local dev
+cd workers/auth && bun run deploy  # Deploy to Cloudflare
 ```
 
 ## Environment
@@ -33,7 +37,7 @@ EXPO_PUBLIC_AUTH_URL=https://auth.ecoeats.app
 ## Structure
 
 ```
-app/                # Expo Router file-based routes
+app/                # Expo Router file-based routes (typed routes enabled)
   (auth)/           # Auth screens (login, onboarding, callback)
   (tabs)/           # Tab navigation (feed, map, post, claims, impact, profile)
 src/
@@ -41,40 +45,34 @@ src/
     ui/             # Generic UI (Button, Card, Input, Badge, Spinner)
     features/       # Domain components (ListingCard)
   services/         # API layer (Supabase, auth-client)
-  stores/           # Zustand stores (listings, cart)
+  stores/           # Zustand stores with subscribeWithSelector middleware
   contexts/         # React contexts (Auth, Toast)
   types/            # TypeScript types
   utils/            # Utilities
-workers/auth/       # Cloudflare Worker for Better Auth
+workers/auth/       # Cloudflare Worker for Better Auth (separate package.json)
 ```
-
-## Routes
-
-| Path | Screen |
-|------|--------|
-| /login | Magic link login |
-| /onboarding | Role selection |
-| /auth/callback | Deep link handler |
-| / | Feed (home) |
-| /map | Map view |
-| /post | Create listing (organizers) |
-| /claims | Your claimed items |
-| /impact | Environmental stats |
-| /profile | User profile |
 
 ## Tech Stack
 
-- **Framework**: Expo SDK 52 + Expo Router
+- **Framework**: Expo SDK 54 + Expo Router
 - **Language**: TypeScript (strict mode)
-- **Styling**: NativeWind (Tailwind CSS for RN)
+- **Styling**: NativeWind v4 (Tailwind CSS for RN)
 - **State**: Zustand + React Context
-- **Auth**: Better Auth (magic link)
-- **Database**: Supabase PostgreSQL
+- **Auth**: Better Auth (magic link) via Cloudflare Worker
+- **Database**: Supabase PostgreSQL with Realtime
 - **Linting**: Biome (not ESLint/Prettier)
+
+## Code Conventions
+
+- Path alias: `@/*` maps to `./src/*`
+- Biome formatting: tabs, 80 char line width, double quotes, trailing commas
+- Zustand stores use `subscribeWithSelector` middleware for subscriptions
 
 ## Gotchas
 
 - NativeWind v4 uses `className` directly (no `styled()` wrapper)
-- Expo Router uses file-based routing (routes defined by file structure)
+- Expo Router uses file-based routing with typed routes (`"typedRoutes": true`)
 - Auth tokens stored in SecureStore on mobile
 - Deep link scheme: `ecoeats://auth/callback?token=xxx`
+- Listings store auto-subscribes to Supabase Realtime via `useListingsSubscription()`
+- Auth worker is a separate package in `workers/auth/` with its own dependencies
