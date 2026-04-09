@@ -42,7 +42,7 @@ export async function createClaim(
     throw new Error('Already claimed');
   }
 
-  // Check listing availability
+  // Get current listing state
   const { data: listing, error: fetchError } = await supabase
     .from('listings')
     .select('quantity_remaining, status')
@@ -61,6 +61,22 @@ export async function createClaim(
     throw new Error('Not enough portions remaining');
   }
 
+  // Atomic update with optimistic locking
+  const newQuantity = listing.quantity_remaining - quantity;
+  const { error: updateError, count } = await supabase
+    .from('listings')
+    .update({
+      quantity_remaining: newQuantity,
+      status: newQuantity === 0 ? 'claimed' : 'active',
+    })
+    .eq('id', listingId)
+    .eq('quantity_remaining', listing.quantity_remaining) // Optimistic lock
+    .eq('status', 'active');
+
+  if (updateError || count === 0) {
+    throw new Error('Listing was modified by another user. Please try again.');
+  }
+
   // Create claim
   const { data: claim, error: claimError } = await supabase
     .from('claims')
@@ -76,16 +92,6 @@ export async function createClaim(
     .single();
 
   if (claimError) throw claimError;
-
-  // Update listing quantity
-  const newQuantity = listing.quantity_remaining - quantity;
-  await supabase
-    .from('listings')
-    .update({
-      quantity_remaining: newQuantity,
-      status: newQuantity === 0 ? 'claimed' : 'active',
-    })
-    .eq('id', listingId);
 
   return claim.id;
 }
@@ -155,14 +161,19 @@ export function subscribeToStudentClaims(
   callback: (claims: Claim[]) => void
 ): () => void {
   async function fetch() {
-    const { data } = await supabase
-      .from('claims')
-      .select('*')
-      .eq('student_id', studentId)
-      .order('claimed_at', { ascending: false })
-      .limit(20);
+    try {
+      const { data, error } = await supabase
+        .from('claims')
+        .select('*')
+        .eq('student_id', studentId)
+        .order('claimed_at', { ascending: false })
+        .limit(20);
 
-    callback((data || []).map(normalizeClaim));
+      if (error) throw error;
+      callback((data || []).map(normalizeClaim));
+    } catch (err) {
+      console.error('Failed to fetch claims:', err);
+    }
   }
 
   fetch();
@@ -189,13 +200,18 @@ export function subscribeToListingClaims(
   callback: (claims: Claim[]) => void
 ): () => void {
   async function fetch() {
-    const { data } = await supabase
-      .from('claims')
-      .select('*')
-      .eq('listing_id', listingId)
-      .order('claimed_at', { ascending: false });
+    try {
+      const { data, error } = await supabase
+        .from('claims')
+        .select('*')
+        .eq('listing_id', listingId)
+        .order('claimed_at', { ascending: false });
 
-    callback((data || []).map(normalizeClaim));
+      if (error) throw error;
+      callback((data || []).map(normalizeClaim));
+    } catch (err) {
+      console.error('Failed to fetch listing claims:', err);
+    }
   }
 
   fetch();

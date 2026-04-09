@@ -11,7 +11,6 @@ function normalizeUser(row: UserRow): User {
     avatar: row.avatar_url,
     role: row.role as UserRole,
     dietaryPrefs: (row.dietary_prefs || []) as DietaryTag[],
-    hostBuilding: '',
     impactStats: row.impact_stats || { mealsRescued: 0, co2Saved: 0, pointsEarned: 0 },
     reputationScore: row.reputation_score || 100,
     lastSeen: new Date(row.last_seen),
@@ -83,7 +82,7 @@ export async function incrementUserImpactStats(
     })
     .eq('id', userId);
 
-  if (error) console.warn('Failed to update impact stats:', error.message);
+  if (error) throw error;
 }
 
 export async function createUserProfile(

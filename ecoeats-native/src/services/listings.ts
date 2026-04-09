@@ -50,7 +50,7 @@ export function subscribeToActiveListings(
   // Initial fetch
   fetchActiveListings()
     .then(callback)
-    .catch(console.error);
+    .catch((err) => console.error('Failed to fetch listings:', err));
 
   // Subscribe to realtime changes
   const channel = supabase
@@ -61,7 +61,7 @@ export function subscribeToActiveListings(
       () => {
         fetchActiveListings()
           .then(callback)
-          .catch(console.error);
+          .catch((err) => console.error('Failed to fetch listings:', err));
       }
     )
     .subscribe();
