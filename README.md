@@ -177,6 +177,57 @@ Listings and claims use Supabase Realtime for live updates:
 - **SecureStore**: Tokens stored securely on device
 - **Biome**: Used for linting and formatting (replaced ESLint/Prettier)
 
+## 🚧 Remaining Implementation
+
+The core migration from React PWA to Expo is complete. The following features still need implementation:
+
+### High Priority
+
+| Feature | Status | Notes |
+|---------|--------|-------|
+| **Map View** | Placeholder | Need platform-specific implementations (iOS: Apple Maps, Android: Google Maps, Web: Leaflet) |
+| **Post Listing Form** | Placeholder | Create listing UI for organizers |
+| **Claim Flow UI** | Services done | Need modal/sheet for claim confirmation and pickup |
+
+### Medium Priority
+
+| Feature | Status | Notes |
+|---------|--------|-------|
+| **Impact Dashboard** | Placeholder | Stats visualization with charts |
+| **Filter Bar** | Services done | Dietary/time/radius filters in feed |
+| **Profile Edit** | Services done | Update name, dietary prefs, avatar |
+
+### Low Priority
+
+| Feature | Status | Notes |
+|---------|--------|-------|
+| **useLocation hook** | Not created | GPS via expo-location |
+| **useOnlineStatus hook** | Not created | Network detection via NetInfo |
+| **Constants** | Hardcoded | routes.ts, categories.ts extraction |
+
+### Testing & Deployment
+
+| Phase | Status |
+|-------|--------|
+| iOS Simulator testing | ❌ Not started |
+| Android Emulator testing | ❌ Not started |
+| Web browser testing | ❌ Not started |
+| EAS build configuration | ❌ Not started |
+| App Store submission | ❌ Not started |
+| Google Play submission | ❌ Not started |
+
+### Implementation Order (Recommended)
+
+1. **Map View** - Core feature, enables location-based discovery
+2. **Claim Flow UI** - Completes the claim → pickup → rating loop
+3. **Post Listing Form** - Enables organizers to create listings
+4. **Impact Dashboard** - Gamification and user engagement
+5. **Profile Edit** - User settings
+6. **Platform Testing** - Verify on all 3 platforms
+7. **Store Deployment** - App Store + Google Play
+
+See `docs/superpowers/specs/2026-04-08-expo-migration-design.md` and `docs/superpowers/plans/2026-04-08-expo-migration.md` for full migration details.
+
 ## 📄 License
 
 MIT
