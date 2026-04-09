@@ -1,164 +1,182 @@
-# EcoEats
+# EcoEats — Campus Food Rescue
 
-**Campus Food Rescue — rescue surplus food, reduce waste, feed people.**
+Multi-platform Expo application for rescuing surplus food on campus. Built with Expo Router, TypeScript, NativeWind, and Supabase.
 
-**GitHub**: https://github.com/MaitreyeeDeshmukh/EcoEats
-
----
-
-## What It Does
-
-- Browse surplus food listings from campus events/cafeterias
-- Claim available food before it expires
-- Track your environmental impact (meals rescued, CO₂ saved)
-- Full PWA — works offline, installable on mobile
-- Real-time updates when new listings appear
-
-## Tech Stack
-
-| Layer | Tech |
-|---|---|
-| Frontend | React 19, Vite, Tailwind CSS |
-| Backend | Supabase (Postgres, Auth, RLS, Realtime) |
-| Hosting | Vercel (auto-deploy from GitHub) |
-| Maps | React Leaflet + OpenStreetMap (no API key) |
-| Geocoding | Nominatim API (free, no API key) |
-| PWA | vite-plugin-pwa + Workbox |
-| Icons | Phosphor Icons |
-
----
-
-## Getting Started
-
-### 1. Clone the repo
+## 🚀 Quick Start
 
 ```bash
-git clone https://github.com/MaitreyeeDeshmukh/EcoEats.git
-cd EcoEats
+# Install dependencies
 npm install
+
+# Start development server
+npm start
+
+# Run on specific platform
+npm run ios     # iOS Simulator
+npm run android # Android Emulator
+npm run web     # Web browser
 ```
 
-### 2. Create a Supabase project
+## 📱 Platforms
 
-1. Go to https://supabase.com → **New project**
-2. Choose a region close to you
-3. Wait for provisioning to complete
+- **iOS** - Apple Maps via react-native-maps
+- **Android** - Google Maps via react-native-maps
+- **Web** - Works in any browser via Expo Router Web
 
-### 3. Run the database schema
+## 🛠 Tech Stack
 
-In Supabase Dashboard → **SQL Editor** → **New query**, paste and run the contents of:
+| Layer | Technology |
+|-------|------------|
+| Framework | Expo SDK 52 + Expo Router |
+| Language | TypeScript (strict mode) |
+| Styling | NativeWind (Tailwind CSS for RN) |
+| State | Zustand + React Context |
+| Auth | Better Auth (magic link) |
+| Database | Supabase PostgreSQL |
+| Maps | react-native-maps |
+| Icons | Phosphor React Native |
+
+## 📁 Project Structure
 
 ```
-supabase/schema.sql
+├── app/                    # Expo Router file-based routes
+│   ├── _layout.tsx         # Root layout with providers
+│   ├── (auth)/             # Auth screens (not in tab bar)
+│   │   ├── login.tsx       # Magic link login
+│   │   ├── onboarding.tsx  # Role selection
+│   │   └── auth/callback.tsx # Deep link handler
+│   ├── (tabs)/             # Tab navigation
+│   │   ├── index.tsx       # Feed (home)
+│   │   ├── map.tsx         # Map view
+│   │   ├── post.tsx        # Create listing
+│   │   ├── claims.tsx      # Your claims
+│   │   ├── impact.tsx      # Impact stats
+│   │   └── profile.tsx     # User profile
+│   └── +not-found.tsx      # 404 page
+├── src/
+│   ├── components/
+│   │   ├── ui/             # Generic UI (Button, Card, Input, Badge, Spinner)
+│   │   └── features/       # Domain components (ListingCard)
+│   ├── services/           # API layer (Supabase, auth-client)
+│   ├── stores/             # Zustand stores (listings, cart)
+│   ├── contexts/           # React contexts (Auth, Toast)
+│   ├── types/              # TypeScript types (database, models, api)
+│   └── utils/              # Utilities (formatters, validators, etc.)
+├── workers/auth/           # Cloudflare Worker for Better Auth
+└── assets/                 # Images and fonts
 ```
 
-This creates tables for users, listings, claims, RLS policies, indexes, and the auto-profile trigger.
+## 🔧 Environment Setup
 
-### 4. Add your environment variables
-
-Create a `.env.local` file in the project root:
+Create `.env.local`:
 
 ```env
-VITE_SUPABASE_URL=https://your-project-id.supabase.co
-VITE_SUPABASE_ANON_KEY=your-anon-key
+EXPO_PUBLIC_SUPABASE_URL=https://your-project.supabase.co
+EXPO_PUBLIC_SUPABASE_ANON_KEY=your-anon-key
+EXPO_PUBLIC_AUTH_URL=https://auth.ecoeats.app
 ```
 
-Find these in: Supabase Dashboard → Project Settings → API.
+## ✅ Verification
 
-### 5. Seed the database (run once)
+Run all checks before committing:
 
 ```bash
-SUPABASE_URL=https://your-project-id.supabase.co \
-SUPABASE_SERVICE_KEY=your-service-role-key \
-node src/scripts/seedSupabase.js
+# TypeScript type check
+npx tsc --noEmit
+
+# Biome linting and formatting
+npx biome check .
+
+# Find unused exports
+npx knip
 ```
 
-The service role key bypasses RLS and is safe to use locally. Find it in:
-Supabase Dashboard → Project Settings → API → **service_role** key.
+## 🔐 Authentication Flow
 
-### 6. Run locally
+1. User enters email on login screen
+2. Better Auth sends magic link via email
+3. User clicks link → opens app via deep link (`ecoeats://auth/callback?token=xxx`)
+4. App verifies token, creates session
+5. User selects role (student/organizer) on first login
+6. Redirected to main feed
+
+## 📊 State Management
+
+| Store | Purpose | Persistence |
+|-------|---------|--------------|
+| `useListingsStore` | Active listings with realtime | Memory only |
+| `useCartStore` | Cart items | AsyncStorage |
+| `AuthProvider` | Session + profile | SecureStore |
+| `ToastProvider` | Notifications | Memory only |
+
+## 🗺 Maps
+
+Platform-specific map implementations:
+
+- **iOS**: Apple Maps (no API key needed)
+- **Android**: Google Maps (requires API key in app.json)
+- **Web**: Leaflet (keep existing implementation)
+
+## 🚢 Deployment
+
+### Mobile (EAS Build)
 
 ```bash
-npm run dev
+# Install EAS CLI
+npm install -g eas-cli
+
+# Login to Expo
+eas login
+
+# Build for stores
+eas build --platform ios
+eas build --platform android
+
+# Submit to stores
+eas submit --platform ios
+eas submit --platform android
 ```
 
-App runs at http://localhost:5173
+### Web
 
-### 7. Deploy to Vercel
+```bash
+# Build web version
+npx expo export --platform web
 
-1. Push this repo to GitHub
-2. Go to https://vercel.com → **Add New Project** → import the GitHub repo
-3. Add environment variables in Vercel Dashboard → Settings → Environment Variables:
-   - `VITE_SUPABASE_URL`
-   - `VITE_SUPABASE_ANON_KEY`
-4. Deploy — Vercel auto-deploys on every push to `main`
-
-### 8. Enable Google OAuth (optional)
-
-In Supabase Dashboard → Authentication → Providers → Google:
-1. Enable Google provider
-2. Add your Google OAuth client ID and secret
-3. Add `https://your-project-id.supabase.co/auth/v1/callback` as an authorized redirect URI in Google Cloud Console
-
----
-
-## Pages
-
-| Route | Page |
-|---|---|
-| `/` | Redirects to `/feed` |
-| `/feed` | Browse food listings — search, filters |
-| `/map` | Map view of active listings |
-| `/post` | Create a listing (organizers only) |
-| `/claims` | Your claimed items |
-| `/impact` | Environmental stats — meals rescued, CO₂ saved |
-| `/profile` | User profile, settings |
-
----
-
-## User Roles
-
-| Role | Permissions |
-|---|---|
-| `student` | Browse listings, claim food, view impact |
-| `organizer` | All student permissions + create/manage listings |
-
----
-
-## How Claims Work
-
-1. Student browses active listings on `/feed` or `/map`
-2. Claims available quantity (reservation valid for 15 min)
-3. Picks up food at listed location before expiry
-4. Host marks as picked up or no-show
-
----
-
-## Project Structure
-
-```
-src/
-  components/
-    ui/          Button, Input, Badge, Card, Modal, Toast, Spinner, Skeleton
-    features/    ListingCard, ClaimFlow, EcoBadge, ReservationTimer
-    auth/        AuthFlow, Onboarding, SplashScreen, RoleSelector
-    feed/        FeedView, FilterBar, ListingCard
-    map/         MapView, ListingPin
-    impact/      Dashboard, CounterRoll
-    post/        PostForm, FoodSafetyChecklist, StepIndicator
-  pages/         One file per route (lazy-loaded)
-  contexts/      AuthContext, ListingsContext, ToastContext
-  hooks/         useAuth, useListings, useClaims, useLocation, useOnlineStatus
-  services/      auth.js, listings.js, claims.js, users.js, supabase.js
-  utils/         formatters.js, validators.js, geocode.js, normalize.js
-  lib/           supabase.js (canonical client)
-  constants/     routes.js
-supabase/
-  schema.sql     Full DB schema with RLS policies
+# Deploy to any static host
 ```
 
----
+### Auth Worker (Cloudflare)
 
-## License
+```bash
+cd workers/auth
+wrangler deploy
+```
 
-MIT — built by Maitreyee Deshmukh
+## 🧪 Development
+
+### Database Schema
+
+The app expects these Supabase tables:
+- `users` - User profiles with role and impact stats
+- `listings` - Food listings with location and expiry
+- `claims` - Food claims with reservation system
+
+See `workers/auth/schema.sql` for auth tables.
+
+### Realtime
+
+Listings and claims use Supabase Realtime for live updates:
+- Automatic subscription on feed mount
+- Cleanup on unmount via `useListingsSubscription()`
+
+## 📝 Notes
+
+- **NativeWind v4**: Uses `className` prop directly (no `styled()` wrapper)
+- **Expo Router**: File-based routing with typed routes
+- **SecureStore**: Tokens stored securely on device
+- **Biome**: Used for linting and formatting (replaced ESLint/Prettier)
+
+## 📄 License
+
+MIT
