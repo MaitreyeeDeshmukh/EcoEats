@@ -21,7 +21,6 @@ export interface User {
   avatar: string | null;
   role: UserRole;
   dietaryPrefs: DietaryTag[];
-  hostBuilding: string | null;
   impactStats: ImpactStats;
   reputationScore: number;
   lastSeen: Date;
