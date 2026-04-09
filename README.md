@@ -177,18 +177,69 @@ Listings and claims use Supabase Realtime for live updates:
 - **Expo Router**: file-based routing with typed routes
 - **Biome**: linting + formatting (replaces ESLint/Prettier)
 
-## 🔄 Dependency Upgrade Status
+## 🔄 Dependency Management
 
-Dependencies were upgraded and validated using Expo's recommended flow:
+### ⚠️ Critical: Don't Use `bun outdated` for Expo Packages
 
-1. `bun update --latest`
-2. `bunx expo install --fix` (re-align to SDK-compatible native versions)
-3. `bunx expo-doctor`
+`bun outdated` shows "latest" versions that may be **incompatible** with your Expo SDK:
 
-### Important dependency policy
+| Package | `bun outdated` "Latest" | Actual SDK 55 Compatible |
+|---------|------------------------|--------------------------|
+| `react-native` | 0.85.0 | 0.83.x (SDK 55) |
+| `react-native-reanimated` | 4.3.0 | 4.2.x (SDK 55) |
+| `react-native-screens` | 4.24.0 | 4.23.x (SDK 55) |
 
-For Expo apps, "latest" means **latest compatible with the current Expo SDK** for native modules.  
-This repo is now on the latest SDK 55-compatible dependency set.
+**React Native is NOT backwards compatible.** Updating to "latest" will break your app.
+
+### Correct Way to Update Dependencies
+
+```bash
+# 1. Check what needs updating (SDK-compatible only)
+npx expo install --check
+
+# 2. Auto-fix to SDK-compatible versions
+npx expo install --fix
+
+# 3. Verify everything is aligned
+npx expo-doctor
+```
+
+### How Expo Package Versions Work
+
+As of SDK 55, all Expo packages use the SDK version as their major version:
+- `expo-camera@^55.0.0` → SDK 55 compatible
+- `expo-router@~55.0.11` → SDK 55 compatible
+
+This makes it easy to identify compatible packages at a glance.
+
+### Package Categories
+
+| Category | Update Method | Notes |
+|----------|---------------|-------|
+| Expo SDK packages | `npx expo install --fix` | Must match SDK version |
+| React/React-DOM | `bun update` | Patch updates usually safe |
+| Native libraries | `npx expo install --fix` | Must be SDK-compatible |
+| **Tailwind CSS** | **DO NOT UPDATE** | Stay on v3 (v4 breaks NativeWind) |
+| Pure JS packages | `bun update` | Check changelog for majors |
+
+### workers/auth (Cloudflare Worker)
+
+This package has **no Expo constraints**. Update freely:
+
+```bash
+cd workers/auth
+bun update
+bunx wrangler deploy
+```
+
+But review changelogs for major bumps (e.g., TypeScript 6.x).
+
+### Current SDK
+
+This project uses **Expo SDK 55** with:
+- React Native 0.83.x
+- React 19.2.x
+- All packages validated via `expo-doctor`
 
 ## ✅ What was re-verified after upgrades
 
