@@ -1,18 +1,26 @@
 // src/components/ui/Button.tsx
 import { Pressable, Text, ActivityIndicator, type ViewStyle } from 'react-native';
+import type { ReactNode } from 'react';
 
 type ButtonVariant = 'primary' | 'secondary' | 'outline' | 'ghost';
 type ButtonSize = 'sm' | 'md' | 'lg';
 
 interface ButtonProps {
-  children: string;
+  children: ReactNode;
   variant?: ButtonVariant;
   size?: ButtonSize;
   disabled?: boolean;
   loading?: boolean;
   onPress: () => void;
   style?: ViewStyle;
+  accessibilityLabel?: string;
+  accessibilityHint?: string;
 }
+
+const COLORS = {
+  forest: '#1B4332',
+  white: '#FFFFFF',
+};
 
 export function Button({
   children,
@@ -22,6 +30,8 @@ export function Button({
   loading = false,
   onPress,
   style,
+  accessibilityLabel,
+  accessibilityHint,
 }: ButtonProps) {
   const variantStyles: Record<ButtonVariant, string> = {
     primary: 'bg-forest-700 active:bg-forest-800',
@@ -60,11 +70,15 @@ export function Button({
       onPress={onPress}
       disabled={disabled || loading}
       style={style}
+      accessibilityRole="button"
+      accessibilityLabel={accessibilityLabel}
+      accessibilityHint={accessibilityHint ?? (loading ? 'Loading' : undefined)}
+      accessibilityState={{ disabled: disabled || loading, busy: loading }}
     >
       {loading ? (
         <ActivityIndicator
           size="small"
-          color={variant === 'primary' ? '#fff' : '#1B4332'}
+          color={variant === 'primary' ? COLORS.white : COLORS.forest}
         />
       ) : (
         <Text
