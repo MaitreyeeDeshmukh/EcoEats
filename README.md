@@ -6,15 +6,15 @@ Multi-platform Expo application for rescuing surplus food on campus. Built with 
 
 ```bash
 # Install dependencies
-npm install
+bun install
 
 # Start development server
-npm start
+bun start
 
 # Run on specific platform
-npm run ios     # iOS Simulator
-npm run android # Android Emulator
-npm run web     # Web browser
+bun run ios     # iOS Simulator
+bun run android # Android Emulator
+bun run web     # Web browser
 ```
 
 ## 📱 Platforms
@@ -123,7 +123,7 @@ Platform-specific map implementations:
 
 ```bash
 # Install EAS CLI
-npm install -g eas-cli
+bun install -g eas-cli
 
 # Login to Expo
 eas login

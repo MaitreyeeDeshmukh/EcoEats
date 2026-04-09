@@ -213,44 +213,44 @@ npx expo install expo-location expo-secure-store expo-constants expo-linking
 - [ ] **Step 2: Install network and storage packages**
 
 ```bash
-npm install @react-native-community/netinfo react-native-maps
+bun add @react-native-community/netinfo react-native-maps
 ```
 
 - [ ] **Step 3: Install state management**
 
 ```bash
-npm install zustand
+bun add zustand
 ```
 
 - [ ] **Step 4: Install styling packages**
 
 ```bash
-npm install nativewind react-native-reanimated react-native-gesture-handler
+bun add nativewind react-native-reanimated react-native-gesture-handler
 ```
 
 - [ ] **Step 5: Install Supabase client**
 
 ```bash
-npm install @supabase/supabase-js
+bun add @supabase/supabase-js
 ```
 
 - [ ] **Step 6: Install UI packages**
 
 ```bash
-npm install phosphor-react-native react-native-svg
-npm install react-native-toast-message
+bun add phosphor-react-native react-native-svg
+bun add react-native-toast-message
 ```
 
 - [ ] **Step 7: Install Better Auth client**
 
 ```bash
-npm install better-auth
+bun add better-auth
 ```
 
 - [ ] **Step 8: Install development dependencies**
 
 ```bash
-npm install -D @types/react @types/react-native tailwindcss
+bun add -D @types/react @types/react-native tailwindcss
 ```
 
 - [ ] **Step 9: Commit**

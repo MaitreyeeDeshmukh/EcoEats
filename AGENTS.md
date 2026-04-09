@@ -5,15 +5,15 @@ Multi-platform Expo application for rescuing surplus food on campus. Built with 
 ## Commands
 
 ```bash
-npm start       # Start Expo dev server
-npm run ios     # Run on iOS Simulator
-npm run android # Run on Android Emulator
-npm run web     # Run on web browser
+bun start       # Start Expo dev server
+bun run ios     # Run on iOS Simulator
+bun run android # Run on Android Emulator
+bun run web     # Run on web browser
 
 # Verification
-npx tsc --noEmit # TypeScript check
-npx biome check . # Linting + formatting
-npx knip         # Find unused exports
+bunx tsc --noEmit # TypeScript check
+bunx biome check . # Linting + formatting
+bunx knip         # Find unused exports
 ```
 
 ## Environment

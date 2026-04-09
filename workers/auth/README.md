@@ -6,7 +6,7 @@ Cloudflare Worker for Better Auth with magic link authentication.
 
 1. Install dependencies:
    ```bash
-   npm install
+   bun install
    ```
 
 2. Set secrets:
@@ -23,12 +23,12 @@ Cloudflare Worker for Better Auth with magic link authentication.
 
 4. Run database migration:
    ```bash
-   npm run migrate
+   bun run migrate
    ```
 
 5. Start dev server:
    ```bash
-   npm run dev
+   bun run dev
    ```
 
 ## Environment Variables
