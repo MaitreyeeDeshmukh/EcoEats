@@ -22,6 +22,8 @@ interface ButtonProps {
 	className?: string;
 	accessibilityLabel?: string;
 	accessibilityHint?: string;
+	/** Test ID for testing purposes */
+	testID?: string;
 }
 
 const COLORS = {
@@ -40,6 +42,7 @@ export function Button({
 	className,
 	accessibilityLabel,
 	accessibilityHint,
+	testID,
 }: ButtonProps) {
 	const variantStyles: Record<ButtonVariant, string> = {
 		primary: "bg-forest-700 active:bg-forest-800",
@@ -69,6 +72,7 @@ export function Button({
 
 	return (
 		<Pressable
+			testID={testID}
 			className={`
         rounded-btn items-center justify-center flex-row
         ${variantStyles[variant]}

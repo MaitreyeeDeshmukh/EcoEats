@@ -28,7 +28,14 @@ module.exports = {
 
 	// Transform TypeScript/TSX files
 	transform: {
-		"^.+\\.tsx?$": "ts-jest",
+		"^.+\\.tsx?$": [
+			"ts-jest",
+			{
+				tsconfig: {
+					jsx: "react-jsx",
+				},
+			},
+		],
 	},
 
 	// Transform ignore patterns - don't transform node_modules

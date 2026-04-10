@@ -9,6 +9,9 @@
 
 import type { ComponentType, ReactNode, Ref } from "react";
 
+// Define React Native __DEV__ global
+(global as Record<string, unknown>).__DEV__ = true;
+
 // Mock react-native Platform before any imports
 jest.mock("react-native", () => ({
 	Platform: {
@@ -19,11 +22,18 @@ jest.mock("react-native", () => ({
 	},
 	StyleSheet: {
 		create: jest.fn((styles: unknown) => styles),
+		flatten: jest.fn((style: unknown) => style),
 	},
 	Dimensions: {
 		get: jest.fn(() => ({ width: 375, height: 812 })),
 		addEventListener: jest.fn(() => ({ remove: jest.fn() })),
 	},
+	View: "View",
+	Text: "Text",
+	ScrollView: "ScrollView",
+	Pressable: "Pressable",
+	ActivityIndicator: "ActivityIndicator",
+	Button: "Button",
 }));
 
 // Import jest-dom matchers for DOM assertions
