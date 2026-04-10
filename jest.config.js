@@ -8,11 +8,11 @@
  * - TypeScript support
  */
 module.exports = {
-	// Use jest-expo preset for React Native/Expo compatibility
-	preset: "jest-expo",
+	// Use a minimal preset - we'll mock everything ourselves
+	preset: undefined,
 
-	// Test environment
-	testEnvironment: "node",
+	// Test environment - use jsdom for DOM APIs
+	testEnvironment: "jsdom",
 
 	// Root directories for Jest to scan
 	roots: ["<rootDir>/src"],
@@ -28,13 +28,11 @@ module.exports = {
 
 	// Transform TypeScript/TSX files
 	transform: {
-		"^.+\\.tsx?$": "babel-jest",
+		"^.+\\.tsx?$": "ts-jest",
 	},
 
-	// Transform ignore patterns - allow transformation of expo modules
-	transformIgnorePatterns: [
-		"node_modules/(?!(react-native|@react-native|@react-navigation|expo|expo-router|@expo|nativewind|react-native-reanimated|react-native-gesture-handler|react-native-screens|react-native-safe-area-context|react-native-svg|phosphor-react-native)/)",
-	],
+	// Transform ignore patterns - don't transform node_modules
+	transformIgnorePatterns: ["/node_modules/"],
 
 	// Module name mapping for path aliases
 	moduleNameMapper: {
@@ -88,13 +86,4 @@ module.exports = {
 
 	// Test timeout
 	testTimeout: 10000,
-
-	// Global setup/teardown
-	globals: {
-		"ts-jest": {
-			tsconfig: {
-				sxjsx: "react",
-			},
-		},
-	},
 };

@@ -9,6 +9,23 @@
 
 import type { ComponentType, ReactNode, Ref } from "react";
 
+// Mock react-native Platform before any imports
+jest.mock("react-native", () => ({
+	Platform: {
+		OS: "ios",
+		select: jest.fn((obj: Record<string, unknown>) => {
+			return obj.ios || obj.default;
+		}),
+	},
+	StyleSheet: {
+		create: jest.fn((styles: unknown) => styles),
+	},
+	Dimensions: {
+		get: jest.fn(() => ({ width: 375, height: 812 })),
+		addEventListener: jest.fn(() => ({ remove: jest.fn() })),
+	},
+}));
+
 // Import jest-dom matchers for DOM assertions
 import "@testing-library/jest-dom";
 
@@ -24,13 +41,13 @@ import "@testing-library/jest-native/extend-expect";
  * Returns the component with CSS className support
  */
 jest.mock("nativewind", () => {
-	const React = require("react");
+	const mockReact = require("react");
 
 	return {
 		styled: (
 			Component: ComponentType<{ ref?: Ref<unknown>; children?: ReactNode }>,
 		) => {
-			return React.forwardRef(
+			const StyledComponent = mockReact.forwardRef(
 				(
 					props: {
 						className?: string;
@@ -40,7 +57,7 @@ jest.mock("nativewind", () => {
 					ref: Ref<unknown>,
 				) => {
 					const { className, ...rest } = props;
-					return React.createElement(Component, {
+					return mockReact.createElement(Component, {
 						...rest,
 						ref,
 						// Merge className with style for testing purposes
@@ -48,6 +65,7 @@ jest.mock("nativewind", () => {
 					});
 				},
 			);
+			return StyledComponent;
 		},
 	};
 });
