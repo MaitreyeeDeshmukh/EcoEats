@@ -56,9 +56,16 @@ export const claimRowSchema = z.object({
 	student_id: z.string(),
 	student_name: z.string(),
 	quantity: z.number().int().positive(),
-	claimed_at: z.string(),
-	picked_up_at: z.string().nullable(),
+	claimed_at: z
+		.union([z.string(), z.date()])
+		.transform((v) => (v instanceof Date ? v.toISOString() : v)),
+	picked_up_at: z
+		.union([z.string(), z.date()])
+		.nullable()
+		.transform((v) => (v instanceof Date ? v.toISOString() : v)),
 	status: claimStatusSchema,
-	reservation_expires_at: z.string(),
+	reservation_expires_at: z
+		.union([z.string(), z.date()])
+		.transform((v) => (v instanceof Date ? v.toISOString() : v)),
 	rating: z.number().int().min(1).max(5).nullable(),
 });

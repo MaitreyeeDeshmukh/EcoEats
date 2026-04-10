@@ -45,8 +45,7 @@ export function getTestPool(): Pool {
 			throw new Error("No DB_URL env var configured");
 		}
 
-		// @ts-expect-error - Pool can accept connection string as first arg
-		testPool = new Pool(url);
+		testPool = new Pool({ connectionString: url });
 	}
 	return testPool;
 }

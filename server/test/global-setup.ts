@@ -20,8 +20,7 @@ export default async function setup() {
 
 	console.log("\n🧪 Setting up test database...");
 
-	// @ts-expect-error - Pool can accept connection string as first arg
-	const pool = new Pool(url);
+	const pool = new Pool({ connectionString: url });
 
 	try {
 		// Clean and set up test tables
