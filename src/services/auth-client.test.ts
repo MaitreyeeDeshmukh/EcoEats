@@ -897,6 +897,147 @@ describe("AuthClient", () => {
 			rn.Platform.OS = originalOS;
 		});
 
+		describe("SSR window undefined (VAL-TEST-078)", () => {
+			let originalWindow: typeof window;
+			let ssrLocalStorageMock: {
+				getItem: jest.Mock;
+				setItem: jest.Mock;
+				removeItem: jest.Mock;
+			};
+
+			beforeEach(() => {
+				// Save original window and make it undefined (SSR scenario)
+				originalWindow = global.window as typeof window;
+
+				// Create localStorage mock to verify it was NOT called during SSR
+				ssrLocalStorageMock = {
+					getItem: jest.fn(),
+					setItem: jest.fn(),
+					removeItem: jest.fn(),
+				};
+				Object.defineProperty(global, "localStorage", {
+					value: ssrLocalStorageMock,
+					writable: true,
+					configurable: true,
+				});
+
+				// @ts-expect-error - Simulating SSR where window is undefined
+				delete global.window;
+			});
+
+			afterEach(() => {
+				// Restore window
+				global.window = originalWindow;
+			});
+
+			it("returns null from getItem when window is undefined", async () => {
+				const mockUser: User = {
+					id: "user-123",
+					email: "test@example.com",
+					name: "Test User",
+					image: null,
+					emailVerified: true,
+				};
+
+				mockFetch.mockResolvedValueOnce({
+					ok: true,
+					json: jest.fn().mockResolvedValue({
+						session: {
+							id: "session-123",
+							userId: "user-123",
+							expiresAt: new Date(Date.now() + 3600000).toISOString(),
+							user: mockUser,
+						},
+					}),
+					headers: {
+						get: jest.fn().mockReturnValue("token-123"),
+					},
+				});
+
+				// Verify that verifyMagicLink works even when window is undefined
+				// (it should not throw and session should be in memory but not persisted)
+				const result = await authClient.verifyMagicLink("test-token");
+
+				expect(result).not.toBeNull();
+				expect(result.id).toBe("session-123");
+				// localStorage should NOT be accessed since window is undefined
+				expect(ssrLocalStorageMock.setItem).not.toHaveBeenCalled();
+			});
+
+			it("setItem is no-op when window is undefined", async () => {
+				const mockUser: User = {
+					id: "user-123",
+					email: "test@example.com",
+					name: "Test User",
+					image: null,
+					emailVerified: true,
+				};
+
+				mockFetch.mockResolvedValueOnce({
+					ok: true,
+					json: jest.fn().mockResolvedValue({
+						session: {
+							id: "session-123",
+							userId: "user-123",
+							expiresAt: new Date(Date.now() + 3600000).toISOString(),
+							user: mockUser,
+						},
+					}),
+					headers: {
+						get: jest.fn().mockReturnValue("token-123"),
+					},
+				});
+
+				// Should not throw even though window is undefined
+				await expect(
+					authClient.verifyMagicLink("test-token"),
+				).resolves.toBeDefined();
+
+				// localStorage.setItem should NOT have been called since window is undefined
+				expect(ssrLocalStorageMock.setItem).not.toHaveBeenCalled();
+			});
+
+			it("deleteItem is no-op when window is undefined", async () => {
+				// Setup a session first (in memory only since storage won't work)
+				const mockSession: Session = {
+					id: "session-123",
+					userId: "user-123",
+					expiresAt: new Date(Date.now() + 3600000),
+					user: {
+						id: "user-123",
+						email: "test@example.com",
+						name: "Test User",
+						image: null,
+						emailVerified: true,
+					},
+				};
+				setPrivate(authClient, "session", mockSession);
+				setPrivate(authClient, "authToken", "token-123");
+
+				mockFetch.mockResolvedValueOnce({
+					ok: true,
+				});
+
+				// Should not throw even though window is undefined
+				await expect(authClient.signOut()).resolves.toBeUndefined();
+
+				// Session should be cleared in memory
+				expect(getPrivate<Session | null>(authClient, "session")).toBeNull();
+				expect(getPrivate<string | null>(authClient, "authToken")).toBeNull();
+			});
+
+			it("getItem returns null when window is undefined", async () => {
+				// Ensure no cached session
+				setPrivate(authClient, "session", null);
+				setPrivate(authClient, "authToken", null);
+
+				const result = await authClient.getSession();
+
+				// Should return null since storage can't be accessed
+				expect(result).toBeNull();
+			});
+		});
+
 		it("uses localStorage on web platform for getItem", async () => {
 			const mockData = {
 				session: {
