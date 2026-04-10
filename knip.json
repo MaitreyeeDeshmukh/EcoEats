@@ -1,0 +1,14 @@
+{
+	"$schema": "./node_modules/knip/schema.json",
+	"ignoreDependencies": ["@biomejs/biome", "expo-system-ui", "expo-updates"],
+	"ignoreFiles": ["babel.config.js", "src/services/claims.ts"],
+	"ignoreIssues": {
+		"src/services/listings.ts": ["exports"],
+		"src/services/users.ts": ["exports"],
+		"src/stores/listings.ts": ["exports"],
+		"src/types/database.ts": ["types"],
+		"src/types/models.ts": ["types"],
+		"src/utils/foodSafety.ts": ["exports", "types"],
+		"src/utils/validators.ts": ["exports"]
+	}
+}

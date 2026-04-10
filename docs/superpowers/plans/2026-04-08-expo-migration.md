@@ -1,5 +1,7 @@
 # EcoEats Expo Migration Implementation Plan
 
+> Archived on 2026-04-09. This implementation plan reflects the earlier Worker-based architecture and is superseded by [how-it-works.md](/Users/divkix/GitHub/EcoEats/docs/how-it-works.md) and [portable-backend-migration.md](/Users/divkix/GitHub/EcoEats/docs/portable-backend-migration.md).
+
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
 **Goal:** Migrate EcoEats from React PWA to multi-platform Expo app (iOS, Android, Web) with TypeScript, Better Auth, and platform-native maps.

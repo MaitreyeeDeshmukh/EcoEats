@@ -1,10 +1,24 @@
 // src/services/claims.ts
 
+import type { InferResponseType } from "hono/client";
 import type { ClaimRow } from "@/types/database";
 import type { Claim, ClaimStatus } from "@/types/models";
-import { supabase } from "./supabase";
+import { readRpcJson, rpcClient, rpcOptions } from "./rpc-client";
 
-const RESERVATION_MINUTES = 20;
+const POLL_INTERVAL_MS = 15000;
+
+type CreateClaimResponse = InferResponseType<
+	typeof rpcClient.api.claims.$post,
+	201
+>;
+type GetListingClaimsResponse = InferResponseType<
+	(typeof rpcClient.api.claims.listing)[":listingId"]["$get"],
+	200
+>;
+type GetStudentClaimsResponse = InferResponseType<
+	typeof rpcClient.api.claims.mine.$get,
+	200
+>;
 
 function normalizeClaim(row: ClaimRow): Claim {
 	return {
@@ -27,134 +41,49 @@ export async function createClaim(
 	studentName: string,
 	quantity: number = 1,
 ): Promise<string> {
-	const reservationExpiresAt = new Date(
-		Date.now() + RESERVATION_MINUTES * 60 * 1000,
+	if (!studentId) {
+		throw new Error("Student session is required");
+	}
+
+	const response = await rpcClient.api.claims.$post(
+		{
+			json: {
+				listingId,
+				studentName,
+				quantity,
+			},
+		},
+		rpcOptions("Failed to create claim"),
 	);
-
-	// Check for existing claim
-	const { data: existing } = await supabase
-		.from("claims")
-		.select("id")
-		.eq("listing_id", listingId)
-		.eq("student_id", studentId)
-		.maybeSingle();
-
-	if (existing) {
-		throw new Error("Already claimed");
-	}
-
-	// Get current listing state
-	const { data: listing, error: fetchError } = await supabase
-		.from("listings")
-		.select("quantity_remaining, status")
-		.eq("id", listingId)
-		.single();
-
-	if (fetchError || !listing) {
-		throw new Error("Listing not found");
-	}
-
-	if (listing.status !== "active") {
-		throw new Error("Listing is no longer active");
-	}
-
-	if (listing.quantity_remaining < quantity) {
-		throw new Error("Not enough portions remaining");
-	}
-
-	// Atomic update with optimistic locking
-	const newQuantity = listing.quantity_remaining - quantity;
-	const { error: updateError, count } = await supabase
-		.from("listings")
-		.update({
-			quantity_remaining: newQuantity,
-			status: newQuantity === 0 ? "claimed" : "active",
-		})
-		.eq("id", listingId)
-		.eq("quantity_remaining", listing.quantity_remaining) // Optimistic lock
-		.eq("status", "active");
-
-	if (updateError || count === 0) {
-		throw new Error("Listing was modified by another user. Please try again.");
-	}
-
-	// Create claim
-	const { data: claim, error: claimError } = await supabase
-		.from("claims")
-		.insert({
-			listing_id: listingId,
-			student_id: studentId,
-			student_name: studentName,
-			quantity,
-			status: "pending",
-			reservation_expires_at: reservationExpiresAt.toISOString(),
-		})
-		.select("id")
-		.single();
-
-	if (claimError) throw claimError;
-
-	return claim.id;
+	const payload = await readRpcJson<CreateClaimResponse>(response);
+	return payload.data.id;
 }
 
 export async function confirmPickup(claimId: string): Promise<void> {
-	const { error } = await supabase
-		.from("claims")
-		.update({
-			status: "picked_up",
-			picked_up_at: new Date().toISOString(),
-		})
-		.eq("id", claimId);
-
-	if (error) throw error;
+	await rpcClient.api.claims[":id"]["confirm-pickup"].$post(
+		{ param: { id: claimId } },
+		rpcOptions("Failed to confirm pickup"),
+	);
 }
 
 export async function markNoShow(claimId: string): Promise<void> {
-	// Get claim details first
-	const { data: claim } = await supabase
-		.from("claims")
-		.select("listing_id, quantity")
-		.eq("id", claimId)
-		.single();
-
-	if (!claim) throw new Error("Claim not found");
-
-	// Update claim status
-	const { error } = await supabase
-		.from("claims")
-		.update({ status: "no_show" })
-		.eq("id", claimId);
-
-	if (error) throw error;
-
-	// Restore listing quantity
-	const { data: listing } = await supabase
-		.from("listings")
-		.select("quantity_remaining")
-		.eq("id", claim.listing_id)
-		.single();
-
-	if (listing) {
-		await supabase
-			.from("listings")
-			.update({
-				quantity_remaining: listing.quantity_remaining + claim.quantity,
-				status: "active",
-			})
-			.eq("id", claim.listing_id);
-	}
+	await rpcClient.api.claims[":id"]["no-show"].$post(
+		{ param: { id: claimId } },
+		rpcOptions("Failed to mark no-show"),
+	);
 }
 
 export async function submitRating(
 	claimId: string,
 	rating: number,
 ): Promise<void> {
-	const { error } = await supabase
-		.from("claims")
-		.update({ rating })
-		.eq("id", claimId);
-
-	if (error) throw error;
+	await rpcClient.api.claims[":id"].rating.$post(
+		{
+			param: { id: claimId },
+			json: { rating },
+		},
+		rpcOptions("Failed to submit rating"),
+	);
 }
 
 export function subscribeToStudentClaims(
@@ -163,37 +92,25 @@ export function subscribeToStudentClaims(
 ): () => void {
 	async function fetch() {
 		try {
-			const { data, error } = await supabase
-				.from("claims")
-				.select("*")
-				.eq("student_id", studentId)
-				.order("claimed_at", { ascending: false })
-				.limit(20);
+			if (!studentId) {
+				callback([]);
+				return;
+			}
 
-			if (error) throw error;
-			callback((data || []).map(normalizeClaim));
+			const response = await rpcClient.api.claims.mine.$get(
+				undefined,
+				rpcOptions("Failed to fetch claims"),
+			);
+			const payload = await readRpcJson<GetStudentClaimsResponse>(response);
+			callback((payload.data || []).map(normalizeClaim));
 		} catch (err) {
 			console.error("Failed to fetch claims:", err);
 		}
 	}
 
 	fetch();
-
-	const channel = supabase
-		.channel(`student-claims-${studentId}`)
-		.on(
-			"postgres_changes",
-			{
-				event: "*",
-				schema: "public",
-				table: "claims",
-				filter: `student_id=eq.${studentId}`,
-			},
-			fetch,
-		)
-		.subscribe();
-
-	return () => supabase.removeChannel(channel);
+	const timer = setInterval(fetch, POLL_INTERVAL_MS);
+	return () => clearInterval(timer);
 }
 
 export function subscribeToListingClaims(
@@ -202,34 +119,18 @@ export function subscribeToListingClaims(
 ): () => void {
 	async function fetch() {
 		try {
-			const { data, error } = await supabase
-				.from("claims")
-				.select("*")
-				.eq("listing_id", listingId)
-				.order("claimed_at", { ascending: false });
-
-			if (error) throw error;
-			callback((data || []).map(normalizeClaim));
+			const response = await rpcClient.api.claims.listing[":listingId"].$get(
+				{ param: { listingId } },
+				rpcOptions("Failed to fetch listing claims"),
+			);
+			const payload = await readRpcJson<GetListingClaimsResponse>(response);
+			callback((payload.data || []).map(normalizeClaim));
 		} catch (err) {
 			console.error("Failed to fetch listing claims:", err);
 		}
 	}
 
 	fetch();
-
-	const channel = supabase
-		.channel(`listing-claims-${listingId}`)
-		.on(
-			"postgres_changes",
-			{
-				event: "*",
-				schema: "public",
-				table: "claims",
-				filter: `listing_id=eq.${listingId}`,
-			},
-			fetch,
-		)
-		.subscribe();
-
-	return () => supabase.removeChannel(channel);
+	const timer = setInterval(fetch, POLL_INTERVAL_MS);
+	return () => clearInterval(timer);
 }

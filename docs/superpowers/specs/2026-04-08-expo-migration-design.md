@@ -1,5 +1,7 @@
 # EcoEats Expo Migration Design
 
+> Archived on 2026-04-09. This document describes the earlier Worker + Supabase-client migration design and is superseded by [how-it-works.md](/Users/divkix/GitHub/EcoEats/docs/how-it-works.md) and [portable-backend-migration.md](/Users/divkix/GitHub/EcoEats/docs/portable-backend-migration.md).
+
 **Date**: 2026-04-08  
 **Status**: Approved  
 **Platforms**: iOS, Android, Web  

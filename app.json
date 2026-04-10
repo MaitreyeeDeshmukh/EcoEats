@@ -14,22 +14,14 @@
 		},
 		"ios": {
 			"supportsTablet": true,
-			"bundleIdentifier": "com.ecoeats.app",
-			"config": {
-				"googleMapsApiKey": "YOUR_GOOGLE_MAPS_API_KEY"
-			}
+			"bundleIdentifier": "com.ecoeats.app"
 		},
 		"android": {
 			"adaptiveIcon": {
 				"foregroundImage": "./assets/adaptive-icon.png",
 				"backgroundColor": "#1B4332"
 			},
-			"package": "com.ecoeats.app",
-			"config": {
-				"googleMaps": {
-					"apiKey": "YOUR_GOOGLE_MAPS_API_KEY"
-				}
-			}
+			"package": "com.ecoeats.app"
 		},
 		"web": {
 			"bundler": "metro",

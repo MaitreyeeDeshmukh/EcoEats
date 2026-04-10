@@ -3,11 +3,7 @@
 import { useEffect } from "react";
 import { create } from "zustand";
 import { subscribeWithSelector } from "zustand/middleware";
-import {
-	expireOldListings,
-	filterListings,
-	subscribeToActiveListings,
-} from "@/services/listings";
+import { filterListings, subscribeToActiveListings } from "@/services/listings";
 import type { Filters, Listing } from "@/types/models";
 
 interface ListingsState {
@@ -31,7 +27,7 @@ const defaultFilters: Filters = {
 	maxMinutes: 90,
 };
 
-export const useListingsStore = create<ListingsState>()(
+const useListingsStore = create<ListingsState>()(
 	subscribeWithSelector((set, get) => ({
 		listings: [],
 		filteredListings: [],
@@ -73,17 +69,9 @@ export const useListingsStore = create<ListingsState>()(
 				get().setListings(listings);
 			});
 
-			// Start expiration timer
-			expireOldListings().catch(() => {});
-			const timer = setInterval(
-				() => expireOldListings().catch(() => {}),
-				60000,
-			);
-
 			set({
 				subscription: () => {
 					unsub();
-					clearInterval(timer);
 				},
 			});
 		},
@@ -105,10 +93,6 @@ export function useFilteredListings() {
 
 export function useListingsLoading() {
 	return useListingsStore((s) => s.loading);
-}
-
-export function useListingsFilters() {
-	return useListingsStore((s) => s.filters);
 }
 
 // Auto-cleanup hook for subscription

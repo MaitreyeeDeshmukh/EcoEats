@@ -64,18 +64,18 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 		if (session?.user) {
 			(async () => {
 				try {
-					let profile = await getUserProfile(session.user.id);
+					let profile = await getUserProfile();
 					if (cancelled) return;
 
 					if (!profile) {
 						// Create profile if it doesn't exist
-						await createUserProfile(session.user.id, {
+						await createUserProfile({
 							name: session.user.name || "EcoEats User",
 							email: session.user.email,
 							avatar: session.user.image,
 						});
 						// Fetch the newly created profile
-						profile = await getUserProfile(session.user.id);
+						profile = await getUserProfile();
 					}
 					if (!cancelled) setProfile(profile);
 				} catch (error) {
@@ -101,7 +101,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
 	const refreshProfile = useCallback(async () => {
 		if (session?.user) {
-			const profile = await getUserProfile(session.user.id);
+			const profile = await getUserProfile();
 			setProfile(profile);
 		}
 	}, [session]);

@@ -18,11 +18,3 @@ export function Spinner({
 		</View>
 	);
 }
-
-export function FullPageSpinner() {
-	return (
-		<View className="flex-1 items-center justify-center bg-cream">
-			<Spinner />
-		</View>
-	);
-}

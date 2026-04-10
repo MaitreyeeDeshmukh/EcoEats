@@ -23,7 +23,7 @@ export default function OnboardingScreen() {
 
 		setLoading(true);
 		try {
-			await updateUserProfile(user.id, { role });
+			await updateUserProfile({ role });
 			await refreshProfile();
 			router.replace("/(tabs)");
 		} catch (error) {

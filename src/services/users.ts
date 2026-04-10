@@ -1,8 +1,20 @@
 // src/services/users.ts
 
+import type { InferRequestType, InferResponseType } from "hono/client";
 import type { UserRow } from "@/types/database";
 import type { DietaryTag, ImpactStats, User, UserRole } from "@/types/models";
-import { supabase } from "./supabase";
+import { readRpcJson, rpcClient, rpcOptions } from "./rpc-client";
+
+type CreateUserProfileInput = InferRequestType<
+	typeof rpcClient.api.users.me.$post
+>["json"];
+type GetUserProfileResponse = InferResponseType<
+	typeof rpcClient.api.users.me.$get,
+	200
+>;
+type UpdateUserProfileInput = InferRequestType<
+	typeof rpcClient.api.users.me.$patch
+>["json"];
 
 function normalizeUser(row: UserRow): User {
 	return {
@@ -23,49 +35,34 @@ function normalizeUser(row: UserRow): User {
 	};
 }
 
-export async function getUserProfile(id: string): Promise<User | null> {
-	const { data, error } = await supabase
-		.from("users")
-		.select("*")
-		.eq("id", id)
-		.single();
-
-	if (error || !data) return null;
-	return normalizeUser(data);
+export async function getUserProfile(): Promise<User | null> {
+	const response = await rpcClient.api.users.me.$get(
+		undefined,
+		rpcOptions("Failed to load user profile"),
+	);
+	const payload = await readRpcJson<GetUserProfileResponse>(response);
+	return payload.data ? normalizeUser(payload.data) : null;
 }
 
 export async function updateUserProfile(
-	id: string,
-	data: {
-		name?: string;
-		avatar?: string | null;
-		dietaryPrefs?: DietaryTag[];
-		role?: UserRole;
-	},
+	data: UpdateUserProfileInput,
 ): Promise<void> {
-	const update: Record<string, unknown> = {};
-
-	if (data.name !== undefined) update.name = data.name;
-	if (data.avatar !== undefined) update.avatar_url = data.avatar;
-	if (data.dietaryPrefs !== undefined) update.dietary_prefs = data.dietaryPrefs;
-	if (data.role !== undefined) update.role = data.role;
-
-	const { error } = await supabase.from("users").update(update).eq("id", id);
-
-	if (error) throw error;
+	await rpcClient.api.users.me.$patch(
+		{ json: data },
+		rpcOptions("Failed to update user profile"),
+	);
 }
 
 export async function incrementUserImpactStats(
 	userId: string,
 	quantity: number,
 ): Promise<void> {
-	const { data } = await supabase
-		.from("users")
-		.select("impact_stats")
-		.eq("id", userId)
-		.single();
+	const profile = await getUserProfile();
+	if (!profile || profile.id !== userId) {
+		throw new Error("User profile not found");
+	}
 
-	const current: ImpactStats = data?.impact_stats || {
+	const current: ImpactStats = profile.impactStats || {
 		mealsRescued: 0,
 		co2Saved: 0,
 		pointsEarned: 0,
@@ -73,40 +70,25 @@ export async function incrementUserImpactStats(
 
 	const POINTS_PER_MEAL = 10;
 
-	const { error } = await supabase
-		.from("users")
-		.update({
-			impact_stats: {
-				mealsRescued: current.mealsRescued + quantity,
-				co2Saved: current.co2Saved + quantity * 0.5,
-				pointsEarned: current.pointsEarned + quantity * POINTS_PER_MEAL,
+	await rpcClient.api.users.me.$patch(
+		{
+			json: {
+				impactStats: {
+					mealsRescued: current.mealsRescued + quantity,
+					co2Saved: current.co2Saved + quantity * 0.5,
+					pointsEarned: current.pointsEarned + quantity * POINTS_PER_MEAL,
+				},
 			},
-		})
-		.eq("id", userId);
-
-	if (error) throw error;
+		},
+		rpcOptions("Failed to update impact stats"),
+	);
 }
 
 export async function createUserProfile(
-	id: string,
-	data: {
-		name: string;
-		email: string;
-		avatar?: string | null;
-		role?: UserRole;
-		dietaryPrefs?: DietaryTag[];
-	},
+	data: CreateUserProfileInput,
 ): Promise<void> {
-	const { error } = await supabase.from("users").insert({
-		id,
-		name: data.name,
-		email: data.email,
-		avatar_url: data.avatar,
-		role: data.role || "student",
-		dietary_prefs: data.dietaryPrefs || [],
-		impact_stats: { mealsRescued: 0, co2Saved: 0, pointsEarned: 0 },
-		reputation_score: 100,
-	});
-
-	if (error) throw error;
+	await rpcClient.api.users.me.$post(
+		{ json: data },
+		rpcOptions("Failed to create user profile"),
+	);
 }

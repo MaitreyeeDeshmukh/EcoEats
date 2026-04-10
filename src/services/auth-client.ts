@@ -1,9 +1,11 @@
 // src/services/auth-client.ts
 import * as SecureStore from "expo-secure-store";
 import { Platform } from "react-native";
+import { readErrorMessage } from "./request";
+import { buildServerUrl } from "./server-config";
 
-const AUTH_URL = process.env.EXPO_PUBLIC_AUTH_URL || "http://localhost:8787";
 const TOKEN_KEY = "ecoeats_session";
+const AUTH_TOKEN_HEADER = "set-auth-token";
 
 function getMagicLinkCallbackURL(): string {
 	if (Platform.OS === "web" && typeof window !== "undefined") {
@@ -17,34 +19,6 @@ function getMagicLinkErrorCallbackURL(): string {
 		return `${window.location.origin}/login`;
 	}
 	return "ecoeats://login";
-}
-
-async function readErrorMessage(
-	response: Response,
-	fallback: string,
-): Promise<string> {
-	try {
-		const payload = await response.json();
-		if (
-			payload &&
-			typeof payload === "object" &&
-			"message" in payload &&
-			typeof payload.message === "string"
-		) {
-			return payload.message;
-		}
-		if (
-			payload &&
-			typeof payload === "object" &&
-			"error" in payload &&
-			typeof payload.error === "string"
-		) {
-			return payload.error;
-		}
-	} catch (error) {
-		console.warn("Failed to parse auth error response:", error);
-	}
-	return fallback;
 }
 
 const webStorage = {
@@ -114,13 +88,13 @@ export interface User {
 
 class AuthClient {
 	private session: Session | null = null;
+	private authToken: string | null = null;
 	private listeners: Set<(session: Session | null) => void> = new Set();
 
 	async getSession(): Promise<Session | null> {
 		if (this.session) {
 			if (this.session.expiresAt <= new Date()) {
-				this.session = null;
-				await storage.deleteItem(TOKEN_KEY);
+				await this.clearSession();
 				return null;
 			}
 			return this.session;
@@ -130,32 +104,37 @@ class AuthClient {
 		if (!stored) return null;
 
 		try {
-			const parsed = JSON.parse(stored);
+			const parsed = JSON.parse(stored) as {
+				session?: Session & { expiresAt: string };
+				authToken?: string | null;
+			};
 			if (
 				!parsed ||
 				typeof parsed !== "object" ||
-				!parsed.id ||
-				!parsed.userId ||
-				!parsed.expiresAt ||
-				!parsed.user
+				!parsed.session ||
+				!parsed.session.id ||
+				!parsed.session.userId ||
+				!parsed.session.expiresAt ||
+				!parsed.session.user
 			) {
 				console.warn("Invalid session data structure");
 				await storage.deleteItem(TOKEN_KEY);
 				return null;
 			}
 			const session: Session = {
-				...parsed,
-				expiresAt: new Date(parsed.expiresAt),
+				...parsed.session,
+				expiresAt: new Date(parsed.session.expiresAt),
 			};
 			if (session.expiresAt <= new Date()) {
-				await storage.deleteItem(TOKEN_KEY);
+				await this.clearSession();
 				return null;
 			}
 			this.session = session;
+			this.authToken = parsed.authToken ?? null;
 			return this.session;
 		} catch (error) {
 			console.warn("Failed to parse session:", error);
-			await storage.deleteItem(TOKEN_KEY);
+			await this.clearSession();
 			return null;
 		}
 	}
@@ -163,16 +142,19 @@ class AuthClient {
 	async requestMagicLink(email: string): Promise<void> {
 		const callbackURL = getMagicLinkCallbackURL();
 		const errorCallbackURL = getMagicLinkErrorCallbackURL();
-		const response = await fetch(`${AUTH_URL}/api/auth/sign-in/magic-link`, {
-			method: "POST",
-			headers: { "Content-Type": "application/json" },
-			credentials: "include",
-			body: JSON.stringify({
-				email,
-				callbackURL,
-				errorCallbackURL,
-			}),
-		});
+		const response = await fetch(
+			buildServerUrl("/api/auth/sign-in/magic-link"),
+			{
+				method: "POST",
+				headers: { "Content-Type": "application/json" },
+				credentials: "include",
+				body: JSON.stringify({
+					email,
+					callbackURL,
+					errorCallbackURL,
+				}),
+			},
+		);
 
 		if (!response.ok) {
 			throw new Error(
@@ -184,7 +166,7 @@ class AuthClient {
 	async verifyMagicLink(token: string): Promise<Session> {
 		const params = new URLSearchParams({ token });
 		const response = await fetch(
-			`${AUTH_URL}/api/auth/magic-link/verify?${params.toString()}`,
+			buildServerUrl(`/api/auth/magic-link/verify?${params.toString()}`),
 			{
 				method: "GET",
 				credentials: "include",
@@ -203,9 +185,9 @@ class AuthClient {
 			expiresAt: new Date(data.session.expiresAt),
 		};
 		this.session = session;
+		this.authToken = response.headers.get(AUTH_TOKEN_HEADER);
 
-		// Store session
-		await storage.setItem(TOKEN_KEY, JSON.stringify(session));
+		await this.persistSession();
 
 		this.notifyListeners();
 		return session;
@@ -213,16 +195,21 @@ class AuthClient {
 
 	async signOut(): Promise<void> {
 		try {
-			await fetch(`${AUTH_URL}/api/auth/sign-out`, {
+			const headers = new Headers();
+			if (this.authToken) {
+				headers.set("Authorization", `Bearer ${this.authToken}`);
+			}
+
+			await fetch(buildServerUrl("/api/auth/sign-out"), {
 				method: "POST",
+				headers,
 				credentials: "include",
 			});
 		} catch (error) {
 			console.warn("Sign out request failed:", error);
 		}
 
-		this.session = null;
-		await storage.deleteItem(TOKEN_KEY);
+		await this.clearSession();
 		this.notifyListeners();
 	}
 
@@ -238,7 +225,28 @@ class AuthClient {
 	}
 
 	getAccessToken(): string | null {
-		return this.session?.id || null;
+		return this.authToken;
+	}
+
+	private async persistSession(): Promise<void> {
+		if (!this.session) {
+			await storage.deleteItem(TOKEN_KEY);
+			return;
+		}
+
+		await storage.setItem(
+			TOKEN_KEY,
+			JSON.stringify({
+				session: this.session,
+				authToken: this.authToken,
+			}),
+		);
+	}
+
+	private async clearSession(): Promise<void> {
+		this.session = null;
+		this.authToken = null;
+		await storage.deleteItem(TOKEN_KEY);
 	}
 }
 
