@@ -11,6 +11,12 @@ import {
 	mutateClaimResponseSchema,
 	submitRatingBodySchema,
 } from "../../shared/contracts";
+import {
+	ConflictError,
+	HttpError,
+	NotFoundError,
+	ValidationError,
+} from "../errors";
 import { type AppEnv, getSession } from "../session";
 import { validate } from "../validation";
 
@@ -83,7 +89,7 @@ export function createClaimsRouter(
 				);
 
 				if ((existingClaim.rowCount ?? 0) > 0) {
-					throw new Error("Already claimed");
+					throw new ConflictError("Already claimed");
 				}
 
 				const listingResult = await client.query(
@@ -97,7 +103,7 @@ export function createClaimsRouter(
 				);
 
 				if (listingResult.rowCount === 0) {
-					throw new Error("Listing not found");
+					throw new NotFoundError("Listing not found");
 				}
 
 				const listing = listingResult.rows[0] as {
@@ -106,11 +112,11 @@ export function createClaimsRouter(
 				};
 
 				if (listing.status !== "active") {
-					throw new Error("Listing is no longer active");
+					throw new ConflictError("Listing is no longer active");
 				}
 
 				if (listing.quantity_remaining < quantity) {
-					throw new Error("Not enough portions remaining");
+					throw new ValidationError("Not enough portions remaining");
 				}
 
 				const nextQuantity = listing.quantity_remaining - quantity;
@@ -168,12 +174,14 @@ export function createClaimsRouter(
 				);
 			} catch (error) {
 				await client.query("ROLLBACK");
+				const statusCode: 400 | 404 | 409 =
+					error instanceof HttpError ? (error.statusCode as 400 | 404 | 409) : 400;
 				return c.json(
 					messageResponseSchema.parse({
 						message:
 							error instanceof Error ? error.message : "Failed to create claim",
 					}),
-					400,
+					statusCode,
 				);
 			} finally {
 				client.release();
@@ -234,7 +242,7 @@ export function createClaimsRouter(
 				);
 
 				if (claimResult.rowCount === 0) {
-					throw new Error("Claim not found");
+					throw new NotFoundError("Claim not found");
 				}
 
 				const claim = claimResult.rows[0] as {
@@ -266,12 +274,14 @@ export function createClaimsRouter(
 				return c.json(mutateClaimResponseSchema.parse({ success: true }), 200);
 			} catch (error) {
 				await client.query("ROLLBACK");
+				const statusCode: 400 | 404 =
+					error instanceof HttpError ? (error.statusCode as 400 | 404) : 400;
 				return c.json(
 					messageResponseSchema.parse({
 						message:
 							error instanceof Error ? error.message : "Failed to mark no-show",
 					}),
-					400,
+					statusCode,
 				);
 			} finally {
 				client.release();

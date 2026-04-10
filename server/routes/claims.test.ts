@@ -490,7 +490,7 @@ describe("Claims Router", () => {
 					}),
 				});
 
-				expect(res.status).toBe(400);
+				expect(res.status).toBe(409);
 
 				const json = await res.json();
 				expect(json.message).toBe("Already claimed");
@@ -523,7 +523,7 @@ describe("Claims Router", () => {
 					}),
 				});
 
-				expect(res.status).toBe(400);
+				expect(res.status).toBe(404);
 
 				const json = await res.json();
 				expect(json.message).toBe("Listing not found");
@@ -571,7 +571,7 @@ describe("Claims Router", () => {
 					}),
 				});
 
-				expect(res.status).toBe(400);
+				expect(res.status).toBe(409);
 
 				const json = await res.json();
 				expect(json.message).toBe("Listing is no longer active");
@@ -1165,7 +1165,7 @@ describe("Claims Router", () => {
 					method: "POST",
 				});
 
-				expect(res.status).toBe(400);
+				expect(res.status).toBe(404);
 
 				const json = await res.json();
 				expect(json.message).toBe("Claim not found");
@@ -1174,7 +1174,7 @@ describe("Claims Router", () => {
 
 		itIf(
 			isDbAvailable,
-			"should return 400 for non-existent claim",
+			"should return 404 for non-existent claim",
 			async () => {
 				db = getTestPoolOrThrow();
 				const hostId = generateTestId();
@@ -1192,7 +1192,7 @@ describe("Claims Router", () => {
 					method: "POST",
 				});
 
-				expect(res.status).toBe(400);
+				expect(res.status).toBe(404);
 
 				const json = await res.json();
 				expect(json.message).toBe("Claim not found");
