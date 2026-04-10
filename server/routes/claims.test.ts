@@ -365,6 +365,32 @@ describe("Claims Router", () => {
 	describe("POST /", () => {
 		itIf(
 			isDbAvailable,
+			"should require authentication (401 without session)",
+			async () => {
+				db = getTestPoolOrThrow();
+
+				const app = new Hono<AppEnv>().route(
+					"/claims",
+					createClaimsRouter(db, async (c) => {
+						return c.json({ message: "Unauthorized" }, 401);
+					}),
+				);
+
+				const res = await app.request("/claims", {
+					method: "POST",
+					headers: { "Content-Type": "application/json" },
+					body: JSON.stringify({
+						listingId: generateTestId(),
+						studentName: "Student",
+						quantity: 1,
+					}),
+				});
+				expect(res.status).toBe(401);
+			},
+		);
+
+		itIf(
+			isDbAvailable,
 			"should create claim successfully with transaction logic",
 			async () => {
 				db = getTestPoolOrThrow();
