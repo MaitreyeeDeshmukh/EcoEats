@@ -1,26 +1,26 @@
 {
-  "featureId": "listings-route-tests",
-  "reviewedAt": "2026-04-10T22:50:00.000Z",
-  "commitId": "e732c37",
-  "transcriptSkeletonReviewed": true,
-  "diffReviewed": true,
-  "status": "pass",
-  "codeReview": {
-    "summary": "The implementation provides comprehensive test coverage for all 24 validation contract assertions (VAL-TEST-030 through VAL-TEST-053) for the listings route. The worker created 28 test cases covering all CRUD operations, ownership validation, auto-expiration logic, and error handling. The worker also discovered and fixed two underlying bugs: (1) listingRowSchema now properly handles Date objects from PostgreSQL like claimRowSchema already did, and (2) fixed SQL type issue with expiryMinutes using make_interval() instead of string concatenation. The test structure follows established patterns from claims.test.ts with conditional database-dependent test execution using itIf helper.",
-    "issues": []
-  },
-  "sharedStateObservations": [
-    {
-      "area": "conventions",
-      "observation": "The listingRowSchema in shared/contracts/database.ts was missing Date object handling that claimRowSchema already had. This pattern (union of string and date with transform) should be consistently applied to all timestamp fields in row schemas.",
-      "evidence": "shared/contracts/database.ts:48-55 - expires_at and posted_at now have the same transform pattern as claimRowSchema's claimed_at, picked_up_at, reservation_expires_at fields. This pattern was already established but not applied consistently."
-    },
-    {
-      "area": "knowledge",
-      "observation": "PostgreSQL interval construction using string concatenation ($15 || ' minutes')::interval fails when parameter is numeric. Must use make_interval(mins => $15) for type-safe interval construction.",
-      "evidence": "server/routes/listings.ts:123 - Changed from NOW() + ($15 || ' minutes')::interval to NOW() + make_interval(mins => $15). The string concatenation approach fails because PostgreSQL deduces inconsistent types for the numeric parameter."
-    }
-  ],
-  "addressesFailureFrom": null,
-  "summary": "PASS - Comprehensive test coverage with 28 test cases covering all 24 validation contract assertions for listings route. Worker followed testing-worker skill procedure, maintained consistency with existing test patterns (claims.test.ts), and proactively fixed two bugs discovered during testing. No blocking issues found."
+	"featureId": "listings-route-tests",
+	"reviewedAt": "2026-04-10T22:50:00.000Z",
+	"commitId": "e732c37",
+	"transcriptSkeletonReviewed": true,
+	"diffReviewed": true,
+	"status": "pass",
+	"codeReview": {
+		"summary": "The implementation provides comprehensive test coverage for all 24 validation contract assertions (VAL-TEST-030 through VAL-TEST-053) for the listings route. The worker created 28 test cases covering all CRUD operations, ownership validation, auto-expiration logic, and error handling. The worker also discovered and fixed two underlying bugs: (1) listingRowSchema now properly handles Date objects from PostgreSQL like claimRowSchema already did, and (2) fixed SQL type issue with expiryMinutes using make_interval() instead of string concatenation. The test structure follows established patterns from claims.test.ts with conditional database-dependent test execution using itIf helper.",
+		"issues": []
+	},
+	"sharedStateObservations": [
+		{
+			"area": "conventions",
+			"observation": "The listingRowSchema in shared/contracts/database.ts was missing Date object handling that claimRowSchema already had. This pattern (union of string and date with transform) should be consistently applied to all timestamp fields in row schemas.",
+			"evidence": "shared/contracts/database.ts:48-55 - expires_at and posted_at now have the same transform pattern as claimRowSchema's claimed_at, picked_up_at, reservation_expires_at fields. This pattern was already established but not applied consistently."
+		},
+		{
+			"area": "knowledge",
+			"observation": "PostgreSQL interval construction using string concatenation ($15 || ' minutes')::interval fails when parameter is numeric. Must use make_interval(mins => $15) for type-safe interval construction.",
+			"evidence": "server/routes/listings.ts:123 - Changed from NOW() + ($15 || ' minutes')::interval to NOW() + make_interval(mins => $15). The string concatenation approach fails because PostgreSQL deduces inconsistent types for the numeric parameter."
+		}
+	],
+	"addressesFailureFrom": null,
+	"summary": "PASS - Comprehensive test coverage with 28 test cases covering all 24 validation contract assertions for listings route. Worker followed testing-worker skill procedure, maintained consistency with existing test patterns (claims.test.ts), and proactively fixed two bugs discovered during testing. No blocking issues found."
 }

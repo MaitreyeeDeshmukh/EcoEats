@@ -1,56 +1,56 @@
 {
-  "featureId": "claims-route-tests",
-  "reviewedAt": "2026-04-10T23:00:00.000Z",
-  "commitId": "3afebde2f1168a37032ff5d37074c34952d836de",
-  "transcriptSkeletonReviewed": true,
-  "diffReviewed": true,
-  "status": "fail",
-  "codeReview": {
-    "summary": "The test suite provides extensive coverage with 30 test cases and 76 expect() calls, but has two blocking issues: a missing test for POST /claims authentication requirement (VAL-TEST-018), and an incorrectly implemented test for the 20-claim limit that doesn't actually test the limit behavior. Several ordering assertions are also weakly verified.",
-    "issues": [
-      {
-        "file": "server/routes/claims.test.ts",
-        "line": 148,
-        "severity": "blocking",
-        "description": "Missing test for VAL-TEST-018: POST /claims Requires Authentication. The test suite includes authentication tests for GET /mine but not for POST /. According to validation-contract.md, unauthenticated POST /claims should return 401 Unauthorized."
-      },
-      {
-        "file": "server/routes/claims.test.ts",
-        "line": 107,
-        "severity": "blocking",
-        "description": "The test 'should limit results to 20 most recent claims' is incorrectly implemented. It creates 25 claims by DIFFERENT students (each student can only claim once), then tests that the host user (who has 0 claims) gets an empty array. This does NOT test the 20-claim limit. The test should create 25+ claims for the SAME user and verify only 20 are returned, but this is impossible due to the UNIQUE(listing_id, student_id) constraint. The 20-claim limit for a single user cannot be tested this way - consider testing with 20 listings claimed by one student instead."
-      },
-      {
-        "file": "server/routes/claims.test.ts",
-        "line": 26,
-        "severity": "non_blocking",
-        "description": "VAL-TEST-004 requires 'ordered by claimed_at DESC', but the test creates only one claim so it cannot verify the descending order. Should create at least 2 claims with different timestamps to verify ordering."
-      },
-      {
-        "file": "server/routes/claims.test.ts",
-        "line": 163,
-        "severity": "non_blocking",
-        "description": "VAL-TEST-007 requires claims 'ordered by claimed_at DESC', but the test creates only one claim so it cannot verify the descending order. Should create at least 2 claims with different timestamps to verify ordering."
-      }
-    ]
-  },
-  "sharedStateObservations": [
-    {
-      "area": "services",
-      "observation": "A docker-compose.yml file was added for local PostgreSQL testing. This provides a reproducible local test database environment but isn't documented in .factory/services.yaml or AGENTS.md.",
-      "evidence": "Git diff shows docker-compose.yml added with 17 lines for PostgreSQL service configuration"
-    },
-    {
-      "area": "conventions",
-      "observation": "Test infrastructure improvements were made: claimRowSchema and listingRowSchema now transform Date objects to strings. This handles PostgreSQL timestamp return types. The convention of handling Date-to-string transformation in Zod schemas should be documented.",
-      "evidence": "shared/contracts/database.ts:58-73 - added .transform() to handle Date objects from PostgreSQL"
-    },
-    {
-      "area": "conventions",
-      "observation": "The test uses `itIf(isDbAvailable, ...)` pattern for conditional test execution when database is unavailable. This is a good pattern for CI environments without database access but isn't documented as a testing convention.",
-      "evidence": "server/routes/claims.test.ts:48-52 - conditional test helper function definition"
-    }
-  ],
-  "addressesFailureFrom": null,
-  "summary": "The claims route test suite provides good coverage of the claims router functionality but has two blocking issues: (1) Missing authentication test for POST / endpoint (VAL-TEST-018), and (2) Incorrectly implemented 20-claim limit test that doesn't actually test the limit behavior. Additionally, several tests create only single claims when they should verify ordering with multiple claims. The worker also made valuable infrastructure improvements including docker-compose.yml for local testing and Date-to-string transformations in Zod schemas."
+	"featureId": "claims-route-tests",
+	"reviewedAt": "2026-04-10T23:00:00.000Z",
+	"commitId": "3afebde2f1168a37032ff5d37074c34952d836de",
+	"transcriptSkeletonReviewed": true,
+	"diffReviewed": true,
+	"status": "fail",
+	"codeReview": {
+		"summary": "The test suite provides extensive coverage with 30 test cases and 76 expect() calls, but has two blocking issues: a missing test for POST /claims authentication requirement (VAL-TEST-018), and an incorrectly implemented test for the 20-claim limit that doesn't actually test the limit behavior. Several ordering assertions are also weakly verified.",
+		"issues": [
+			{
+				"file": "server/routes/claims.test.ts",
+				"line": 148,
+				"severity": "blocking",
+				"description": "Missing test for VAL-TEST-018: POST /claims Requires Authentication. The test suite includes authentication tests for GET /mine but not for POST /. According to validation-contract.md, unauthenticated POST /claims should return 401 Unauthorized."
+			},
+			{
+				"file": "server/routes/claims.test.ts",
+				"line": 107,
+				"severity": "blocking",
+				"description": "The test 'should limit results to 20 most recent claims' is incorrectly implemented. It creates 25 claims by DIFFERENT students (each student can only claim once), then tests that the host user (who has 0 claims) gets an empty array. This does NOT test the 20-claim limit. The test should create 25+ claims for the SAME user and verify only 20 are returned, but this is impossible due to the UNIQUE(listing_id, student_id) constraint. The 20-claim limit for a single user cannot be tested this way - consider testing with 20 listings claimed by one student instead."
+			},
+			{
+				"file": "server/routes/claims.test.ts",
+				"line": 26,
+				"severity": "non_blocking",
+				"description": "VAL-TEST-004 requires 'ordered by claimed_at DESC', but the test creates only one claim so it cannot verify the descending order. Should create at least 2 claims with different timestamps to verify ordering."
+			},
+			{
+				"file": "server/routes/claims.test.ts",
+				"line": 163,
+				"severity": "non_blocking",
+				"description": "VAL-TEST-007 requires claims 'ordered by claimed_at DESC', but the test creates only one claim so it cannot verify the descending order. Should create at least 2 claims with different timestamps to verify ordering."
+			}
+		]
+	},
+	"sharedStateObservations": [
+		{
+			"area": "services",
+			"observation": "A docker-compose.yml file was added for local PostgreSQL testing. This provides a reproducible local test database environment but isn't documented in .factory/services.yaml or AGENTS.md.",
+			"evidence": "Git diff shows docker-compose.yml added with 17 lines for PostgreSQL service configuration"
+		},
+		{
+			"area": "conventions",
+			"observation": "Test infrastructure improvements were made: claimRowSchema and listingRowSchema now transform Date objects to strings. This handles PostgreSQL timestamp return types. The convention of handling Date-to-string transformation in Zod schemas should be documented.",
+			"evidence": "shared/contracts/database.ts:58-73 - added .transform() to handle Date objects from PostgreSQL"
+		},
+		{
+			"area": "conventions",
+			"observation": "The test uses `itIf(isDbAvailable, ...)` pattern for conditional test execution when database is unavailable. This is a good pattern for CI environments without database access but isn't documented as a testing convention.",
+			"evidence": "server/routes/claims.test.ts:48-52 - conditional test helper function definition"
+		}
+	],
+	"addressesFailureFrom": null,
+	"summary": "The claims route test suite provides good coverage of the claims router functionality but has two blocking issues: (1) Missing authentication test for POST / endpoint (VAL-TEST-018), and (2) Incorrectly implemented 20-claim limit test that doesn't actually test the limit behavior. Additionally, several tests create only single claims when they should verify ordering with multiple claims. The worker also made valuable infrastructure improvements including docker-compose.yml for local testing and Date-to-string transformations in Zod schemas."
 }

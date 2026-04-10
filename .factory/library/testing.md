@@ -116,6 +116,40 @@ NOW() + make_interval(mins => $15)
 
 ---
 
+## SSR Testing Pattern (Server-Side Rendering)
+
+To test code that guards against `typeof window === "undefined"`, use this pattern in Jest:
+
+```typescript
+describe("SSR window undefined", () => {
+  let originalWindow: Window | undefined;
+
+  beforeEach(() => {
+    originalWindow = global.window;
+    // @ts-expect-error - delete window to simulate SSR
+    delete global.window;
+    // Mock localStorage to verify it's NOT accessed
+    global.localStorage = {
+      getItem: jest.fn(),
+      setItem: jest.fn(),
+      removeItem: jest.fn(),
+    };
+  });
+
+  afterEach(() => {
+    global.window = originalWindow;
+  });
+
+  it("returns null from getItem when window is undefined", () => {
+    // Test SSR behavior
+  });
+});
+```
+
+This pattern allows testing code that checks `typeof window === "undefined"` in a jsdom environment.
+
+---
+
 ## Test Scripts
 
 | Script | Description |

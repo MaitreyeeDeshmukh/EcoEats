@@ -1,0 +1,21 @@
+{
+	"featureId": "fix-auth-ssr-test",
+	"reviewedAt": "2026-04-10T23:25:00.000Z",
+	"commitId": "1e86ebffd6865aaa0ef5ee12d9b6cb6546006850",
+	"transcriptSkeletonReviewed": true,
+	"diffReviewed": true,
+	"status": "pass",
+	"codeReview": {
+		"summary": "The fix adequately addresses the original failure for VAL-TEST-078 (Web Storage Handles Undefined Window for SSR). The implementation adds 4 well-structured tests that verify the SSR behavior: (1) getItem returns null when window is undefined, (2) setItem is a no-op when window is undefined, (3) deleteItem is a no-op when window is undefined, and (4) session operations work gracefully without throwing errors during SSR. The tests correctly simulate SSR by deleting global.window and mock localStorage to verify it's NOT accessed. This matches the source code behavior in auth-client.ts lines 24-50 where webStorage methods check `typeof window === \"undefined\"` before accessing localStorage.",
+		"issues": []
+	},
+	"sharedStateObservations": [
+		{
+			"area": "knowledge",
+			"observation": "The SSR testing approach using `delete global.window` combined with mocking `global.localStorage` is a useful pattern for testing server-side rendering scenarios in Jest/jsdom. This technique could be documented in the testing-worker skill or AGENTS.md for future workers who need to test SSR behavior.",
+			"evidence": "src/services/auth-client.test.ts lines 904-924: beforeEach deletes global.window and sets up localStorage mock on global. This pattern allows testing code that guards against `typeof window === \"undefined\"`."
+		}
+	],
+	"addressesFailureFrom": ".factory/validation/testing-infrastructure/scrutiny/reviews/auth-client-tests.json",
+	"summary": "PASS: The fix successfully addresses the original failure where VAL-TEST-078 was not tested. The implementation adds 4 tests that properly verify SSR behavior where window is undefined. Tests use the correct approach of deleting global.window and mocking localStorage to verify operations are no-ops. The fix matches the source code's SSR handling and all verification commands pass (tests, tsc)."
+}
