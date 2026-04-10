@@ -1,0 +1,31 @@
+commands:
+  install: bun install
+  typecheck: bunx tsc --noEmit
+  build: bun run api
+  test: bun test
+  test:frontend: bun run test:frontend
+  lint: bunx biome check .
+  lint:fix: bunx biome check --write .
+  knip: bunx knip
+
+services:
+  postgres:
+    start: docker compose up -d postgres 2>/dev/null || true
+    stop: docker compose stop postgres 2>/dev/null || true
+    healthcheck: pg_isready -h localhost -p 5432 2>/dev/null || echo "PostgreSQL not running locally"
+    port: 5432
+    depends_on: []
+
+  api:
+    start: PORT=3001 bun server/index.ts
+    stop: lsof -ti :3001 | xargs kill 2>/dev/null || true
+    healthcheck: curl -sf http://localhost:3001/health
+    port: 3001
+    depends_on: [postgres]
+
+  expo:
+    start: bun start
+    stop: lsof -ti :8081 | xargs kill 2>/dev/null || true
+    healthcheck: curl -sf http://localhost:8081
+    port: 8081
+    depends_on: []
