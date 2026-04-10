@@ -14,6 +14,8 @@
 		"eas:build:ios": "bunx eas-cli@latest build -p ios --profile production",
 		"eas:build:local:android": "bunx eas-cli@latest build -p android --profile preview --local",
 		"eas:build:local:ios": "bunx eas-cli@latest build -p ios --profile preview --local",
+		"eas:submit:android": "bunx eas-cli@latest submit -p android --profile production",
+		"eas:submit:ios": "bunx eas-cli@latest submit -p ios --profile production",
 		"start": "expo start",
 		"android": "expo start --android",
 		"ios": "expo start --ios",
