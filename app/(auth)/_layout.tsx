@@ -1,12 +1,15 @@
 // app/(auth)/_layout.tsx
 import { Stack } from "expo-router";
+import { ErrorBoundary } from "@/components/ui/ErrorBoundary";
 
 export default function AuthLayout() {
 	return (
-		<Stack screenOptions={{ headerShown: false }}>
-			<Stack.Screen name="login" />
-			<Stack.Screen name="onboarding" />
-			<Stack.Screen name="auth/callback" />
-		</Stack>
+		<ErrorBoundary>
+			<Stack screenOptions={{ headerShown: false }}>
+				<Stack.Screen name="login" />
+				<Stack.Screen name="onboarding" />
+				<Stack.Screen name="auth/callback" />
+			</Stack>
+		</ErrorBoundary>
 	);
 }
