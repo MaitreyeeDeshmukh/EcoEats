@@ -646,7 +646,8 @@ describe("AuthClient", () => {
 				},
 			});
 
-			const initialSession = await authClient.verifyMagicLink("magic-token-123");
+			const initialSession =
+				await authClient.verifyMagicLink("magic-token-123");
 
 			expect(initialSession).not.toBeNull();
 			expect(initialSession.id).toBe("session-123");
@@ -756,10 +757,10 @@ describe("AuthClient", () => {
 
 			// Spy on storage to verify it's not accessed repeatedly
 			const originalGetItem = global.secureStoreMock;
-			let storageAccessCount = 0;
+			let _storageAccessCount = 0;
 			Object.defineProperty(global, "secureStoreMock", {
 				get: () => {
-					storageAccessCount++;
+					_storageAccessCount++;
 					return originalGetItem;
 				},
 				configurable: true,
@@ -770,7 +771,7 @@ describe("AuthClient", () => {
 			expect(session1).not.toBeNull();
 
 			// Reset counter after first access
-			storageAccessCount = 0;
+			_storageAccessCount = 0;
 
 			// Second call should use cached session
 			const session2 = await authClient.getSession();

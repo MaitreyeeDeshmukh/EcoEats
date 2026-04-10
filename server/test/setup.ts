@@ -11,20 +11,37 @@ let testPool: Pool | null = null;
 let isDatabaseAvailable: boolean | null = null;
 
 /**
- * Check if database is available
+ * Check if database is available (synchronous check for config)
+ */
+function hasDatabaseConfig(): boolean {
+	if (process.env.DB_SKIP === "true") {
+		return false;
+	}
+	if (!process.env.DB_URL) {
+		return false;
+	}
+	return true;
+}
+
+/**
+ * Check if database is available and can be connected to
  */
 async function checkDatabaseAvailability(): Promise<boolean> {
 	if (isDatabaseAvailable !== null) {
 		return isDatabaseAvailable;
 	}
 
-	if (process.env.DB_SKIP === "true") {
+	if (!hasDatabaseConfig()) {
 		isDatabaseAvailable = false;
 		return false;
 	}
 
 	try {
 		const pool = getTestPool();
+		if (!pool) {
+			isDatabaseAvailable = false;
+			return false;
+		}
 		await pool.query("SELECT 1");
 		isDatabaseAvailable = true;
 		return true;
@@ -37,18 +54,38 @@ async function checkDatabaseAvailability(): Promise<boolean> {
 
 /**
  * Get or create the test database pool
+ * Returns null if database is not configured
  */
-export function getTestPool(): Pool {
+export function getTestPool(): Pool | null {
 	if (!testPool) {
 		const url = process.env.DB_URL;
 		if (!url) {
-			throw new Error("No DB_URL env var configured");
+			return null;
 		}
 
 		testPool = new Pool({ connectionString: url });
 	}
 	return testPool;
 }
+
+/**
+ * Get test pool, throwing if not available
+ * Use this in tests after checking isDbAvailable()
+ */
+export function getTestPoolOrThrow(): Pool {
+	const pool = getTestPool();
+	if (!pool) {
+		throw new Error("Database not configured. Set DB_URL env var.");
+	}
+	return pool;
+}
+
+/**
+ * Export the database availability check as a boolean value
+ */
+export const isDbAvailable: boolean = !(
+	process.env.DB_SKIP === "true" || !process.env.DB_URL
+);
 
 /**
  * Clean up all data in test tables
@@ -58,7 +95,7 @@ export async function cleanupTestData(): Promise<void> {
 	if (!(await checkDatabaseAvailability())) {
 		return;
 	}
-	const pool = getTestPool();
+	const pool = getTestPoolOrThrow();
 	await pool.query(`
 		DELETE FROM claims;
 		DELETE FROM listings;
@@ -81,7 +118,7 @@ export async function insertTestUsers(
 	if (!(await checkDatabaseAvailability())) {
 		return;
 	}
-	const pool = getTestPool();
+	const pool = getTestPoolOrThrow();
 	for (const user of users) {
 		await pool.query(
 			`INSERT INTO users (id, name, email, role)
@@ -115,7 +152,7 @@ export async function insertTestListings(
 	if (!(await checkDatabaseAvailability())) {
 		return;
 	}
-	const pool = getTestPool();
+	const pool = getTestPoolOrThrow();
 	for (const listing of listings) {
 		await pool.query(
 			`INSERT INTO listings (
@@ -161,7 +198,7 @@ export async function insertTestClaims(
 	if (!(await checkDatabaseAvailability())) {
 		return;
 	}
-	const pool = getTestPool();
+	const pool = getTestPoolOrThrow();
 	for (const claim of claims) {
 		await pool.query(
 			`INSERT INTO claims (

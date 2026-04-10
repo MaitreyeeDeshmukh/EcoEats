@@ -18,14 +18,12 @@ import {
 	cleanupTestData,
 	futureMinutes,
 	generateTestId,
-	getTestPool,
+	getTestPoolOrThrow,
 	insertTestClaims,
 	insertTestListings,
 	insertTestUsers,
+	isDbAvailable,
 } from "./index";
-
-// Check if database is available for database-dependent tests
-const dbAvailable = !process.env.DB_SKIP;
 
 /**
  * Create a mock requireSession middleware for testing
@@ -52,7 +50,7 @@ function createMockRequireSession(userId: string): any {
 /**
  * Conditional test helper - runs test only if condition is true
  */
-function itIf(condition: boolean, name: string, fn: any) {
+function itIf(condition: boolean, name: string, fn: () => Promise<void>) {
 	if (condition) {
 		it(name, fn);
 	} else {
@@ -68,10 +66,10 @@ describe("Integration: Claim and Listing Status Consistency", () => {
 	});
 
 	itIf(
-		dbAvailable,
+		isDbAvailable,
 		"listing status changes to 'claimed' when quantity becomes zero (VAL-TEST-098)",
 		async () => {
-			db = getTestPool();
+			db = getTestPoolOrThrow();
 			const hostId = generateTestId();
 			const studentId = generateTestId();
 			const listingId = generateTestId();
@@ -125,10 +123,10 @@ describe("Integration: Claim and Listing Status Consistency", () => {
 	);
 
 	itIf(
-		dbAvailable,
+		isDbAvailable,
 		"no-show restores listing status to 'active' and quantity (VAL-TEST-098)",
 		async () => {
-			db = getTestPool();
+			db = getTestPoolOrThrow();
 			const hostId = generateTestId();
 			const studentId = generateTestId();
 			const listingId = generateTestId();
@@ -194,10 +192,10 @@ describe("Integration: Claim and Listing Status Consistency", () => {
 	);
 
 	itIf(
-		dbAvailable,
+		isDbAvailable,
 		"multiple claims reduce quantity until zero then status changes (VAL-TEST-098)",
 		async () => {
-			db = getTestPool();
+			db = getTestPoolOrThrow();
 			const hostId = generateTestId();
 			const listingId = generateTestId();
 
@@ -301,10 +299,10 @@ describe("Integration: Claim and Listing Status Consistency", () => {
 	);
 
 	itIf(
-		dbAvailable,
+		isDbAvailable,
 		"no-show on partial claim restores only claimed quantity (VAL-TEST-098)",
 		async () => {
-			db = getTestPool();
+			db = getTestPoolOrThrow();
 			const hostId = generateTestId();
 			const student1Id = generateTestId();
 			const student2Id = generateTestId();
@@ -372,10 +370,10 @@ describe("Integration: Concurrent Claims Race Condition", () => {
 	});
 
 	itIf(
-		dbAvailable,
+		isDbAvailable,
 		"only one claim succeeds when two request last item simultaneously (VAL-TEST-099)",
 		async () => {
-			db = getTestPool();
+			db = getTestPoolOrThrow();
 			const hostId = generateTestId();
 			const student1Id = generateTestId();
 			const student2Id = generateTestId();
@@ -462,10 +460,10 @@ describe("Integration: Concurrent Claims Race Condition", () => {
 	);
 
 	itIf(
-		dbAvailable,
+		isDbAvailable,
 		"multiple concurrent claims respect quantity limits (VAL-TEST-099)",
 		async () => {
-			db = getTestPool();
+			db = getTestPoolOrThrow();
 			const hostId = generateTestId();
 			const listingId = generateTestId();
 
@@ -539,10 +537,10 @@ describe("Integration: Concurrent Claims Race Condition", () => {
 	);
 
 	itIf(
-		dbAvailable,
+		isDbAvailable,
 		"concurrent claims with different quantities handle overflow correctly (VAL-TEST-099)",
 		async () => {
-			db = getTestPool();
+			db = getTestPoolOrThrow();
 			const hostId = generateTestId();
 			const student1Id = generateTestId();
 			const student2Id = generateTestId();
@@ -619,10 +617,10 @@ describe("Integration: End-to-End Claim Workflow", () => {
 	});
 
 	itIf(
-		dbAvailable,
+		isDbAvailable,
 		"complete workflow: create listing, claim, confirm pickup (integration)",
 		async () => {
-			db = getTestPool();
+			db = getTestPoolOrThrow();
 			const hostId = generateTestId();
 			const studentId = generateTestId();
 
@@ -733,10 +731,10 @@ describe("Integration: End-to-End Claim Workflow", () => {
 	);
 
 	itIf(
-		dbAvailable,
+		isDbAvailable,
 		"complete workflow: create listing, claim, no-show, re-claim (integration)",
 		async () => {
-			db = getTestPool();
+			db = getTestPoolOrThrow();
 			const hostId = generateTestId();
 			const student1Id = generateTestId();
 			const student2Id = generateTestId();

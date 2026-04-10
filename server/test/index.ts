@@ -6,9 +6,11 @@
 export {
 	cleanupTestData,
 	getTestPool,
+	getTestPoolOrThrow,
 	insertTestClaims,
 	insertTestListings,
 	insertTestUsers,
+	isDbAvailable,
 } from "./setup";
 
 /**

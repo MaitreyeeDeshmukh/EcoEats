@@ -6,15 +6,13 @@ import {
 	cleanupTestData,
 	futureMinutes,
 	generateTestId,
-	getTestPool,
+	getTestPoolOrThrow,
 	insertTestClaims,
 	insertTestListings,
 	insertTestUsers,
+	isDbAvailable,
 } from "../test";
 import { createClaimsRouter } from "./claims";
-
-// Check if database is available for database-dependent tests
-const dbAvailable = !process.env.DB_SKIP;
 
 /**
  * Create a mock requireSession middleware for testing
@@ -41,7 +39,7 @@ function createMockRequireSession(userId: string): any {
 /**
  * Conditional test helper - runs test only if condition is true
  */
-function itIf(condition: boolean, name: string, fn: any) {
+function itIf(condition: boolean, name: string, fn: () => Promise<void>) {
 	if (condition) {
 		it(name, fn);
 	} else {
@@ -58,10 +56,10 @@ describe("Claims Router", () => {
 
 	describe("GET /mine", () => {
 		itIf(
-			dbAvailable,
+			isDbAvailable,
 			"should return user's claims sorted by claimed_at DESC",
 			async () => {
-				db = getTestPool();
+				db = getTestPoolOrThrow();
 				const userId = generateTestId();
 				const listingId = generateTestId();
 
@@ -107,10 +105,10 @@ describe("Claims Router", () => {
 		);
 
 		itIf(
-			dbAvailable,
+			isDbAvailable,
 			"should return empty array when user has no claims",
 			async () => {
-				db = getTestPool();
+				db = getTestPoolOrThrow();
 				const userId = generateTestId();
 
 				await insertTestUsers([
@@ -131,10 +129,10 @@ describe("Claims Router", () => {
 		);
 
 		itIf(
-			dbAvailable,
+			isDbAvailable,
 			"should require authentication (401 without session)",
 			async () => {
-				db = getTestPool();
+				db = getTestPoolOrThrow();
 
 				const app = new Hono<AppEnv>().route(
 					"/claims",
@@ -149,10 +147,10 @@ describe("Claims Router", () => {
 		);
 
 		itIf(
-			dbAvailable,
+			isDbAvailable,
 			"should limit results to 20 most recent claims",
 			async () => {
-				db = getTestPool();
+				db = getTestPoolOrThrow();
 				const userId = generateTestId();
 				const listingId = generateTestId();
 
@@ -208,8 +206,8 @@ describe("Claims Router", () => {
 	});
 
 	describe("GET /listing/:listingId", () => {
-		itIf(dbAvailable, "should return claims for host's listing", async () => {
-			db = getTestPool();
+		itIf(isDbAvailable, "should return claims for host's listing", async () => {
+			db = getTestPoolOrThrow();
 			const hostId = generateTestId();
 			const studentId = generateTestId();
 			const listingId = generateTestId();
@@ -255,10 +253,10 @@ describe("Claims Router", () => {
 		});
 
 		itIf(
-			dbAvailable,
+			isDbAvailable,
 			"should return empty array when host has no claims on their listing",
 			async () => {
-				db = getTestPool();
+				db = getTestPoolOrThrow();
 				const hostId = generateTestId();
 				const listingId = generateTestId();
 
@@ -291,10 +289,10 @@ describe("Claims Router", () => {
 		);
 
 		itIf(
-			dbAvailable,
+			isDbAvailable,
 			"should reject non-host trying to view claims",
 			async () => {
-				db = getTestPool();
+				db = getTestPoolOrThrow();
 				const hostId = generateTestId();
 				const nonHostId = generateTestId();
 				const studentId = generateTestId();
@@ -342,30 +340,34 @@ describe("Claims Router", () => {
 			},
 		);
 
-		itIf(dbAvailable, "should validate UUID format for listingId", async () => {
-			db = getTestPool();
-			const userId = generateTestId();
+		itIf(
+			isDbAvailable,
+			"should validate UUID format for listingId",
+			async () => {
+				db = getTestPoolOrThrow();
+				const userId = generateTestId();
 
-			await insertTestUsers([
-				{ id: userId, name: "Test User", email: "test@example.com" },
-			]);
+				await insertTestUsers([
+					{ id: userId, name: "Test User", email: "test@example.com" },
+				]);
 
-			const app = new Hono<AppEnv>().route(
-				"/claims",
-				createClaimsRouter(db, createMockRequireSession(userId)),
-			);
+				const app = new Hono<AppEnv>().route(
+					"/claims",
+					createClaimsRouter(db, createMockRequireSession(userId)),
+				);
 
-			const res = await app.request("/claims/listing/invalid-uuid");
-			expect(res.status).toBe(400);
-		});
+				const res = await app.request("/claims/listing/invalid-uuid");
+				expect(res.status).toBe(400);
+			},
+		);
 	});
 
 	describe("POST /", () => {
 		itIf(
-			dbAvailable,
+			isDbAvailable,
 			"should create claim successfully with transaction logic",
 			async () => {
-				db = getTestPool();
+				db = getTestPoolOrThrow();
 				const hostId = generateTestId();
 				const studentId = generateTestId();
 				const listingId = generateTestId();
@@ -417,10 +419,10 @@ describe("Claims Router", () => {
 		);
 
 		itIf(
-			dbAvailable,
+			isDbAvailable,
 			"should prevent duplicate claims from same user",
 			async () => {
-				db = getTestPool();
+				db = getTestPoolOrThrow();
 				const hostId = generateTestId();
 				const studentId = generateTestId();
 				const listingId = generateTestId();
@@ -475,10 +477,10 @@ describe("Claims Router", () => {
 		);
 
 		itIf(
-			dbAvailable,
+			isDbAvailable,
 			"should reject claim for non-existent listing",
 			async () => {
-				db = getTestPool();
+				db = getTestPoolOrThrow();
 				const studentId = generateTestId();
 
 				await insertTestUsers([
@@ -507,55 +509,59 @@ describe("Claims Router", () => {
 			},
 		);
 
-		itIf(dbAvailable, "should reject claim for inactive listing", async () => {
-			db = getTestPool();
-			const hostId = generateTestId();
-			const studentId = generateTestId();
-			const listingId = generateTestId();
+		itIf(
+			isDbAvailable,
+			"should reject claim for inactive listing",
+			async () => {
+				db = getTestPoolOrThrow();
+				const hostId = generateTestId();
+				const studentId = generateTestId();
+				const listingId = generateTestId();
 
-			await insertTestUsers([
-				{ id: hostId, name: "Host", email: "host@example.com" },
-				{ id: studentId, name: "Student", email: "student@example.com" },
-			]);
-			await insertTestListings([
-				{
-					id: listingId,
-					host_id: hostId,
-					host_name: "Host",
-					title: "Test Listing",
-					quantity: 10,
-					quantity_remaining: 5,
-					expires_at: futureMinutes(60),
-					status: "claimed", // inactive status
-				},
-			]);
+				await insertTestUsers([
+					{ id: hostId, name: "Host", email: "host@example.com" },
+					{ id: studentId, name: "Student", email: "student@example.com" },
+				]);
+				await insertTestListings([
+					{
+						id: listingId,
+						host_id: hostId,
+						host_name: "Host",
+						title: "Test Listing",
+						quantity: 10,
+						quantity_remaining: 5,
+						expires_at: futureMinutes(60),
+						status: "claimed", // inactive status
+					},
+				]);
 
-			const app = new Hono<AppEnv>().route(
-				"/claims",
-				createClaimsRouter(db, createMockRequireSession(studentId)),
-			);
+				const app = new Hono<AppEnv>().route(
+					"/claims",
+					createClaimsRouter(db, createMockRequireSession(studentId)),
+				);
 
-			const res = await app.request("/claims", {
-				method: "POST",
-				headers: { "Content-Type": "application/json" },
-				body: JSON.stringify({
-					listingId,
-					studentName: "Student",
-					quantity: 1,
-				}),
-			});
+				const res = await app.request("/claims", {
+					method: "POST",
+					headers: { "Content-Type": "application/json" },
+					body: JSON.stringify({
+						listingId,
+						studentName: "Student",
+						quantity: 1,
+					}),
+				});
 
-			expect(res.status).toBe(400);
+				expect(res.status).toBe(400);
 
-			const json = await res.json();
-			expect(json.message).toBe("Listing is no longer active");
-		});
+				const json = await res.json();
+				expect(json.message).toBe("Listing is no longer active");
+			},
+		);
 
 		itIf(
-			dbAvailable,
+			isDbAvailable,
 			"should reject claim when insufficient quantity remaining",
 			async () => {
-				db = getTestPool();
+				db = getTestPoolOrThrow();
 				const hostId = generateTestId();
 				const studentId = generateTestId();
 				const listingId = generateTestId();
@@ -599,10 +605,10 @@ describe("Claims Router", () => {
 		);
 
 		itIf(
-			dbAvailable,
+			isDbAvailable,
 			"should set reservation expiry 20 minutes from now",
 			async () => {
-				db = getTestPool();
+				db = getTestPoolOrThrow();
 				const hostId = generateTestId();
 				const studentId = generateTestId();
 				const listingId = generateTestId();
@@ -661,10 +667,10 @@ describe("Claims Router", () => {
 		);
 
 		itIf(
-			dbAvailable,
+			isDbAvailable,
 			"should use default quantity of 1 when not specified",
 			async () => {
-				db = getTestPool();
+				db = getTestPoolOrThrow();
 				const hostId = generateTestId();
 				const studentId = generateTestId();
 				const listingId = generateTestId();
@@ -720,10 +726,10 @@ describe("Claims Router", () => {
 		);
 
 		itIf(
-			dbAvailable,
+			isDbAvailable,
 			"should release database connection after transaction",
 			async () => {
-				db = getTestPool();
+				db = getTestPoolOrThrow();
 				const hostId = generateTestId();
 				const studentId = generateTestId();
 				const listingId = generateTestId();
@@ -789,10 +795,10 @@ describe("Claims Router", () => {
 		);
 
 		itIf(
-			dbAvailable,
+			isDbAvailable,
 			"should set listing status to 'claimed' when quantity becomes zero",
 			async () => {
-				db = getTestPool();
+				db = getTestPoolOrThrow();
 				const hostId = generateTestId();
 				const studentId = generateTestId();
 				const listingId = generateTestId();
@@ -842,8 +848,8 @@ describe("Claims Router", () => {
 	});
 
 	describe("POST /:id/confirm-pickup", () => {
-		itIf(dbAvailable, "should confirm pickup successfully", async () => {
-			db = getTestPool();
+		itIf(isDbAvailable, "should confirm pickup successfully", async () => {
+			db = getTestPoolOrThrow();
 			const hostId = generateTestId();
 			const studentId = generateTestId();
 			const listingId = generateTestId();
@@ -900,10 +906,10 @@ describe("Claims Router", () => {
 		});
 
 		itIf(
-			dbAvailable,
+			isDbAvailable,
 			"should reject non-host trying to confirm pickup",
 			async () => {
-				db = getTestPool();
+				db = getTestPoolOrThrow();
 				const hostId = generateTestId();
 				const nonHostId = generateTestId();
 				const studentId = generateTestId();
@@ -954,71 +960,79 @@ describe("Claims Router", () => {
 			},
 		);
 
-		itIf(dbAvailable, "should return 404 for non-existent claim", async () => {
-			db = getTestPool();
-			const hostId = generateTestId();
-			const listingId = generateTestId();
+		itIf(
+			isDbAvailable,
+			"should return 404 for non-existent claim",
+			async () => {
+				db = getTestPoolOrThrow();
+				const hostId = generateTestId();
+				const listingId = generateTestId();
 
-			await insertTestUsers([
-				{ id: hostId, name: "Host", email: "host@example.com" },
-			]);
-			await insertTestListings([
-				{
-					id: listingId,
-					host_id: hostId,
-					host_name: "Host",
-					title: "Test Listing",
-					quantity: 10,
-					quantity_remaining: 5,
-					expires_at: futureMinutes(60),
-				},
-			]);
+				await insertTestUsers([
+					{ id: hostId, name: "Host", email: "host@example.com" },
+				]);
+				await insertTestListings([
+					{
+						id: listingId,
+						host_id: hostId,
+						host_name: "Host",
+						title: "Test Listing",
+						quantity: 10,
+						quantity_remaining: 5,
+						expires_at: futureMinutes(60),
+					},
+				]);
 
-			const app = new Hono<AppEnv>().route(
-				"/claims",
-				createClaimsRouter(db, createMockRequireSession(hostId)),
-			);
+				const app = new Hono<AppEnv>().route(
+					"/claims",
+					createClaimsRouter(db, createMockRequireSession(hostId)),
+				);
 
-			const res = await app.request(
-				`/claims/${generateTestId()}/confirm-pickup`,
-				{
+				const res = await app.request(
+					`/claims/${generateTestId()}/confirm-pickup`,
+					{
+						method: "POST",
+					},
+				);
+
+				expect(res.status).toBe(404);
+
+				const json = await res.json();
+				expect(json.message).toBe("Claim not found");
+			},
+		);
+
+		itIf(
+			isDbAvailable,
+			"should validate UUID format for claim id",
+			async () => {
+				db = getTestPoolOrThrow();
+				const hostId = generateTestId();
+
+				await insertTestUsers([
+					{ id: hostId, name: "Host", email: "host@example.com" },
+				]);
+
+				const app = new Hono<AppEnv>().route(
+					"/claims",
+					createClaimsRouter(db, createMockRequireSession(hostId)),
+				);
+
+				const res = await app.request("/claims/invalid-uuid/confirm-pickup", {
 					method: "POST",
-				},
-			);
+				});
 
-			expect(res.status).toBe(404);
-
-			const json = await res.json();
-			expect(json.message).toBe("Claim not found");
-		});
-
-		itIf(dbAvailable, "should validate UUID format for claim id", async () => {
-			db = getTestPool();
-			const hostId = generateTestId();
-
-			await insertTestUsers([
-				{ id: hostId, name: "Host", email: "host@example.com" },
-			]);
-
-			const app = new Hono<AppEnv>().route(
-				"/claims",
-				createClaimsRouter(db, createMockRequireSession(hostId)),
-			);
-
-			const res = await app.request("/claims/invalid-uuid/confirm-pickup", {
-				method: "POST",
-			});
-
-			expect(res.status).toBe(400);
-		});
+				expect(res.status).toBe(400);
+			},
+		);
 	});
 
 	describe("POST /:id/no-show", () => {
 		itIf(
-			dbAvailable,
+			isDbAvailable,
 			"should mark no-show successfully and restore quantity",
 			async () => {
-				db = getTestPool();
+				db = getTestPoolOrThrow();
 				const hostId = generateTestId();
 				const studentId = generateTestId();
 				const listingId = generateTestId();
@@ -1083,10 +1097,10 @@ describe("Claims Router", () => {
 		);
 
 		itIf(
-			dbAvailable,
+			isDbAvailable,
 			"should reject non-host trying to mark no-show",
 			async () => {
-				db = getTestPool();
+				db = getTestPoolOrThrow();
 				const hostId = generateTestId();
 				const nonHostId = generateTestId();
 				const studentId = generateTestId();
@@ -1137,31 +1151,35 @@ describe("Claims Router", () => {
 			},
 		);
 
-		itIf(dbAvailable, "should return 400 for non-existent claim", async () => {
-			db = getTestPool();
-			const hostId = generateTestId();
+		itIf(
+			isDbAvailable,
+			"should return 400 for non-existent claim",
+			async () => {
+				db = getTestPoolOrThrow();
+				const hostId = generateTestId();
 
-			await insertTestUsers([
-				{ id: hostId, name: "Host", email: "host@example.com" },
-			]);
+				await insertTestUsers([
+					{ id: hostId, name: "Host", email: "host@example.com" },
+				]);
 
-			const app = new Hono<AppEnv>().route(
-				"/claims",
-				createClaimsRouter(db, createMockRequireSession(hostId)),
-			);
+				const app = new Hono<AppEnv>().route(
+					"/claims",
+					createClaimsRouter(db, createMockRequireSession(hostId)),
+				);
 
-			const res = await app.request(`/claims/${generateTestId()}/no-show`, {
-				method: "POST",
-			});
+				const res = await app.request(`/claims/${generateTestId()}/no-show`, {
+					method: "POST",
+				});
 
-			expect(res.status).toBe(400);
+				expect(res.status).toBe(400);
 
-			const json = await res.json();
-			expect(json.message).toBe("Claim not found");
-		});
+				const json = await res.json();
+				expect(json.message).toBe("Claim not found");
+			},
+		);
 
-		itIf(dbAvailable, "should rollback transaction on error", async () => {
-			db = getTestPool();
+		itIf(isDbAvailable, "should rollback transaction on error", async () => {
+			db = getTestPoolOrThrow();
 			const hostId = generateTestId();
 			const studentId = generateTestId();
 			const listingId = generateTestId();
@@ -1237,8 +1255,8 @@ describe("Claims Router", () => {
 	});
 
 	describe("POST /:id/rating", () => {
-		itIf(dbAvailable, "should submit rating successfully", async () => {
-			db = getTestPool();
+		itIf(isDbAvailable, "should submit rating successfully", async () => {
+			db = getTestPoolOrThrow();
 			const hostId = generateTestId();
 			const studentId = generateTestId();
 			const listingId = generateTestId();
@@ -1296,10 +1314,10 @@ describe("Claims Router", () => {
 		});
 
 		itIf(
-			dbAvailable,
+			isDbAvailable,
 			"should reject rating from non-owner of claim",
 			async () => {
-				db = getTestPool();
+				db = getTestPoolOrThrow();
 				const hostId = generateTestId();
 				const studentId = generateTestId();
 				const nonOwnerId = generateTestId();
@@ -1352,8 +1370,8 @@ describe("Claims Router", () => {
 			},
 		);
 
-		itIf(dbAvailable, "should validate rating range (1-5)", async () => {
-			db = getTestPool();
+		itIf(isDbAvailable, "should validate rating range (1-5)", async () => {
+			db = getTestPoolOrThrow();
 			const hostId = generateTestId();
 			const studentId = generateTestId();
 			const listingId = generateTestId();
@@ -1408,51 +1426,59 @@ describe("Claims Router", () => {
 			expect(resHigh.status).toBe(400);
 		});
 
-		itIf(dbAvailable, "should return 404 for non-existent claim", async () => {
-			db = getTestPool();
-			const studentId = generateTestId();
+		itIf(
+			isDbAvailable,
+			"should return 404 for non-existent claim",
+			async () => {
+				db = getTestPoolOrThrow();
+				const studentId = generateTestId();
 
-			await insertTestUsers([
-				{ id: studentId, name: "Student", email: "student@example.com" },
-			]);
+				await insertTestUsers([
+					{ id: studentId, name: "Student", email: "student@example.com" },
+				]);
 
-			const app = new Hono<AppEnv>().route(
-				"/claims",
-				createClaimsRouter(db, createMockRequireSession(studentId)),
-			);
+				const app = new Hono<AppEnv>().route(
+					"/claims",
+					createClaimsRouter(db, createMockRequireSession(studentId)),
+				);
 
-			const res = await app.request(`/claims/${generateTestId()}/rating`, {
-				method: "POST",
-				headers: { "Content-Type": "application/json" },
-				body: JSON.stringify({ rating: 5 }),
-			});
+				const res = await app.request(`/claims/${generateTestId()}/rating`, {
+					method: "POST",
+					headers: { "Content-Type": "application/json" },
+					body: JSON.stringify({ rating: 5 }),
+				});
 
-			expect(res.status).toBe(404);
+				expect(res.status).toBe(404);
 
-			const json = await res.json();
-			expect(json.message).toBe("Claim not found");
-		});
+				const json = await res.json();
+				expect(json.message).toBe("Claim not found");
+			},
+		);
 
-		itIf(dbAvailable, "should validate UUID format for claim id", async () => {
-			db = getTestPool();
-			const studentId = generateTestId();
+		itIf(
+			isDbAvailable,
+			"should validate UUID format for claim id",
+			async () => {
+				db = getTestPoolOrThrow();
+				const studentId = generateTestId();
 
-			await insertTestUsers([
-				{ id: studentId, name: "Student", email: "student@example.com" },
-			]);
+				await insertTestUsers([
+					{ id: studentId, name: "Student", email: "student@example.com" },
+				]);
 
-			const app = new Hono<AppEnv>().route(
-				"/claims",
-				createClaimsRouter(db, createMockRequireSession(studentId)),
-			);
+				const app = new Hono<AppEnv>().route(
+					"/claims",
+					createClaimsRouter(db, createMockRequireSession(studentId)),
+				);
 
-			const res = await app.request("/claims/invalid-uuid/rating", {
-				method: "POST",
-				headers: { "Content-Type": "application/json" },
-				body: JSON.stringify({ rating: 5 }),
-			});
+				const res = await app.request("/claims/invalid-uuid/rating", {
+					method: "POST",
+					headers: { "Content-Type": "application/json" },
+					body: JSON.stringify({ rating: 5 }),
+				});
 
-			expect(res.status).toBe(400);
-		});
+				expect(res.status).toBe(400);
+			},
+		);
 	});
 });

@@ -6,15 +6,13 @@ import {
 	cleanupTestData,
 	futureMinutes,
 	generateTestId,
-	getTestPool,
+	getTestPoolOrThrow,
 	insertTestListings,
 	insertTestUsers,
+	isDbAvailable,
 	pastMinutes,
 } from "../test";
 import { createListingsRouter } from "./listings";
-
-// Check if database is available for database-dependent tests
-const dbAvailable = !process.env.DB_SKIP;
 
 /**
  * Create a mock requireSession middleware for testing
@@ -41,7 +39,7 @@ function createMockRequireSession(userId: string): any {
 /**
  * Conditional test helper - runs test only if condition is true
  */
-function itIf(condition: boolean, name: string, fn: any) {
+function itIf(condition: boolean, name: string, fn: () => Promise<void>) {
 	if (condition) {
 		it(name, fn);
 	} else {
@@ -58,10 +56,10 @@ describe("Listings Router", () => {
 
 	describe("GET /", () => {
 		itIf(
-			dbAvailable,
+			isDbAvailable,
 			"should return active listings ordered by posted_at DESC",
 			async () => {
-				db = getTestPool();
+				db = getTestPoolOrThrow();
 				const userId = generateTestId();
 				const listingId1 = generateTestId();
 				const listingId2 = generateTestId();
@@ -107,10 +105,10 @@ describe("Listings Router", () => {
 		);
 
 		itIf(
-			dbAvailable,
+			isDbAvailable,
 			"should auto-expire stale listings before returning results",
 			async () => {
-				db = getTestPool();
+				db = getTestPoolOrThrow();
 				const userId = generateTestId();
 				const activeListingId = generateTestId();
 				const expiredListingId = generateTestId();
@@ -164,10 +162,10 @@ describe("Listings Router", () => {
 		);
 
 		itIf(
-			dbAvailable,
+			isDbAvailable,
 			"should return empty array when no active listings exist",
 			async () => {
-				db = getTestPool();
+				db = getTestPoolOrThrow();
 				const userId = generateTestId();
 
 				await insertTestUsers([
@@ -188,10 +186,10 @@ describe("Listings Router", () => {
 		);
 
 		itIf(
-			dbAvailable,
+			isDbAvailable,
 			"should require authentication (401 without session)",
 			async () => {
-				db = getTestPool();
+				db = getTestPoolOrThrow();
 
 				const app = new Hono<AppEnv>().route(
 					"/listings",
@@ -205,8 +203,8 @@ describe("Listings Router", () => {
 			},
 		);
 
-		itIf(dbAvailable, "should limit results to 50 listings", async () => {
-			db = getTestPool();
+		itIf(isDbAvailable, "should limit results to 50 listings", async () => {
+			db = getTestPoolOrThrow();
 			const userId = generateTestId();
 
 			await insertTestUsers([
@@ -239,8 +237,8 @@ describe("Listings Router", () => {
 	});
 
 	describe("GET /:id", () => {
-		itIf(dbAvailable, "should return single listing by ID", async () => {
-			db = getTestPool();
+		itIf(isDbAvailable, "should return single listing by ID", async () => {
+			db = getTestPoolOrThrow();
 			const userId = generateTestId();
 			const listingId = generateTestId();
 
@@ -282,10 +280,10 @@ describe("Listings Router", () => {
 		});
 
 		itIf(
-			dbAvailable,
+			isDbAvailable,
 			"should return 404 for non-existent listing",
 			async () => {
-				db = getTestPool();
+				db = getTestPoolOrThrow();
 				const userId = generateTestId();
 
 				await insertTestUsers([
@@ -306,10 +304,10 @@ describe("Listings Router", () => {
 		);
 
 		itIf(
-			dbAvailable,
+			isDbAvailable,
 			"should return listing regardless of status (expired, cancelled, claimed)",
 			async () => {
-				db = getTestPool();
+				db = getTestPoolOrThrow();
 				const userId = generateTestId();
 				const expiredListingId = generateTestId();
 				const cancelledListingId = generateTestId();
@@ -376,8 +374,8 @@ describe("Listings Router", () => {
 			},
 		);
 
-		itIf(dbAvailable, "should validate UUID parameter format", async () => {
-			db = getTestPool();
+		itIf(isDbAvailable, "should validate UUID parameter format", async () => {
+			db = getTestPoolOrThrow();
 			const userId = generateTestId();
 
 			await insertTestUsers([
@@ -396,10 +394,10 @@ describe("Listings Router", () => {
 
 	describe("POST /", () => {
 		itIf(
-			dbAvailable,
+			isDbAvailable,
 			"should create listing successfully with all fields",
 			async () => {
-				db = getTestPool();
+				db = getTestPoolOrThrow();
 				const userId = generateTestId();
 
 				await insertTestUsers([
@@ -468,10 +466,10 @@ describe("Listings Router", () => {
 		);
 
 		itIf(
-			dbAvailable,
+			isDbAvailable,
 			"should use default expiry of 90 minutes when not specified",
 			async () => {
-				db = getTestPool();
+				db = getTestPoolOrThrow();
 				const userId = generateTestId();
 
 				await insertTestUsers([
@@ -527,8 +525,8 @@ describe("Listings Router", () => {
 			},
 		);
 
-		itIf(dbAvailable, "should store location data correctly", async () => {
-			db = getTestPool();
+		itIf(isDbAvailable, "should store location data correctly", async () => {
+			db = getTestPoolOrThrow();
 			const userId = generateTestId();
 
 			await insertTestUsers([
@@ -576,56 +574,60 @@ describe("Listings Router", () => {
 			});
 		});
 
-		itIf(dbAvailable, "should store dietary tags array correctly", async () => {
-			db = getTestPool();
-			const userId = generateTestId();
+		itIf(
+			isDbAvailable,
+			"should store dietary tags array correctly",
+			async () => {
+				db = getTestPoolOrThrow();
+				const userId = generateTestId();
 
-			await insertTestUsers([
-				{ id: userId, name: "Test User", email: "test@example.com" },
-			]);
+				await insertTestUsers([
+					{ id: userId, name: "Test User", email: "test@example.com" },
+				]);
 
-			const app = new Hono<AppEnv>().route(
-				"/listings",
-				createListingsRouter(db, createMockRequireSession(userId)),
-			);
+				const app = new Hono<AppEnv>().route(
+					"/listings",
+					createListingsRouter(db, createMockRequireSession(userId)),
+				);
 
-			const res = await app.request("/listings", {
-				method: "POST",
-				headers: { "Content-Type": "application/json" },
-				body: JSON.stringify({
-					hostName: "Test Host",
-					hostBuilding: "Building A",
-					title: "Fresh Pizza",
-					description: "Delicious pizza",
-					foodItems: ["Pizza"],
-					quantity: 5,
-					dietaryTags: ["vegan", "gluten-free", "halal", "kosher"],
-					imageUrl: null,
-					location: {
-						lat: 40.7128,
-						lng: -74.006,
-						buildingName: "Student Center",
-					},
-				}),
-			});
+				const res = await app.request("/listings", {
+					method: "POST",
+					headers: { "Content-Type": "application/json" },
+					body: JSON.stringify({
+						hostName: "Test Host",
+						hostBuilding: "Building A",
+						title: "Fresh Pizza",
+						description: "Delicious pizza",
+						foodItems: ["Pizza"],
+						quantity: 5,
+						dietaryTags: ["vegan", "gluten-free", "halal", "kosher"],
+						imageUrl: null,
+						location: {
+							lat: 40.7128,
+							lng: -74.006,
+							buildingName: "Student Center",
+						},
+					}),
+				});
 
-			expect(res.status).toBe(201);
+				expect(res.status).toBe(201);
 
-			const json = await res.json();
-			const listingResult = await db.query(
-				"SELECT dietary_tags FROM listings WHERE id = $1",
-				[json.data.id],
-			);
-			expect(listingResult.rows[0].dietary_tags).toEqual([
-				"vegan",
-				"gluten-free",
-				"halal",
-				"kosher",
-			]);
-		});
+				const json = await res.json();
+				const listingResult = await db.query(
+					"SELECT dietary_tags FROM listings WHERE id = $1",
+					[json.data.id],
+				);
+				expect(listingResult.rows[0].dietary_tags).toEqual([
+					"vegan",
+					"gluten-free",
+					"halal",
+					"kosher",
+				]);
+			},
+		);
 
-		itIf(dbAvailable, "should validate required fields", async () => {
-			db = getTestPool();
+		itIf(isDbAvailable, "should validate required fields", async () => {
+			db = getTestPoolOrThrow();
 			const userId = generateTestId();
 
 			await insertTestUsers([
@@ -727,10 +729,10 @@ describe("Listings Router", () => {
 		});
 
 		itIf(
-			dbAvailable,
+			isDbAvailable,
 			"should require authentication (401 without session)",
 			async () => {
-				db = getTestPool();
+				db = getTestPoolOrThrow();
 
 				const app = new Hono<AppEnv>().route(
 					"/listings",
@@ -764,56 +766,60 @@ describe("Listings Router", () => {
 	});
 
 	describe("PATCH /:id", () => {
-		itIf(dbAvailable, "should update listing status successfully", async () => {
-			db = getTestPool();
-			const userId = generateTestId();
-			const listingId = generateTestId();
+		itIf(
+			isDbAvailable,
+			"should update listing status successfully",
+			async () => {
+				db = getTestPoolOrThrow();
+				const userId = generateTestId();
+				const listingId = generateTestId();
 
-			await insertTestUsers([
-				{ id: userId, name: "Test User", email: "test@example.com" },
-			]);
-			await insertTestListings([
-				{
-					id: listingId,
-					host_id: userId,
-					host_name: "Test Host",
-					title: "Test Listing",
-					quantity: 10,
-					quantity_remaining: 5,
-					expires_at: futureMinutes(60),
-					status: "active",
-				},
-			]);
+				await insertTestUsers([
+					{ id: userId, name: "Test User", email: "test@example.com" },
+				]);
+				await insertTestListings([
+					{
+						id: listingId,
+						host_id: userId,
+						host_name: "Test Host",
+						title: "Test Listing",
+						quantity: 10,
+						quantity_remaining: 5,
+						expires_at: futureMinutes(60),
+						status: "active",
+					},
+				]);
 
-			const app = new Hono<AppEnv>().route(
-				"/listings",
-				createListingsRouter(db, createMockRequireSession(userId)),
-			);
+				const app = new Hono<AppEnv>().route(
+					"/listings",
+					createListingsRouter(db, createMockRequireSession(userId)),
+				);
 
-			const res = await app.request(`/listings/${listingId}`, {
-				method: "PATCH",
-				headers: { "Content-Type": "application/json" },
-				body: JSON.stringify({ status: "claimed" }),
-			});
+				const res = await app.request(`/listings/${listingId}`, {
+					method: "PATCH",
+					headers: { "Content-Type": "application/json" },
+					body: JSON.stringify({ status: "claimed" }),
+				});
 
-			expect(res.status).toBe(200);
+				expect(res.status).toBe(200);
 
-			const json = await res.json();
-			expect(json.success).toBe(true);
+				const json = await res.json();
+				expect(json.success).toBe(true);
 
-			// Verify status was updated
-			const listingResult = await db.query(
-				"SELECT status FROM listings WHERE id = $1",
-				[listingId],
-			);
-			expect(listingResult.rows[0].status).toBe("claimed");
-		});
+				// Verify status was updated
+				const listingResult = await db.query(
+					"SELECT status FROM listings WHERE id = $1",
+					[listingId],
+				);
+				expect(listingResult.rows[0].status).toBe("claimed");
+			},
+		);
 
 		itIf(
-			dbAvailable,
+			isDbAvailable,
 			"should update listing quantity_remaining successfully",
 			async () => {
-				db = getTestPool();
+				db = getTestPoolOrThrow();
 				const userId = generateTestId();
 				const listingId = generateTestId();
 
@@ -859,10 +865,10 @@ describe("Listings Router", () => {
 		);
 
 		itIf(
-			dbAvailable,
+			isDbAvailable,
 			"should handle partial update (status only)",
 			async () => {
-				db = getTestPool();
+				db = getTestPoolOrThrow();
 				const userId = generateTestId();
 				const listingId = generateTestId();
 
@@ -906,10 +912,10 @@ describe("Listings Router", () => {
 		);
 
 		itIf(
-			dbAvailable,
+			isDbAvailable,
 			"should handle partial update (quantityRemaining only)",
 			async () => {
-				db = getTestPool();
+				db = getTestPoolOrThrow();
 				const userId = generateTestId();
 				const listingId = generateTestId();
 
@@ -952,8 +958,8 @@ describe("Listings Router", () => {
 			},
 		);
 
-		itIf(dbAvailable, "should reject update from non-host", async () => {
-			db = getTestPool();
+		itIf(isDbAvailable, "should reject update from non-host", async () => {
+			db = getTestPoolOrThrow();
 			const hostId = generateTestId();
 			const nonHostId = generateTestId();
 			const listingId = generateTestId();
@@ -993,10 +999,10 @@ describe("Listings Router", () => {
 		});
 
 		itIf(
-			dbAvailable,
+			isDbAvailable,
 			"should return 404 for non-existent listing",
 			async () => {
-				db = getTestPool();
+				db = getTestPoolOrThrow();
 				const userId = generateTestId();
 
 				await insertTestUsers([
@@ -1021,8 +1027,8 @@ describe("Listings Router", () => {
 			},
 		);
 
-		itIf(dbAvailable, "should validate UUID parameter format", async () => {
-			db = getTestPool();
+		itIf(isDbAvailable, "should validate UUID parameter format", async () => {
+			db = getTestPoolOrThrow();
 			const userId = generateTestId();
 
 			await insertTestUsers([
@@ -1043,8 +1049,8 @@ describe("Listings Router", () => {
 			expect(res.status).toBe(400);
 		});
 
-		itIf(dbAvailable, "should reject empty update body", async () => {
-			db = getTestPool();
+		itIf(isDbAvailable, "should reject empty update body", async () => {
+			db = getTestPoolOrThrow();
 			const userId = generateTestId();
 			const listingId = generateTestId();
 
@@ -1081,8 +1087,8 @@ describe("Listings Router", () => {
 	});
 
 	describe("POST /:id/cancel", () => {
-		itIf(dbAvailable, "should cancel listing successfully", async () => {
-			db = getTestPool();
+		itIf(isDbAvailable, "should cancel listing successfully", async () => {
+			db = getTestPoolOrThrow();
 			const userId = generateTestId();
 			const listingId = generateTestId();
 
@@ -1124,8 +1130,8 @@ describe("Listings Router", () => {
 			expect(listingResult.rows[0].status).toBe("cancelled");
 		});
 
-		itIf(dbAvailable, "should reject cancel from non-host", async () => {
-			db = getTestPool();
+		itIf(isDbAvailable, "should reject cancel from non-host", async () => {
+			db = getTestPoolOrThrow();
 			const hostId = generateTestId();
 			const nonHostId = generateTestId();
 			const listingId = generateTestId();
@@ -1163,10 +1169,10 @@ describe("Listings Router", () => {
 		});
 
 		itIf(
-			dbAvailable,
+			isDbAvailable,
 			"should return 404 for non-existent listing",
 			async () => {
-				db = getTestPool();
+				db = getTestPoolOrThrow();
 				const userId = generateTestId();
 
 				await insertTestUsers([
@@ -1190,10 +1196,10 @@ describe("Listings Router", () => {
 		);
 
 		itIf(
-			dbAvailable,
+			isDbAvailable,
 			"should be idempotent (cancel already cancelled listing)",
 			async () => {
-				db = getTestPool();
+				db = getTestPoolOrThrow();
 				const userId = generateTestId();
 				const listingId = generateTestId();
 
@@ -1237,8 +1243,8 @@ describe("Listings Router", () => {
 			},
 		);
 
-		itIf(dbAvailable, "should validate UUID parameter format", async () => {
-			db = getTestPool();
+		itIf(isDbAvailable, "should validate UUID parameter format", async () => {
+			db = getTestPoolOrThrow();
 			const userId = generateTestId();
 
 			await insertTestUsers([

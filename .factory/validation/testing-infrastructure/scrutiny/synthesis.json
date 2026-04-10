@@ -1,0 +1,103 @@
+{
+	"milestone": "testing-infrastructure",
+	"round": 1,
+	"status": "fail",
+	"validatorsRun": {
+		"test": {
+			"passed": true,
+			"command": "bun run test",
+			"exitCode": 0,
+			"observation": "1 passed, 70 skipped (database tests skipped due to missing DB_URL)"
+		},
+		"test:frontend": {
+			"passed": true,
+			"command": "bun run test:frontend",
+			"exitCode": 0,
+			"observation": "92 tests passed across 2 test suites"
+		},
+		"typecheck": {
+			"passed": true,
+			"command": "bunx tsc --noEmit",
+			"exitCode": 0,
+			"observation": "No TypeScript errors"
+		},
+		"lint": {
+			"passed": true,
+			"command": "bunx biome check --write .",
+			"exitCode": 0,
+			"observation": "9 warnings about 'any' types in test utilities (acceptable)"
+		}
+	},
+	"reviewsSummary": {
+		"total": 7,
+		"passed": 5,
+		"failed": 2,
+		"failedFeatures": ["claims-route-tests", "auth-client-tests"]
+	},
+	"blockingIssues": [
+		{
+			"featureId": "claims-route-tests",
+			"severity": "blocking",
+			"description": "Missing test for VAL-TEST-018: POST /claims Requires Authentication. The test suite includes authentication tests for GET /mine but not for POST /. Unauthenticated POST /claims should return 401 Unauthorized.",
+			"suggestedFix": "Add a test case: 'should require authentication (401 without session)' in the POST / describe block that creates an app without authentication middleware and makes a POST /claims request, expecting 401 status."
+		},
+		{
+			"featureId": "claims-route-tests",
+			"severity": "blocking",
+			"description": "The test 'should limit results to 20 most recent claims' is incorrectly implemented. It creates 25 claims by DIFFERENT students, then tests that the host user (who has 0 claims) gets an empty array. This does NOT test the 20-claim limit for a single user.",
+			"suggestedFix": "Rewrite the test to create 25+ listings, have one student claim all of them, then verify only 20 are returned. Or accept that this limit cannot be meaningfully tested due to the UNIQUE(listing_id, student_id) constraint and update the assertion as a design limitation."
+		},
+		{
+			"featureId": "auth-client-tests",
+			"severity": "blocking",
+			"description": "VAL-TEST-078 is NOT tested: 'Server-side rendering (no window) returns null from getItem, setItem/deleteItem are no-ops.' The source code correctly handles this case, but no test verifies it.",
+			"suggestedFix": "Add a test that either: (a) uses Jest's @jest-environment node docblock to run without jsdom, or (b) temporarily deletes/mocks the global window object to test SSR behavior."
+		}
+	],
+	"nonBlockingIssues": [
+		{
+			"featureId": "jest-rtl-setup",
+			"description": "identity-obj-proxy is referenced in jest.config.js but not installed. Consider installing or removing the reference."
+		},
+		{
+			"featureId": "jest-rtl-setup",
+			"description": "VAL-TEST-003's custom render wrapper requirement is not implemented. Should be added when actual component tests are written."
+		},
+		{
+			"featureId": "validators-tests",
+			"description": "Duplicate boundary value tests (1, 100, 0, 101 appear twice each). Could be consolidated."
+		},
+		{
+			"featureId": "claims-route-tests",
+			"description": "Single-claim tests cannot verify claimed_at DESC ordering. Should create multiple claims with different timestamps."
+		}
+	],
+	"appliedUpdates": [
+		{
+			"target": "library",
+			"description": "Added testing conventions documentation: DB_URL/DB_SKIP environment variables, conditional test pattern, secureStoreMock pattern, Date-to-string transform, PostgreSQL interval construction",
+			"sourceFeature": "multiple"
+		}
+	],
+	"suggestedGuidanceUpdates": [
+		{
+			"target": "AGENTS.md",
+			"suggestion": "Add testing environment documentation: DB_URL for test database connection, DB_SKIP to skip database-dependent tests, and the itIf(isDbAvailable, ...) pattern for conditional test execution.",
+			"evidence": "Multiple test files use the conditional test pattern. Workers need to know how to run tests without a database.",
+			"isSystemic": true
+		},
+		{
+			"target": "skills/testing-worker",
+			"suggestion": "Document when to use preset: 'jest-expo' vs preset: undefined. Current skill says 'use jest-expo preset' but workers have found success with manual configuration.",
+			"evidence": "jest-rtl-setup worker used preset: undefined with manual mocks instead of jest-expo preset.",
+			"isSystemic": false
+		}
+	],
+	"rejectedObservations": [
+		{
+			"observation": "Add docker-compose.yml to services.yaml",
+			"reason": "docker-compose.yml was added for local testing but services.yaml describes operational services. Docker Compose for local test database doesn't fit the services model of 'start/stop/healthcheck'."
+		}
+	],
+	"previousRound": null
+}

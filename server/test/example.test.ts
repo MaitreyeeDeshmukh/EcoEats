@@ -1,19 +1,32 @@
 import { describe, expect, it } from "vitest";
-import { cleanupTestData, getTestPool, insertTestUsers } from "./index";
+import {
+	cleanupTestData,
+	getTestPoolOrThrow,
+	insertTestUsers,
+	isDbAvailable,
+} from "./index";
 
-// Check if database is available for database-dependent tests
-const dbAvailable = !process.env.DB_SKIP;
+/**
+ * Conditional test helper - runs test only if condition is true
+ */
+function itIf(condition: boolean, name: string, fn: () => Promise<void>) {
+	if (condition) {
+		it(name, fn);
+	} else {
+		it.skip(name, fn);
+	}
+}
 
 describe("Test Environment Setup", () => {
-	it.runIf(dbAvailable)("should connect to the test database", async () => {
-		const pool = getTestPool();
+	itIf(isDbAvailable, "should connect to the test database", async () => {
+		const pool = getTestPoolOrThrow();
 		const result = await pool.query("SELECT 1 as test");
 		expect(result.rows[0].test).toBe(1);
 	});
 
-	it.runIf(dbAvailable)("should clean up test data", async () => {
+	itIf(isDbAvailable, "should clean up test data", async () => {
 		await cleanupTestData();
-		const pool = getTestPool();
+		const pool = getTestPoolOrThrow();
 
 		const users = await pool.query("SELECT * FROM users");
 		expect(users.rows).toHaveLength(0);
@@ -25,7 +38,7 @@ describe("Test Environment Setup", () => {
 		expect(claims.rows).toHaveLength(0);
 	});
 
-	it.runIf(dbAvailable)("should insert and retrieve test users", async () => {
+	itIf(isDbAvailable, "should insert and retrieve test users", async () => {
 		await cleanupTestData();
 		await insertTestUsers([
 			{
@@ -42,7 +55,7 @@ describe("Test Environment Setup", () => {
 			},
 		]);
 
-		const pool = getTestPool();
+		const pool = getTestPoolOrThrow();
 		const result = await pool.query("SELECT * FROM users ORDER BY email");
 
 		expect(result.rows).toHaveLength(2);

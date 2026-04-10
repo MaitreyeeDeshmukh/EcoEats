@@ -1,0 +1,43 @@
+{
+  "featureId": "auth-client-tests",
+  "reviewedAt": "2026-04-10T22:55:00.000Z",
+  "commitId": "0271e8803af023e7200a48017337f195f4072b5e",
+  "transcriptSkeletonReviewed": true,
+  "diffReviewed": true,
+  "status": "fail",
+  "codeReview": {
+    "summary": "The test implementation is comprehensive and well-structured, covering most of the required assertions (VAL-TEST-054 through VAL-TEST-079). However, one critical assertion is missing test coverage: VAL-TEST-078 (Web Storage Handles Undefined Window) requires testing server-side rendering scenarios where `window` is undefined, but no such test exists. The test file uses jsdom environment which always has `window` defined, making it impossible to test this scenario without additional mocking.",
+    "issues": [
+      {
+        "file": "src/services/auth-client.test.ts",
+        "line": 815,
+        "severity": "blocking",
+        "description": "VAL-TEST-078 is listed in the feature's `fulfills` array but is NOT tested. The validation contract requires: 'Server-side rendering (no window) returns null from getItem, setItem/deleteItem are no-ops.' The web storage handling describe block tests localStorage operations with errors, but does NOT test the `typeof window === \"undefined\"` case. The source code (auth-client.ts lines 30-50) correctly handles this case by returning null/void early, but tests do not verify this behavior."
+      }
+    ]
+  },
+  "sharedStateObservations": [
+    {
+      "area": "conventions",
+      "observation": "The jest.setup.ts uses a `global.secureStoreMock` pattern for mocking SecureStore in tests, but this convention is not documented in AGENTS.md. Future workers writing frontend tests that interact with SecureStore need to know about this global mock pattern.",
+      "evidence": "jest.setup.ts lines 42-56 define the SecureStore mock using `global.secureStoreMock`. The auth-client.test.ts uses this pattern (e.g., `global.secureStoreMock = { ecoeats_session: ... }`). AGENTS.md mentions 'Mock SecureStore, localStorage, fetch, and Platform.OS' but doesn't explain the global mock variable pattern."
+    },
+    {
+      "area": "skills",
+      "observation": "The testing-worker skill was followed correctly. The worker: (1) understood requirements, (2) used existing Jest setup (jest-rtl-setup precondition), (3) wrote tests covering described behaviors, (4) verified tests pass with typecheck and lint. The skill procedure was followed well.",
+      "evidence": "Handoff shows `followedProcedure: true` with no deviations. Verification commands show `bun run test:frontend`, `bunx tsc --noEmit`, and `bunx biome check` all passed."
+    },
+    {
+      "area": "services",
+      "observation": "No new services were started during this feature. The worker correctly used `bun run test:frontend` which is already documented in services.yaml.",
+      "evidence": "services.yaml already includes `test:frontend: bun run test:frontend` command."
+    },
+    {
+      "area": "knowledge",
+      "observation": "The jsdom test environment always has `window` defined, making it difficult to test server-side rendering scenarios (where `window` is undefined). This limitation should be documented for future frontend testing work that needs to test SSR behavior.",
+      "evidence": "jest.config.js line 15 sets `testEnvironment: \"jsdom\"`. Testing `typeof window === \"undefined\"` would require either: (a) using a different test environment like 'node', (b) dynamically deleting/mocking the global `window` object, or (c) using Jest's `@jest-environment` docblock to switch environments per test."
+    }
+  ],
+  "addressesFailureFrom": null,
+  "summary": "Comprehensive test coverage for auth-client.ts with 35 test cases, but missing test for VAL-TEST-078 (server-side rendering scenario where window is undefined). The source code correctly handles this case, but tests don't verify it. This is a blocking issue as the feature explicitly claims to fulfill VAL-TEST-078."
+}
