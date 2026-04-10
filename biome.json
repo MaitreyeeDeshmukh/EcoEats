@@ -6,7 +6,13 @@
 		"useIgnoreFile": true
 	},
 	"files": {
-		"includes": ["**", "!**/node_modules", "!**/.expo", "!**/dist"]
+		"includes": [
+			"**",
+			"!**/node_modules",
+			"!**/.expo",
+			"!**/dist",
+			"!worker-configuration.d.ts"
+		]
 	},
 	"linter": {
 		"enabled": true,

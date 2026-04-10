@@ -1,9 +1,11 @@
 import { Pool } from "pg";
-import { serverConfig, validateServerConfig } from "./config";
+import type { RuntimeConfig } from "./config";
 
-validateServerConfig();
-
-export const pool = new Pool({
-	connectionString: serverConfig.databaseUrl,
-	max: 10,
-});
+export function createPool(
+	config: Pick<RuntimeConfig, "databaseConnectionString">,
+): Pool {
+	return new Pool({
+		connectionString: config.databaseConnectionString,
+		max: 5,
+	});
+}

@@ -1,7 +1,16 @@
 {
 	"$schema": "./node_modules/knip/schema.json",
-	"ignoreDependencies": ["@biomejs/biome", "expo-system-ui", "expo-updates"],
-	"ignoreFiles": ["babel.config.js", "src/services/claims.ts"],
+	"ignoreDependencies": [
+		"@biomejs/biome",
+		"@opentelemetry/api",
+		"expo-system-ui",
+		"expo-updates"
+	],
+	"ignoreFiles": [
+		"babel.config.js",
+		"server/auth.ts",
+		"src/services/claims.ts"
+	],
 	"ignoreIssues": {
 		"src/services/listings.ts": ["exports"],
 		"src/services/users.ts": ["exports"],

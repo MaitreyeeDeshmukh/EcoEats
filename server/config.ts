@@ -5,41 +5,91 @@ const DEFAULT_ALLOWED_ORIGINS = [
 	"ecoeats://",
 ];
 
-function readRequiredEnv(name: string): string {
-	const value = process.env[name];
-	if (!value) {
-		throw new Error(`Missing required environment variable: ${name}`);
-	}
-	return value;
+export interface RuntimeConfig {
+	port: number;
+	apiUrl: string;
+	databaseConnectionString: string;
+	authSecret: string;
+	resendApiKey: string;
+	fromEmail: string;
+	allowedOrigins: string[];
 }
 
-function readAllowedOrigins(): string[] {
-	const raw = process.env.CORS_ORIGINS || process.env.TRUSTED_ORIGINS;
-	if (!raw) {
+interface RuntimeConfigInput {
+	port?: number | string;
+	apiUrl?: string;
+	databaseConnectionString?: string;
+	authSecret?: string;
+	resendApiKey?: string;
+	fromEmail?: string;
+	allowedOrigins?: string[] | string;
+}
+
+function normalizePort(value?: number | string): number {
+	const port = Number(value ?? 3001);
+
+	if (!Number.isFinite(port) || port <= 0) {
+		return 3001;
+	}
+
+	return port;
+}
+
+function normalizeAllowedOrigins(value?: string[] | string): string[] {
+	if (Array.isArray(value)) {
+		return value.length > 0 ? value : DEFAULT_ALLOWED_ORIGINS;
+	}
+
+	if (!value) {
 		return DEFAULT_ALLOWED_ORIGINS;
 	}
 
-	return raw
+	const origins = value
 		.split(",")
 		.map((origin) => origin.trim())
 		.filter(Boolean);
+
+	return origins.length > 0 ? origins : DEFAULT_ALLOWED_ORIGINS;
 }
 
-export const serverConfig = {
-	port: Number(process.env.PORT || 3001),
-	apiUrl: process.env.API_URL || "http://localhost:3001",
-	databaseUrl: process.env.DATABASE_URL || "",
-	authSecret: process.env.AUTH_SECRET || "",
-	resendApiKey: process.env.RESEND_API_KEY || "",
-	fromEmail: process.env.AUTH_FROM_EMAIL || "EcoEats <noreply@ecoeats.app>",
-	allowedOrigins: readAllowedOrigins(),
-};
+export function createRuntimeConfig(input: RuntimeConfigInput): RuntimeConfig {
+	const config: RuntimeConfig = {
+		port: normalizePort(input.port),
+		apiUrl: input.apiUrl || "http://localhost:3001",
+		databaseConnectionString: input.databaseConnectionString || "",
+		authSecret: input.authSecret || "",
+		resendApiKey: input.resendApiKey || "",
+		fromEmail: input.fromEmail || "EcoEats <noreply@ecoeats.app>",
+		allowedOrigins: normalizeAllowedOrigins(input.allowedOrigins),
+	};
 
-export function validateServerConfig(): void {
-	if (!serverConfig.databaseUrl) {
-		readRequiredEnv("DATABASE_URL");
+	validateRuntimeConfig(config);
+
+	return config;
+}
+
+export function loadNodeConfig(
+	env: NodeJS.ProcessEnv = process.env,
+): RuntimeConfig {
+	return createRuntimeConfig({
+		port: env.PORT,
+		apiUrl: env.API_URL,
+		databaseConnectionString: env.DATABASE_URL,
+		authSecret: env.AUTH_SECRET,
+		resendApiKey: env.RESEND_API_KEY,
+		fromEmail: env.AUTH_FROM_EMAIL,
+		allowedOrigins: env.CORS_ORIGINS || env.TRUSTED_ORIGINS,
+	});
+}
+
+function validateRuntimeConfig(
+	config: Pick<RuntimeConfig, "databaseConnectionString" | "authSecret">,
+): void {
+	if (!config.databaseConnectionString) {
+		throw new Error("Missing required database connection string");
 	}
-	if (!serverConfig.authSecret) {
-		readRequiredEnv("AUTH_SECRET");
+
+	if (!config.authSecret) {
+		throw new Error("Missing required AUTH_SECRET");
 	}
 }

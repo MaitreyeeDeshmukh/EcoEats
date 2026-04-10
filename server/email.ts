@@ -1,32 +1,38 @@
-import { serverConfig } from "./config";
+import type { RuntimeConfig } from "./config";
 
-interface EmailPayload {
+export interface EmailPayload {
 	to: string;
 	subject: string;
 	html: string;
 }
 
-export async function sendEmail(payload: EmailPayload): Promise<void> {
-	if (!serverConfig.resendApiKey) {
-		console.warn("RESEND_API_KEY is not configured; skipping email send.");
-		return;
-	}
+export type EmailSender = (payload: EmailPayload) => Promise<void>;
 
-	const response = await fetch("https://api.resend.com/emails", {
-		method: "POST",
-		headers: {
-			Authorization: `Bearer ${serverConfig.resendApiKey}`,
-			"Content-Type": "application/json",
-		},
-		body: JSON.stringify({
-			from: serverConfig.fromEmail,
-			to: payload.to,
-			subject: payload.subject,
-			html: payload.html,
-		}),
-	});
+export function createEmailSender(
+	config: Pick<RuntimeConfig, "resendApiKey" | "fromEmail">,
+): EmailSender {
+	return async (payload) => {
+		if (!config.resendApiKey) {
+			console.warn("RESEND_API_KEY is not configured; skipping email send.");
+			return;
+		}
 
-	if (!response.ok) {
-		throw new Error(`Failed to send email: ${await response.text()}`);
-	}
+		const response = await fetch("https://api.resend.com/emails", {
+			method: "POST",
+			headers: {
+				Authorization: `Bearer ${config.resendApiKey}`,
+				"Content-Type": "application/json",
+			},
+			body: JSON.stringify({
+				from: config.fromEmail,
+				to: payload.to,
+				subject: payload.subject,
+				html: payload.html,
+			}),
+		});
+
+		if (!response.ok) {
+			throw new Error(`Failed to send email: ${await response.text()}`);
+		}
+	};
 }

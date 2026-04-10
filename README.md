@@ -1,23 +1,24 @@
 # EcoEats
 
-Campus food rescue app built with Expo, Better Auth, Hono, and PostgreSQL.
+Campus food rescue app built with Expo, Hono, Better Auth, and PostgreSQL.
 
 ## Architecture
 
-```mermaid
-flowchart LR
-	App[Expo App] --> API[EcoEats API]
-	API --> Auth[Better Auth]
-	API --> DB[(PostgreSQL)]
-	Auth --> DB
+```text
+Expo app
+  -> typed Hono RPC client
+  -> Cloudflare Worker API
+  -> Hyperdrive
+  -> PostgreSQL
 ```
 
-- The Expo app only talks to your API.
-- The API owns auth and data access.
-- PostgreSQL is the persistence layer.
-- Supabase can still host Postgres for now, but the app is no longer coupled to Supabase client features.
+- Expo is only the frontend.
+- Hono owns auth, validation, and business logic.
+- Better Auth runs inside the backend.
+- PostgreSQL can be hosted anywhere.
+- Supabase can still host Postgres, but it is no longer an app dependency.
 
-See [how-it-works.md](/Users/divkix/GitHub/EcoEats/docs/how-it-works.md) for the full walkthrough.
+See [edge-architecture.md](/Users/divkix/GitHub/EcoEats/docs/edge-architecture.md) for the full system walkthrough and ASCII diagrams.
 
 ## Quick Start
 
@@ -27,15 +28,16 @@ See [how-it-works.md](/Users/divkix/GitHub/EcoEats/docs/how-it-works.md) for the
 bun install
 ```
 
-2. Copy envs:
+2. Create local env files:
 
 ```bash
 cp .env.example .env.local
+cp .dev.vars.example .dev.vars
 ```
 
 3. Fill in:
 
-- `DATABASE_URL`
+- `DATABASE_URL` in `.env.local`
 - `AUTH_SECRET`
 - `RESEND_API_KEY`
 
@@ -47,10 +49,16 @@ bun run auth:migrate
 
 5. Create app tables with [001_init_app_tables.sql](/Users/divkix/GitHub/EcoEats/server/sql/001_init_app_tables.sql)
 
-6. Start the API:
+6. Start one backend mode:
 
 ```bash
 bun run api:dev
+```
+
+or
+
+```bash
+bun run api:worker:dev
 ```
 
 7. Start Expo:
@@ -59,18 +67,33 @@ bun run api:dev
 bun start
 ```
 
+If you use the Worker locally, point `EXPO_PUBLIC_SERVER_URL` at `http://localhost:8787`.
+
 ## Commands
 
 ```bash
-bun run api         # Start API server
-bun run api:dev     # Start API server with watch mode
+# Backend
+bun run api
+bun run api:dev
+bun run api:worker:dev
+bun run api:worker:deploy
+bun run api:worker:types
+bun run api:worker:check
 bun run auth:migrate
 
+# Expo
 bun start
 bun run ios
 bun run android
 bun run web
 
+# EAS
+bun run eas:build:ios
+bun run eas:build:android
+bun run eas:build:local:ios
+bun run eas:build:local:android
+
+# Verification
 bunx tsc --noEmit
 bunx biome check .
 bunx knip
@@ -78,16 +101,27 @@ bunx knip
 
 ## Environment
 
-Use [.env.example](/Users/divkix/GitHub/EcoEats/.env.example).
+Frontend:
 
-Important variables:
+- `EXPO_PUBLIC_SERVER_URL`: API base URL used by Expo
 
-- `EXPO_PUBLIC_SERVER_URL`: public URL the Expo app uses for API calls
-- `API_URL`: canonical server base URL used by Better Auth on the server
-- `DATABASE_URL`: Postgres connection string
-- `AUTH_SECRET`: Better Auth secret
-- `RESEND_API_KEY`: email delivery key
-- `CORS_ORIGINS`: comma-separated allowed origins
+Node/Bun backend and migrations:
+
+- `API_URL`
+- `DATABASE_URL`
+- `AUTH_SECRET`
+- `RESEND_API_KEY`
+- `AUTH_FROM_EMAIL`
+- `CORS_ORIGINS`
+
+Cloudflare Worker:
+
+- `API_URL`
+- `AUTH_FROM_EMAIL`
+- `CORS_ORIGINS`
+- `AUTH_SECRET` as a Worker secret
+- `RESEND_API_KEY` as a Worker secret
+- `HYPERDRIVE` binding for the Postgres connection
 
 ## Project Structure
 
@@ -100,50 +134,28 @@ src/
   services/            typed client-side HTTP and auth wrappers
   stores/              Zustand state
   components/          UI and feature components
-  types/               shared TypeScript types
+  types/               frontend and domain types
 shared/
   contracts/           shared Zod API contracts
 server/
-  index.ts             Hono entrypoint
-  auth.ts              Better Auth setup
-  db.ts                pg pool
-  session.ts           auth guard
+  app.ts               Hono app factory
+  runtime.ts           runtime assembly for Node or Workers
+  auth-core.ts         Better Auth factory
   routes/              users/listings/claims endpoints
   sql/                 app schema
+worker/
+  index.ts             Cloudflare Worker entrypoint
 docs/
+  edge-architecture.md
   how-it-works.md
   portable-backend-migration.md
 ```
 
-## Current Behavior
+## Deployment
 
-- Magic-link sign-in through Better Auth
-- Bearer-token authenticated API requests from app to server
-- Shared Zod contracts and Hono RPC typing between Expo and the API
-- Listings polled every 20s
-- Claims polled every 15s
-- No direct Supabase SDK usage in the client
+- Frontend builds through EAS for iOS and Android.
+- Web can be exported statically.
+- Backend deploys to Cloudflare Workers from `wrangler.jsonc`.
+- PostgreSQL can live on Supabase, Neon, Railway, RDS, or any other compatible host.
 
-## Why This Shape
-
-- Portability: changing Postgres hosts later should mostly be an env change
-- Simplicity: one server instead of separate auth worker plus data client
-- Ownership: business logic lives in your code, not vendor-specific client APIs
-- MVP fit: polling is simpler than realtime and good enough for low traffic
-
-## Status
-
-Implemented now:
-
-- portable API layer
-- Better Auth server
-- Postgres-backed app routes
-- migration docs and diagrams
-
-Still pending:
-
-- map screen
-- post listing flow
-- claims UI
-- impact dashboard
-- release setup
+See [DEPLOY.md](/Users/divkix/GitHub/EcoEats/DEPLOY.md) for the full deploy checklist.

@@ -1,0 +1,25 @@
+{
+	"$schema": "./node_modules/wrangler/config-schema.json",
+	"name": "ecoeats-api",
+	"main": "worker/index.ts",
+	"compatibility_date": "2026-04-10",
+	"compatibility_flags": ["nodejs_compat"],
+	"observability": {
+		"enabled": true,
+		"head_sampling_rate": 1
+	},
+	"secrets": {
+		"required": ["AUTH_SECRET", "RESEND_API_KEY"]
+	},
+	"vars": {
+		"API_URL": "https://api.ecoeats.app",
+		"AUTH_FROM_EMAIL": "EcoEats <noreply@ecoeats.app>",
+		"CORS_ORIGINS": "https://app.ecoeats.app,ecoeats://"
+	},
+	"hyperdrive": [
+		{
+			"binding": "HYPERDRIVE",
+			"id": "REPLACE_WITH_HYPERDRIVE_ID"
+		}
+	]
+}

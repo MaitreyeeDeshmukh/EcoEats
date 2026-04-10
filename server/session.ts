@@ -1,5 +1,5 @@
-import type { Context, Next } from "hono";
-import { type AuthSession, auth } from "./auth";
+import type { Context, MiddlewareHandler } from "hono";
+import type { AppAuth, AuthSession } from "./auth-core";
 
 export type AppEnv = {
 	Variables: {
@@ -9,20 +9,19 @@ export type AppEnv = {
 
 type AppContext = Context<AppEnv>;
 
-export async function requireSession(
-	c: AppContext,
-	next: Next,
-): Promise<Response | undefined> {
-	const session = await auth.api.getSession({
-		headers: c.req.raw.headers,
-	});
+export function createRequireSession(auth: AppAuth): MiddlewareHandler<AppEnv> {
+	return async (c, next) => {
+		const session = await auth.api.getSession({
+			headers: c.req.raw.headers,
+		});
 
-	if (!session) {
-		return c.json({ message: "Unauthorized" }, 401);
-	}
+		if (!session) {
+			return c.json({ message: "Unauthorized" }, 401);
+		}
 
-	c.set("authSession", session);
-	await next();
+		c.set("authSession", session);
+		await next();
+	};
 }
 
 export function getSession(c: AppContext): AuthSession {

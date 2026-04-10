@@ -5,25 +5,38 @@ Multi-platform Expo application for rescuing surplus food on campus. Built with 
 ## Commands
 
 ```bash
-bun run api:dev # Start the API server
-bun start       # Start Expo dev server
-bun run ios     # Run on iOS Simulator
-bun run android # Run on Android Emulator
-bun run web     # Run on web browser
+# Backend
+bun run api             # Start the local Node/Bun API
+bun run api:dev         # Start the local Node/Bun API with watch mode
+bun run api:worker:dev  # Start the Cloudflare Worker locally with Wrangler
+bun run api:worker:deploy
+bun run api:worker:types
+bun run api:worker:check
+bun run auth:migrate    # Run Better Auth migrations against DATABASE_URL
 
-# Auth schema
-bun run auth:migrate # Create Better Auth tables using server/auth.ts
+# Expo
+bun start
+bun run ios
+bun run android
+bun run web
 
-# Verification (run all before committing)
-bunx tsc --noEmit   # TypeScript check
-bunx biome check .  # Linting + formatting
-bunx knip           # Find unused exports
+# EAS
+bun run eas:build:ios
+bun run eas:build:android
+bun run eas:build:local:ios
+bun run eas:build:local:android
+
+# Verification
+bunx tsc --noEmit
+bunx biome check .
+bunx knip
 ```
 
 ## Environment
 
-Create `.env.local`:
-```
+Create `.env.local` for Expo and local Node/Bun backend work:
+
+```env
 EXPO_PUBLIC_SERVER_URL=http://localhost:3001
 API_URL=http://localhost:3001
 DATABASE_URL=postgresql://...
@@ -33,6 +46,22 @@ AUTH_FROM_EMAIL=EcoEats <noreply@ecoeats.app>
 CORS_ORIGINS=http://localhost:8081,http://localhost:3000,http://localhost:3001,ecoeats://
 ```
 
+Create `.dev.vars` for local Worker secrets:
+
+```env
+API_URL=http://localhost:8787
+AUTH_SECRET=replace-with-32-plus-random-chars
+RESEND_API_KEY=re_...
+AUTH_FROM_EMAIL=EcoEats <noreply@ecoeats.app>
+CORS_ORIGINS=http://localhost:8081,http://localhost:3000,http://localhost:3001,ecoeats://
+```
+
+For local Worker development against a local or arbitrary Postgres database, export:
+
+```bash
+export CLOUDFLARE_HYPERDRIVE_LOCAL_CONNECTION_STRING_HYPERDRIVE="postgresql://..."
+```
+
 ## Database Setup
 
 1. Run `bun run auth:migrate` for Better Auth tables
@@ -40,37 +69,31 @@ CORS_ORIGINS=http://localhost:8081,http://localhost:3000,http://localhost:3001,e
 
 ## Structure
 
-```
-app/                # Expo Router file-based routes (typed routes enabled)
-  (auth)/           # Auth screens (login, onboarding, callback)
-  (tabs)/           # Tab navigation (feed, map, post, claims, impact, profile)
-src/
-  components/
-    ui/             # Generic UI (Button, Input, Badge, Spinner)
-    features/       # Domain components (ListingCard)
-  services/         # auth-client, typed Hono RPC client, feature API calls
-  stores/           # Zustand stores with subscribeWithSelector middleware
-  contexts/         # React contexts (Auth, Toast)
-  types/            # TypeScript types
-  utils/            # Utilities
-shared/
-  contracts/        # Shared Zod request/response contracts
-server/             # Hono API + Better Auth + pg
-  app.ts            # Routed Hono app + exported AppType
-  routes/           # Users, listings, claims handlers
+```text
+app/                Expo Router screens
+src/                frontend code
+shared/contracts/   shared Zod API contracts
+server/             runtime-agnostic Hono backend
+  app.ts            Hono app factory
+  runtime.ts        backend runtime assembly
+  auth-core.ts      Better Auth factory
+  routes/           users, listings, claims
+  sql/              app schema
+worker/             Cloudflare Worker entrypoint
 ```
 
 ## Tech Stack
 
 - **Framework**: Expo SDK 55 + Expo Router
 - **Language**: TypeScript (strict mode)
-- **Styling**: NativeWind v4 (Tailwind CSS for RN)
+- **Styling**: NativeWind v4
 - **State**: Zustand + React Context
-- **Backend**: Hono + pg
+- **Backend**: Hono
 - **Auth**: Better Auth (magic link + bearer token)
 - **Contracts**: Shared Zod schemas + Hono RPC typing
-- **Database**: PostgreSQL (Supabase-hosted for now, but only as Postgres)
-- **Linting**: Biome (not ESLint/Prettier)
+- **Database**: PostgreSQL anywhere, reached from Workers through Hyperdrive
+- **Deployment**: Cloudflare Workers for the API, EAS for mobile builds
+- **Linting**: Biome
 
 ## Code Conventions
 
@@ -80,12 +103,13 @@ server/             # Hono API + Better Auth + pg
 
 ## Gotchas
 
-- NativeWind v4 uses `className` directly (no `styled()` wrapper)
-- Expo Router uses file-based routing with typed routes (`"typedRoutes": true`)
-- Auth tokens stored in SecureStore on mobile
-- Deep link scheme: `ecoeats://auth/callback?token=xxx`
-- Expo never talks directly to the database
+- Expo Router `app/` is frontend routing only, not backend routes
 - `shared/contracts/*` is the API source of truth for request/response shapes
-- `src/services/rpc-client.ts` is the shared typed client transport layer
-- Listings and claims use polling through the first-party API
-- Supabase is no longer used from the frontend SDK side
+- `src/services/rpc-client.ts` is the typed client transport layer
+- Better Auth runs inside the Hono backend, not as a separate app
+- Expo never talks directly to the database
+- `worker-configuration.d.ts` is generated by `wrangler types`
+- `wrangler.jsonc` uses a Hyperdrive binding, so Worker deployment still works with any external Postgres host
+- Auth tokens are stored in SecureStore on mobile and localStorage on web
+- Deep link scheme: `ecoeats://auth/callback?token=xxx`
+- Listings and claims currently use polling through the first-party API

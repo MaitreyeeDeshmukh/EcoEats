@@ -1,13 +1,14 @@
 import { serve } from "@hono/node-server";
-import { app } from "./app";
-import { serverConfig, validateServerConfig } from "./config";
+import { createApp } from "./app";
+import { getNodeRuntime } from "./runtime";
 
-validateServerConfig();
+const runtime = getNodeRuntime();
+const app = createApp(runtime);
 
 serve(
 	{
 		fetch: app.fetch,
-		port: serverConfig.port,
+		port: runtime.config.port,
 	},
 	(info) => {
 		console.log(`EcoEats API listening on http://localhost:${info.port}`);

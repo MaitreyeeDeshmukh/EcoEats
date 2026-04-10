@@ -1,138 +1,183 @@
 # Deployment Guide
 
-This project now deploys as two things:
+This app deploys as two separate systems:
 
-1. the Expo app
-2. the EcoEats API server
+1. the Expo frontend
+2. the EcoEats API backend on Cloudflare Workers
 
-There is no separate auth worker anymore. Better Auth runs inside the API server.
+The database stays outside Cloudflare and can be any PostgreSQL provider.
 
-## Production Architecture
+## Production Topology
 
-```mermaid
-flowchart LR
-	App[Expo App: iOS / Android / Web] --> API[EcoEats API Server]
-	API --> Auth[Better Auth]
-	API --> DB[(PostgreSQL)]
-	Auth --> DB
-	Auth --> Email[Resend]
+```text
+Expo app / web build
+  -> https://api.ecoeats.app
+  -> Cloudflare Worker
+  -> Hyperdrive
+  -> PostgreSQL
+  -> Resend
 ```
 
-## What You Need
+## One-Time Backend Setup
 
-- a PostgreSQL database
-- a deployed API server reachable over HTTPS
-- a Resend account for magic-link emails
-- Expo/EAS for app builds if shipping mobile apps
+### 1. Create a Hyperdrive config
 
-## Environment Variables
+Create a Hyperdrive configuration that points at your PostgreSQL database.
 
-### API server
+That database can be:
 
-```env
-PORT=3001
+- Supabase Postgres
+- Neon
+- AWS RDS
+- Railway Postgres
+- local/self-hosted Postgres reachable from the internet
+
+Then replace the placeholder id in [wrangler.jsonc](/Users/divkix/GitHub/EcoEats/wrangler.jsonc).
+
+### 2. Set Worker secrets
+
+Run once:
+
+```bash
+wrangler secret put AUTH_SECRET
+wrangler secret put RESEND_API_KEY
+```
+
+### 3. Set Worker vars
+
+Update [wrangler.jsonc](/Users/divkix/GitHub/EcoEats/wrangler.jsonc):
+
+- `API_URL`
+- `AUTH_FROM_EMAIL`
+- `CORS_ORIGINS`
+
+Recommended production values:
+
+```text
 API_URL=https://api.ecoeats.app
-DATABASE_URL=postgresql://...
-AUTH_SECRET=replace-with-32-plus-random-chars
-RESEND_API_KEY=re_...
 AUTH_FROM_EMAIL=EcoEats <noreply@ecoeats.app>
 CORS_ORIGINS=https://app.ecoeats.app,ecoeats://
 ```
 
-### Expo app
+## Database Setup
 
-```env
+Run Better Auth migrations against the same Postgres database the Worker will use:
+
+```bash
+DATABASE_URL=postgresql://... bun run auth:migrate
+```
+
+Then apply the app schema:
+
+```bash
+psql "postgresql://..." -f server/sql/001_init_app_tables.sql
+```
+
+This is why the database is still portable:
+
+- Better Auth migrations use a normal Postgres connection string
+- app schema is normal SQL
+- Hyperdrive is only the Worker-to-Postgres transport layer
+
+## Backend Deploy Options
+
+### Option A: direct CLI deploy
+
+```bash
+bun run api:worker:deploy
+```
+
+### Option B: git push deploy
+
+This repo includes [.github/workflows/deploy-api.yml](/Users/divkix/GitHub/EcoEats/.github/workflows/deploy-api.yml).
+
+Set these GitHub repository secrets:
+
+- `CLOUDFLARE_API_TOKEN`
+- `CLOUDFLARE_ACCOUNT_ID`
+
+Then pushing to `main` deploys the Worker automatically.
+
+## Local Backend Development
+
+### Fast local backend
+
+```bash
+bun run api:dev
+```
+
+Use `.env.local` and `DATABASE_URL`.
+
+### Cloudflare runtime locally
+
+```bash
+cp .dev.vars.example .dev.vars
+export CLOUDFLARE_HYPERDRIVE_LOCAL_CONNECTION_STRING_HYPERDRIVE="postgresql://..."
+bun run api:worker:dev
+```
+
+Then point Expo at:
+
+```text
+EXPO_PUBLIC_SERVER_URL=http://localhost:8787
+```
+
+## Expo and EAS
+
+### Required Expo env
+
+Set this for local builds and cloud builds:
+
+```text
 EXPO_PUBLIC_SERVER_URL=https://api.ecoeats.app
 ```
 
-## Database Setup
-
-### 1. Better Auth tables
-
-Run:
+### Cloud builds
 
 ```bash
-bun run auth:migrate
+bun run eas:build:ios
+bun run eas:build:android
 ```
 
-This creates Better Auth tables in your Postgres database.
-
-### 2. App tables
-
-Run the SQL in [001_init_app_tables.sql](/Users/divkix/GitHub/EcoEats/server/sql/001_init_app_tables.sql).
-
-That creates:
-
-- `users`
-- `listings`
-- `claims`
-
-## Deploying The API
-
-The API is just a Bun/Node-style server using Hono and `pg`.
-
-Any platform that can run a long-lived Node/Bun HTTP server is fine.
-
-Typical options:
-
-- Fly.io
-- Render
-- Railway
-- a VM/VPS
-- Docker on your own infrastructure
-
-### API checklist
-
-1. set production env vars
-2. run `bun install`
-3. run `bun run auth:migrate`
-4. apply app schema SQL
-5. start the server with `bun run api`
-6. point `EXPO_PUBLIC_SERVER_URL` at the deployed API
-
-## Deploying The Expo App
-
-### Web
+### Local builds
 
 ```bash
-npx expo export --platform web
+bun run eas:build:local:ios
+bun run eas:build:local:android
 ```
 
-Then deploy the output to any static host.
+The build profiles live in [eas.json](/Users/divkix/GitHub/EcoEats/eas.json).
 
-### Mobile
+## Deploy Checklist
+
+```text
+1. Create Hyperdrive
+2. Replace the Hyperdrive id in wrangler.jsonc
+3. Set AUTH_SECRET and RESEND_API_KEY as Worker secrets
+4. Run Better Auth migrations against Postgres
+5. Apply server/sql/001_init_app_tables.sql
+6. Set EXPO_PUBLIC_SERVER_URL in EAS
+7. Add CLOUDFLARE_API_TOKEN and CLOUDFLARE_ACCOUNT_ID to GitHub
+8. Push to main
+```
+
+## Verification
+
+Run before shipping:
 
 ```bash
-eas build --platform ios
-eas build --platform android
+bunx wrangler types
+bunx tsc --noEmit
+bunx biome check .
+bunx knip
+bunx wrangler deploy --dry-run
 ```
 
-## Production Checks
-
-After deployment, verify:
+Then verify in production:
 
 1. `GET /health` returns `200`
-2. magic-link email sends successfully
-3. clicking the link signs in on web
-4. deep-link callback works on device
-5. authenticated calls to `/api/users/me` succeed
-6. listings load from `/api/listings`
-
-## Domain Setup
-
-Recommended split:
-
-- app: `app.ecoeats.app`
-- api: `api.ecoeats.app`
-
-Then set:
-
-- `API_URL=https://api.ecoeats.app`
-- `EXPO_PUBLIC_SERVER_URL=https://api.ecoeats.app`
-- `CORS_ORIGINS=https://app.ecoeats.app,ecoeats://`
-
-## Notes
-
-- Supabase can still be the Postgres host, but only as a database host.
-- The client should not need Supabase URL or anon key anymore.
-- If you move to another Postgres provider later, update `DATABASE_URL` and rerun migrations if needed.
+2. magic-link email sends
+3. login works on web and native deep links
+4. `/api/users/me` succeeds with bearer auth
+5. listings load
+6. claim creation works transactionally

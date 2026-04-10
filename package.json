@@ -5,7 +5,15 @@
 	"scripts": {
 		"api": "bun server/index.ts",
 		"api:dev": "bun --watch server/index.ts",
+		"api:worker:dev": "wrangler dev --port 8787",
+		"api:worker:deploy": "wrangler deploy",
+		"api:worker:types": "wrangler types",
+		"api:worker:check": "wrangler check startup",
 		"auth:migrate": "bunx @better-auth/cli@latest migrate --config server/auth.ts",
+		"eas:build:android": "bunx eas-cli@latest build -p android --profile production",
+		"eas:build:ios": "bunx eas-cli@latest build -p ios --profile production",
+		"eas:build:local:android": "bunx eas-cli@latest build -p android --profile preview --local",
+		"eas:build:local:ios": "bunx eas-cli@latest build -p ios --profile preview --local",
 		"start": "expo start",
 		"android": "expo start --android",
 		"ios": "expo start --ios",
@@ -14,6 +22,7 @@
 	"dependencies": {
 		"@hono/node-server": "^1.19.13",
 		"@hono/zod-validator": "^0.7.6",
+		"@opentelemetry/api": "^1.9.0",
 		"better-auth": "^1.6.1",
 		"expo": "~55.0.13",
 		"expo-constants": "~55.0.13",
@@ -44,7 +53,8 @@
 		"@types/react": "~19.2.14",
 		"knip": "^6.3.1",
 		"tailwindcss": "^3.4.19",
-		"typescript": "~5.9.2"
+		"typescript": "~5.9.2",
+		"wrangler": "^4.81.1"
 	},
 	"private": true
 }
