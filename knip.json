@@ -4,7 +4,9 @@
 		"@biomejs/biome",
 		"@opentelemetry/api",
 		"expo-system-ui",
-		"expo-updates"
+		"expo-updates",
+		"vitest",
+		"@vitest/coverage-v8"
 	],
 	"ignoreFiles": [
 		"babel.config.js",
@@ -12,6 +14,8 @@
 		"src/services/claims.ts"
 	],
 	"ignoreIssues": {
+		"server/test/index.ts": ["exports"],
+		"server/test/setup.ts": ["exports"],
 		"src/services/listings.ts": ["exports"],
 		"src/services/users.ts": ["exports"],
 		"src/stores/listings.ts": ["exports"],

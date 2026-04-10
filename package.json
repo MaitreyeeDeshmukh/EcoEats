@@ -16,6 +16,9 @@
 		"eas:build:local:ios": "bunx eas-cli@latest build -p ios --profile preview --local",
 		"eas:submit:android": "bunx eas-cli@latest submit -p android --profile production",
 		"eas:submit:ios": "bunx eas-cli@latest submit -p ios --profile production",
+		"test": "vitest run",
+		"test:watch": "vitest",
+		"test:coverage": "vitest run --coverage",
 		"start": "expo start",
 		"android": "expo start --android",
 		"ios": "expo start --ios",
@@ -53,9 +56,11 @@
 	"devDependencies": {
 		"@biomejs/biome": "^2.4.10",
 		"@types/react": "~19.2.14",
+		"@vitest/coverage-v8": "^4.1.4",
 		"knip": "^6.3.1",
 		"tailwindcss": "^3.4.19",
 		"typescript": "~5.9.2",
+		"vitest": "^4.1.4",
 		"wrangler": "^4.81.1"
 	},
 	"private": true
