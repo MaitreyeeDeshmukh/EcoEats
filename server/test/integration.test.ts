@@ -440,7 +440,11 @@ describe("Integration: Concurrent Claims Race Condition", () => {
 			// Find the failed response
 			const failedRes = res1.status === 400 ? res1 : res2;
 			const failedJson = await failedRes.json();
-			expect(failedJson.message).toBe("Not enough portions remaining");
+			// Both error messages are valid race condition outcomes
+			expect([
+				"Not enough portions remaining",
+				"Listing is no longer active",
+			]).toContain(failedJson.message);
 
 			// Verify only one claim was created
 			const claimsResult = await db.query(
