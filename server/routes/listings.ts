@@ -120,7 +120,7 @@ export function createListingsRouter(
 						$13,
 						$14,
 						$15,
-						NOW() + ($15 || ' minutes')::interval,
+						NOW() + make_interval(mins => $15),
 						'active'
 					)
 				`,

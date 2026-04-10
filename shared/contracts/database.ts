@@ -45,8 +45,12 @@ export const listingRowSchema = z.object({
 	lat: z.number().nullable(),
 	lng: z.number().nullable(),
 	expiry_minutes: z.number().int().positive(),
-	expires_at: z.string(),
-	posted_at: z.string(),
+	expires_at: z
+		.union([z.string(), z.date()])
+		.transform((v) => (v instanceof Date ? v.toISOString() : v)),
+	posted_at: z
+		.union([z.string(), z.date()])
+		.transform((v) => (v instanceof Date ? v.toISOString() : v)),
 	status: listingStatusSchema,
 });
 
