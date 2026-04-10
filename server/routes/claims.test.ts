@@ -152,41 +152,34 @@ describe("Claims Router", () => {
 			async () => {
 				db = getTestPoolOrThrow();
 				const userId = generateTestId();
-				const listingId = generateTestId();
+				const hostId = generateTestId();
 
-				// Create test user and listing
+				// Create test user (the one who will make claims) and host
 				await insertTestUsers([
 					{ id: userId, name: "Test User", email: "test@example.com" },
-				]);
-				await insertTestListings([
-					{
-						id: listingId,
-						host_id: userId,
-						host_name: "Test Host",
-						title: "Test Listing",
-						quantity: 100,
-						quantity_remaining: 50,
-						expires_at: futureMinutes(60),
-					},
+					{ id: hostId, name: "Host User", email: "host@example.com" },
 				]);
 
-				// Create 25 different students to make 25 claims
-				// (each student can only claim a listing once due to unique constraint)
-				const studentIds = Array.from({ length: 25 }, (_, i) => ({
+				// Create 25 different listings (one student can only claim a listing once)
+				const listings = Array.from({ length: 25 }, (_, i) => ({
 					id: generateTestId(),
-					name: `Student ${i}`,
-					email: `student${i}@example.com`,
+					host_id: hostId,
+					host_name: "Host User",
+					title: `Test Listing ${i}`,
+					quantity: 10,
+					quantity_remaining: 5,
+					expires_at: futureMinutes(60),
 				}));
-				await insertTestUsers(studentIds);
+				await insertTestListings(listings);
 
-				// Insert 25 claims (more than the 20 limit)
-				const claims = studentIds.map((student, i) => ({
+				// Insert 25 claims for the SAME user (more than the 20 limit)
+				const claims = listings.map((listing, i) => ({
 					id: generateTestId(),
-					listing_id: listingId,
-					student_id: student.id,
-					student_name: student.name,
+					listing_id: listing.id,
+					student_id: userId, // Same user makes all claims
+					student_name: "Test User",
 					quantity: 1,
-					reservation_expires_at: futureMinutes(20 - i),
+					reservation_expires_at: futureMinutes(30 - i),
 					status: "pending" as const,
 				}));
 				await insertTestClaims(claims);
@@ -200,7 +193,9 @@ describe("Claims Router", () => {
 				expect(res.status).toBe(200);
 
 				const json = await res.json();
-				expect(json.data).toHaveLength(0); // User has no claims (they were made by other students)
+				// Should be limited to 20 most recent claims (sorted by claimed_at DESC)
+				expect(json.data).toHaveLength(20);
+				expect(json.data.length).toBeLessThanOrEqual(20);
 			},
 		);
 	});
