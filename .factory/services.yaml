@@ -2,7 +2,7 @@ commands:
   install: bun install
   typecheck: bunx tsc --noEmit
   build: bun run api
-  test: bun test
+  test: bun run test
   test:frontend: bun run test:frontend
   lint: bunx biome check .
   lint:fix: bunx biome check --write .

@@ -6,9 +6,15 @@ import { defineConfig } from "vitest/config";
  */
 export default defineConfig({
 	test: {
-		// Test file patterns
+		// Test file patterns - backend only, explicitly exclude frontend tests
 		include: ["server/**/*.test.ts"],
-		exclude: ["node_modules/**", "dist/**", ".idea/**"],
+		exclude: [
+			"node_modules/**",
+			"dist/**",
+			".idea/**",
+			"src/**/*.test.ts",
+			"src/**/*.test.tsx",
+		],
 
 		// TypeScript and ESM support
 		globals: true,
