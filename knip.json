@@ -6,7 +6,10 @@
 		"expo-system-ui",
 		"expo-updates",
 		"vitest",
-		"@vitest/coverage-v8"
+		"@vitest/coverage-v8",
+		"jest-environment-jsdom",
+		"jest-watch-typeahead",
+		"identity-obj-proxy"
 	],
 	"ignoreFiles": [
 		"babel.config.js",
@@ -16,12 +19,14 @@
 	"ignoreIssues": {
 		"server/test/index.ts": ["exports"],
 		"server/test/setup.ts": ["exports"],
+		"src/services/claims.ts": ["exports"],
 		"src/services/listings.ts": ["exports"],
 		"src/services/users.ts": ["exports"],
 		"src/stores/listings.ts": ["exports"],
 		"src/types/database.ts": ["types"],
 		"src/types/models.ts": ["types"],
 		"src/utils/foodSafety.ts": ["exports", "types"],
-		"src/utils/validators.ts": ["exports"]
+		"src/utils/validators.ts": ["exports"],
+		"src/constants/app.ts": ["exports"]
 	}
 }
