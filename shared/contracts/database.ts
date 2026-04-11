@@ -1,20 +1,47 @@
 import { z } from "zod";
 
+/**
+ * Enum schema for user roles in the system.
+ * - "student": Regular user who can claim food listings
+ * - "organizer": Host user who can create and manage listings
+ */
 export const userRoleSchema = z.enum(["student", "organizer"]);
+/**
+ * Enum schema for food listing statuses.
+ * - "active": Listing is available for claims
+ * - "claimed": All portions have been claimed
+ * - "expired": Listing passed its expiration time
+ * - "cancelled": Host cancelled the listing before expiration
+ */
 export const listingStatusSchema = z.enum([
 	"active",
 	"claimed",
 	"expired",
 	"cancelled",
 ]);
+
+/**
+ * Enum schema for claim statuses.
+ * - "pending": Claim is active and awaiting pickup
+ * - "picked_up": Food was successfully picked up by the student
+ * - "no_show": Student did not show up within the reservation window
+ */
 const claimStatusSchema = z.enum(["pending", "picked_up", "no_show"]);
 
+/**
+ * Schema for user impact statistics tracking their contribution to food rescue.
+ * Tracks meals rescued, CO2 emissions saved, and reputation points earned.
+ */
 export const impactStatsSchema = z.object({
 	mealsRescued: z.number().int().nonnegative(),
 	co2Saved: z.number().nonnegative(),
 	pointsEarned: z.number().int().nonnegative(),
 });
 
+/**
+ * Schema for a database row representing a user profile.
+ * Contains all user information including role, preferences, and impact statistics.
+ */
 export const userRowSchema = z.object({
 	id: z.string(),
 	name: z.string(),
@@ -28,6 +55,11 @@ export const userRowSchema = z.object({
 	created_at: z.string(),
 });
 
+/**
+ * Schema for a database row representing a food listing.
+ * Contains all listing information including host details, location, quantity, and status.
+ * Timestamps are normalized to ISO strings for consistent serialization.
+ */
 export const listingRowSchema = z.object({
 	id: z.string().uuid(),
 	host_id: z.string(),
@@ -54,6 +86,11 @@ export const listingRowSchema = z.object({
 	status: listingStatusSchema,
 });
 
+/**
+ * Schema for a database row representing a claim on a food listing.
+ * Contains claim details including student info, quantity claimed, status, and optional rating.
+ * Timestamps are normalized to ISO strings for consistent serialization.
+ */
 export const claimRowSchema = z.object({
 	id: z.string().uuid(),
 	listing_id: z.string().uuid(),
