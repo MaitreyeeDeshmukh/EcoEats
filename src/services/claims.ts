@@ -1,12 +1,11 @@
 // src/services/claims.ts
 
 import type { InferResponseType } from "hono/client";
+import { POLL_INTERVAL_CLAIMS_MS } from "@/constants/app";
 import type { ClaimRow } from "@/types/database";
 import type { Claim, ClaimStatus } from "@/types/models";
 import { AuthError } from "@/utils/errors";
 import { readRpcJson, rpcClient, rpcOptions } from "./rpc-client";
-
-const POLL_INTERVAL_MS = 15000;
 
 type CreateClaimResponse = InferResponseType<
 	typeof rpcClient.api.claims.$post,
@@ -111,7 +110,7 @@ export function subscribeToStudentClaims(
 	}
 
 	fetch();
-	const timer = setInterval(fetch, POLL_INTERVAL_MS);
+	const timer = setInterval(fetch, POLL_INTERVAL_CLAIMS_MS);
 	return () => clearInterval(timer);
 }
 
@@ -136,6 +135,6 @@ export function subscribeToListingClaims(
 	}
 
 	fetch();
-	const timer = setInterval(fetch, POLL_INTERVAL_MS);
+	const timer = setInterval(fetch, POLL_INTERVAL_CLAIMS_MS);
 	return () => clearInterval(timer);
 }

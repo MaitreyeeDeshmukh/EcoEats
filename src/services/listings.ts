@@ -1,11 +1,10 @@
 // src/services/listings.ts
 
 import type { InferRequestType, InferResponseType } from "hono/client";
+import { POLL_INTERVAL_LISTINGS_MS } from "@/constants/app";
 import type { ListingRow } from "@/types/database";
 import type { DietaryTag, Filters, Listing } from "@/types/models";
 import { readRpcJson, rpcClient, rpcOptions } from "./rpc-client";
-
-const POLL_INTERVAL_MS = 20000;
 
 type CreateListingInput = InferRequestType<
 	typeof rpcClient.api.listings.$post
@@ -74,7 +73,7 @@ export function subscribeToActiveListings(
 	};
 
 	sync();
-	const timer = setInterval(sync, POLL_INTERVAL_MS);
+	const timer = setInterval(sync, POLL_INTERVAL_LISTINGS_MS);
 
 	return () => clearInterval(timer);
 }

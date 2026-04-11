@@ -1,4 +1,6 @@
 // src/utils/validators.ts
+import { MAX_QUANTITY, MIN_QUANTITY } from "@/constants/app";
+
 const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
 export function validateEmail(email: string): string | null {
@@ -36,11 +38,11 @@ export function validateQuantity(quantity: number): string | null {
 	if (!Number.isFinite(quantity)) {
 		return "Quantity must be a valid number";
 	}
-	if (quantity < 1) {
-		return "Quantity must be at least 1";
+	if (quantity < MIN_QUANTITY) {
+		return `Quantity must be at least ${MIN_QUANTITY}`;
 	}
-	if (quantity > 100) {
-		return "Quantity cannot exceed 100";
+	if (quantity > MAX_QUANTITY) {
+		return `Quantity cannot exceed ${MAX_QUANTITY}`;
 	}
 	if (!Number.isInteger(quantity)) {
 		return "Quantity must be a whole number";
