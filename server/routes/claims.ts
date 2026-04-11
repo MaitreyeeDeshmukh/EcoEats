@@ -175,7 +175,9 @@ export function createClaimsRouter(
 			} catch (error) {
 				await client.query("ROLLBACK");
 				const statusCode: 400 | 404 | 409 =
-					error instanceof HttpError ? (error.statusCode as 400 | 404 | 409) : 400;
+					error instanceof HttpError
+						? (error.statusCode as 400 | 404 | 409)
+						: 400;
 				return c.json(
 					messageResponseSchema.parse({
 						message:

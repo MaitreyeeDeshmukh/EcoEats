@@ -1,6 +1,8 @@
 import { Hono } from "hono";
 import type { Pool } from "pg";
 import { beforeEach, describe, expect, it } from "vitest";
+import { messageResponseSchema } from "../../shared/contracts";
+import { HttpError } from "../errors";
 import type { AppEnv } from "../session";
 import {
 	cleanupTestData,
@@ -13,6 +15,27 @@ import {
 	pastMinutes,
 } from "../test";
 import { createListingsRouter } from "./listings";
+
+/**
+ * Helper to create test app with error handling for typed errors
+ */
+function createTestApp(db: Pool, requireSession: any) {
+	const app = new Hono<AppEnv>().route(
+		"/listings",
+		createListingsRouter(db, requireSession),
+	);
+	// Error handler for typed errors (mirrors app.ts)
+	app.onError((err, c) => {
+		if (err instanceof HttpError) {
+			return c.json(
+				messageResponseSchema.parse({ message: err.message }),
+				err.statusCode as 400 | 401 | 404 | 409 | 500,
+			);
+		}
+		throw err;
+	});
+	return app;
+}
 
 /**
  * Create a mock requireSession middleware for testing
@@ -88,10 +111,7 @@ describe("Listings Router", () => {
 					},
 				]);
 
-				const app = new Hono<AppEnv>().route(
-					"/listings",
-					createListingsRouter(db, createMockRequireSession(userId)),
-				);
+				const app = createTestApp(db, createMockRequireSession(userId));
 
 				const res = await app.request("/listings");
 				expect(res.status).toBe(200);
@@ -139,10 +159,7 @@ describe("Listings Router", () => {
 					},
 				]);
 
-				const app = new Hono<AppEnv>().route(
-					"/listings",
-					createListingsRouter(db, createMockRequireSession(userId)),
-				);
+				const app = createTestApp(db, createMockRequireSession(userId));
 
 				const res = await app.request("/listings");
 				expect(res.status).toBe(200);
@@ -172,10 +189,7 @@ describe("Listings Router", () => {
 					{ id: userId, name: "Test User", email: "test@example.com" },
 				]);
 
-				const app = new Hono<AppEnv>().route(
-					"/listings",
-					createListingsRouter(db, createMockRequireSession(userId)),
-				);
+				const app = createTestApp(db, createMockRequireSession(userId));
 
 				const res = await app.request("/listings");
 				expect(res.status).toBe(200);
@@ -223,10 +237,7 @@ describe("Listings Router", () => {
 			}));
 			await insertTestListings(listings);
 
-			const app = new Hono<AppEnv>().route(
-				"/listings",
-				createListingsRouter(db, createMockRequireSession(userId)),
-			);
+			const app = createTestApp(db, createMockRequireSession(userId));
 
 			const res = await app.request("/listings");
 			expect(res.status).toBe(200);
@@ -261,10 +272,7 @@ describe("Listings Router", () => {
 				},
 			]);
 
-			const app = new Hono<AppEnv>().route(
-				"/listings",
-				createListingsRouter(db, createMockRequireSession(userId)),
-			);
+			const app = createTestApp(db, createMockRequireSession(userId));
 
 			const res = await app.request(`/listings/${listingId}`);
 			expect(res.status).toBe(200);
@@ -290,10 +298,7 @@ describe("Listings Router", () => {
 					{ id: userId, name: "Test User", email: "test@example.com" },
 				]);
 
-				const app = new Hono<AppEnv>().route(
-					"/listings",
-					createListingsRouter(db, createMockRequireSession(userId)),
-				);
+				const app = createTestApp(db, createMockRequireSession(userId));
 
 				const res = await app.request(`/listings/${generateTestId()}`);
 				expect(res.status).toBe(404);
@@ -349,10 +354,7 @@ describe("Listings Router", () => {
 					},
 				]);
 
-				const app = new Hono<AppEnv>().route(
-					"/listings",
-					createListingsRouter(db, createMockRequireSession(userId)),
-				);
+				const app = createTestApp(db, createMockRequireSession(userId));
 
 				// Test expired listing
 				const res1 = await app.request(`/listings/${expiredListingId}`);
@@ -382,10 +384,7 @@ describe("Listings Router", () => {
 				{ id: userId, name: "Test User", email: "test@example.com" },
 			]);
 
-			const app = new Hono<AppEnv>().route(
-				"/listings",
-				createListingsRouter(db, createMockRequireSession(userId)),
-			);
+			const app = createTestApp(db, createMockRequireSession(userId));
 
 			const res = await app.request("/listings/invalid-uuid");
 			expect(res.status).toBe(400);
@@ -404,10 +403,7 @@ describe("Listings Router", () => {
 					{ id: userId, name: "Test User", email: "test@example.com" },
 				]);
 
-				const app = new Hono<AppEnv>().route(
-					"/listings",
-					createListingsRouter(db, createMockRequireSession(userId)),
-				);
+				const app = createTestApp(db, createMockRequireSession(userId));
 
 				const listingData = {
 					hostName: "Test Host",
@@ -476,10 +472,7 @@ describe("Listings Router", () => {
 					{ id: userId, name: "Test User", email: "test@example.com" },
 				]);
 
-				const app = new Hono<AppEnv>().route(
-					"/listings",
-					createListingsRouter(db, createMockRequireSession(userId)),
-				);
+				const app = createTestApp(db, createMockRequireSession(userId));
 
 				const beforeCreate = new Date();
 
@@ -533,10 +526,7 @@ describe("Listings Router", () => {
 				{ id: userId, name: "Test User", email: "test@example.com" },
 			]);
 
-			const app = new Hono<AppEnv>().route(
-				"/listings",
-				createListingsRouter(db, createMockRequireSession(userId)),
-			);
+			const app = createTestApp(db, createMockRequireSession(userId));
 
 			const res = await app.request("/listings", {
 				method: "POST",
@@ -585,10 +575,7 @@ describe("Listings Router", () => {
 					{ id: userId, name: "Test User", email: "test@example.com" },
 				]);
 
-				const app = new Hono<AppEnv>().route(
-					"/listings",
-					createListingsRouter(db, createMockRequireSession(userId)),
-				);
+				const app = createTestApp(db, createMockRequireSession(userId));
 
 				const res = await app.request("/listings", {
 					method: "POST",
@@ -634,10 +621,7 @@ describe("Listings Router", () => {
 				{ id: userId, name: "Test User", email: "test@example.com" },
 			]);
 
-			const app = new Hono<AppEnv>().route(
-				"/listings",
-				createListingsRouter(db, createMockRequireSession(userId)),
-			);
+			const app = createTestApp(db, createMockRequireSession(userId));
 
 			// Missing hostName
 			const res1 = await app.request("/listings", {
@@ -790,10 +774,7 @@ describe("Listings Router", () => {
 					},
 				]);
 
-				const app = new Hono<AppEnv>().route(
-					"/listings",
-					createListingsRouter(db, createMockRequireSession(userId)),
-				);
+				const app = createTestApp(db, createMockRequireSession(userId));
 
 				const res = await app.request(`/listings/${listingId}`, {
 					method: "PATCH",
@@ -839,10 +820,7 @@ describe("Listings Router", () => {
 					},
 				]);
 
-				const app = new Hono<AppEnv>().route(
-					"/listings",
-					createListingsRouter(db, createMockRequireSession(userId)),
-				);
+				const app = createTestApp(db, createMockRequireSession(userId));
 
 				const res = await app.request(`/listings/${listingId}`, {
 					method: "PATCH",
@@ -888,10 +866,7 @@ describe("Listings Router", () => {
 					},
 				]);
 
-				const app = new Hono<AppEnv>().route(
-					"/listings",
-					createListingsRouter(db, createMockRequireSession(userId)),
-				);
+				const app = createTestApp(db, createMockRequireSession(userId));
 
 				const res = await app.request(`/listings/${listingId}`, {
 					method: "PATCH",
@@ -935,10 +910,7 @@ describe("Listings Router", () => {
 					},
 				]);
 
-				const app = new Hono<AppEnv>().route(
-					"/listings",
-					createListingsRouter(db, createMockRequireSession(userId)),
-				);
+				const app = createTestApp(db, createMockRequireSession(userId));
 
 				const res = await app.request(`/listings/${listingId}`, {
 					method: "PATCH",
@@ -981,10 +953,7 @@ describe("Listings Router", () => {
 				},
 			]);
 
-			const app = new Hono<AppEnv>().route(
-				"/listings",
-				createListingsRouter(db, createMockRequireSession(nonHostId)),
-			);
+			const app = createTestApp(db, createMockRequireSession(nonHostId));
 
 			const res = await app.request(`/listings/${listingId}`, {
 				method: "PATCH",
@@ -1009,10 +978,7 @@ describe("Listings Router", () => {
 					{ id: userId, name: "Test User", email: "test@example.com" },
 				]);
 
-				const app = new Hono<AppEnv>().route(
-					"/listings",
-					createListingsRouter(db, createMockRequireSession(userId)),
-				);
+				const app = createTestApp(db, createMockRequireSession(userId));
 
 				const res = await app.request(`/listings/${generateTestId()}`, {
 					method: "PATCH",
@@ -1035,10 +1001,7 @@ describe("Listings Router", () => {
 				{ id: userId, name: "Test User", email: "test@example.com" },
 			]);
 
-			const app = new Hono<AppEnv>().route(
-				"/listings",
-				createListingsRouter(db, createMockRequireSession(userId)),
-			);
+			const app = createTestApp(db, createMockRequireSession(userId));
 
 			const res = await app.request("/listings/invalid-uuid", {
 				method: "PATCH",
@@ -1070,10 +1033,7 @@ describe("Listings Router", () => {
 				},
 			]);
 
-			const app = new Hono<AppEnv>().route(
-				"/listings",
-				createListingsRouter(db, createMockRequireSession(userId)),
-			);
+			const app = createTestApp(db, createMockRequireSession(userId));
 
 			// Empty body - no fields provided
 			const res = await app.request(`/listings/${listingId}`, {
@@ -1108,10 +1068,7 @@ describe("Listings Router", () => {
 				},
 			]);
 
-			const app = new Hono<AppEnv>().route(
-				"/listings",
-				createListingsRouter(db, createMockRequireSession(userId)),
-			);
+			const app = createTestApp(db, createMockRequireSession(userId));
 
 			const res = await app.request(`/listings/${listingId}/cancel`, {
 				method: "POST",
@@ -1153,10 +1110,7 @@ describe("Listings Router", () => {
 				},
 			]);
 
-			const app = new Hono<AppEnv>().route(
-				"/listings",
-				createListingsRouter(db, createMockRequireSession(nonHostId)),
-			);
+			const app = createTestApp(db, createMockRequireSession(nonHostId));
 
 			const res = await app.request(`/listings/${listingId}/cancel`, {
 				method: "POST",
@@ -1179,10 +1133,7 @@ describe("Listings Router", () => {
 					{ id: userId, name: "Test User", email: "test@example.com" },
 				]);
 
-				const app = new Hono<AppEnv>().route(
-					"/listings",
-					createListingsRouter(db, createMockRequireSession(userId)),
-				);
+				const app = createTestApp(db, createMockRequireSession(userId));
 
 				const res = await app.request(`/listings/${generateTestId()}/cancel`, {
 					method: "POST",
@@ -1219,10 +1170,7 @@ describe("Listings Router", () => {
 					},
 				]);
 
-				const app = new Hono<AppEnv>().route(
-					"/listings",
-					createListingsRouter(db, createMockRequireSession(userId)),
-				);
+				const app = createTestApp(db, createMockRequireSession(userId));
 
 				// Cancel an already cancelled listing
 				const res = await app.request(`/listings/${listingId}/cancel`, {
@@ -1251,10 +1199,7 @@ describe("Listings Router", () => {
 				{ id: userId, name: "Test User", email: "test@example.com" },
 			]);
 
-			const app = new Hono<AppEnv>().route(
-				"/listings",
-				createListingsRouter(db, createMockRequireSession(userId)),
-			);
+			const app = createTestApp(db, createMockRequireSession(userId));
 
 			const res = await app.request("/listings/invalid-uuid/cancel", {
 				method: "POST",

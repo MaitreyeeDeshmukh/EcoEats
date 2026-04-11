@@ -1,6 +1,8 @@
 import { Hono } from "hono";
 import { cors } from "hono/cors";
 import { logger } from "hono/logger";
+import { messageResponseSchema } from "../shared/contracts";
+import { HttpError } from "./errors";
 import { createClaimsRouter } from "./routes/claims";
 import { createListingsRouter } from "./routes/listings";
 import { createUsersRouter } from "./routes/users";
@@ -51,6 +53,18 @@ export function createApp(runtime: AppRuntime) {
 
 	app.on(["GET", "POST"], "/api/auth/*", (c) => {
 		return runtime.auth.handler(c.req.raw);
+	});
+
+	// Global error handler for typed HTTP errors
+	app.onError((err, c) => {
+		if (err instanceof HttpError) {
+			return c.json(
+				messageResponseSchema.parse({ message: err.message }),
+				err.statusCode as 400 | 401 | 404 | 409 | 500,
+			);
+		}
+		// Re-throw unknown errors to let Hono handle them (returns 500)
+		throw err;
 	});
 
 	return app

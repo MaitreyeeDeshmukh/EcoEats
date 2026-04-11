@@ -7,10 +7,10 @@ import {
 	getListingResponseSchema,
 	getListingsResponseSchema,
 	listingIdParamSchema,
-	messageResponseSchema,
 	mutateListingResponseSchema,
 	updateListingBodySchema,
 } from "../../shared/contracts";
+import { ConflictError, NotFoundError } from "../errors";
 import { type AppEnv, getSession } from "../session";
 import { validate } from "../validation";
 
@@ -64,10 +64,7 @@ export function createListingsRouter(
 			);
 
 			if (result.rowCount === 0) {
-				return c.json(
-					messageResponseSchema.parse({ message: "Listing not found" }),
-					404,
-				);
+				throw new NotFoundError("Listing not found");
 			}
 
 			return c.json(
@@ -153,32 +150,49 @@ export function createListingsRouter(
 				const session = getSession(c);
 				const { id } = c.req.valid("param");
 				const payload = c.req.valid("json");
-				const result = await db.query(
+
+				// Check if listing exists and get its current state
+				const listingResult = await db.query(
+					`
+						SELECT status, host_id
+						FROM listings
+						WHERE id = $1
+						LIMIT 1
+					`,
+					[id],
+				);
+
+				if (listingResult.rowCount === 0) {
+					throw new NotFoundError("Listing not found");
+				}
+
+				const listing = listingResult.rows[0] as {
+					status: string;
+					host_id: string;
+				};
+
+				// Verify host ownership
+				if (listing.host_id !== session.user.id) {
+					throw new NotFoundError("Listing not found");
+				}
+
+				// Prevent updates to listings in terminal states
+				if (listing.status === "cancelled" || listing.status === "expired") {
+					throw new ConflictError(
+						`Cannot update listing with status '${listing.status}'`,
+					);
+				}
+
+				await db.query(
 					`
 						UPDATE listings
 						SET
-							status = COALESCE($3, status),
-							quantity_remaining = COALESCE($4, quantity_remaining)
+							status = COALESCE($2, status),
+							quantity_remaining = COALESCE($3, quantity_remaining)
 						WHERE id = $1
-							AND host_id = $2
-						RETURNING id
 					`,
-					[
-						id,
-						session.user.id,
-						payload.status ?? null,
-						payload.quantityRemaining ?? null,
-					],
+					[id, payload.status ?? null, payload.quantityRemaining ?? null],
 				);
-
-				if (result.rowCount === 0) {
-					return c.json(
-						messageResponseSchema.parse({
-							message: "Listing not found",
-						}),
-						404,
-					);
-				}
 
 				return c.json(
 					mutateListingResponseSchema.parse({ success: true }),
@@ -189,21 +203,48 @@ export function createListingsRouter(
 		.post("/:id/cancel", validate("param", listingIdParamSchema), async (c) => {
 			const session = getSession(c);
 			const { id } = c.req.valid("param");
-			const result = await db.query(
+
+			// Check if listing exists and get its current state
+			const listingResult = await db.query(
 				`
-					UPDATE listings
-					SET status = 'cancelled'
+					SELECT status, host_id
+					FROM listings
 					WHERE id = $1
-						AND host_id = $2
-					RETURNING id
+					LIMIT 1
 				`,
-				[id, session.user.id],
+				[id],
 			);
 
-			if (result.rowCount === 0) {
-				return c.json(
-					messageResponseSchema.parse({ message: "Listing not found" }),
-					404,
+			if (listingResult.rowCount === 0) {
+				throw new NotFoundError("Listing not found");
+			}
+
+			const listing = listingResult.rows[0] as {
+				status: string;
+				host_id: string;
+			};
+
+			// Verify host ownership
+			if (listing.host_id !== session.user.id) {
+				throw new NotFoundError("Listing not found");
+			}
+
+			// Allow idempotent cancels (already cancelled), but reject other terminal states
+			if (listing.status === "expired" || listing.status === "claimed") {
+				throw new ConflictError(
+					`Cannot cancel listing with status '${listing.status}'`,
+				);
+			}
+
+			// Only update if not already cancelled
+			if (listing.status !== "cancelled") {
+				await db.query(
+					`
+						UPDATE listings
+						SET status = 'cancelled'
+						WHERE id = $1
+					`,
+					[id],
 				);
 			}
 
