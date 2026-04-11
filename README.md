@@ -153,6 +153,10 @@ bun run eas:build:local:android
 bun run eas:submit:ios
 bun run eas:submit:android
 
+# Testing
+bun run test              # Backend tests (Vitest)
+bun run test:frontend     # Frontend tests (Jest)
+
 # Verification
 bunx tsc --noEmit
 bunx biome check .
@@ -296,18 +300,25 @@ app/
   (auth)/              auth screens
   (tabs)/              main app tabs
 src/
+  constants/           app constants (polling intervals, limits)
   contexts/            auth and toast state
   services/            typed client-side HTTP and auth wrappers
   stores/              Zustand state
-  components/          UI and feature components
+  components/
+    ui/                base UI components (Button, ErrorBoundary, Spinner)
   types/               frontend and domain types
+  utils/
+    errors.ts          typed error classes (ValidationError, AuthError, NetworkError)
 shared/
   contracts/           shared Zod API contracts
 server/
   app.ts               Hono app factory
   runtime.ts           runtime assembly for Node or Workers
   auth-core.ts         Better Auth factory
+  constants.ts         backend constants (reservation minutes, query limits)
+  errors.ts            typed HTTP error classes (NotFoundError, ConflictError, etc.)
   routes/              users/listings/claims endpoints
+  test/                test setup and utilities
   sql/                 app schema
 worker/
   index.ts             Cloudflare Worker entrypoint
@@ -316,6 +327,28 @@ docs/
   how-it-works.md
   portable-backend-migration.md
 ```
+
+## Code Quality
+
+### Testing
+
+- **Backend**: Vitest with PostgreSQL test isolation (see `server/test/`)
+- **Frontend**: Jest with React Testing Library (see `src/**/*.test.ts(x)`)
+
+### Error Handling
+
+- **Frontend**: `ErrorBoundary` component wraps navigation groups with fallback UI
+- **Typed errors**: `ValidationError`, `AuthError`, `NetworkError` (frontend); `NotFoundError`, `ConflictError`, `UnauthorizedError` (backend)
+
+### Pre-commit Hooks
+
+Husky runs `lint-staged` on commit:
+- `biome check --write` on staged files
+- `tsc --noEmit` for type checking
+
+### Rate Limiting
+
+API routes are rate-limited: 100 requests per 15 minutes per IP. Health endpoint excluded.
 
 ## More Docs
 
