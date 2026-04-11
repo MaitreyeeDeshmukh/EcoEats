@@ -1,0 +1,15 @@
+{
+  "featureId": "listings-error-standardization",
+  "reviewedAt": "2026-04-11T00:15:00.000Z",
+  "commitId": "219f762",
+  "transcriptSkeletonReviewed": true,
+  "diffReviewed": true,
+  "status": "pass",
+  "codeReview": {
+    "summary": "The listings route has been successfully refactored to use typed errors (NotFoundError, ConflictError) instead of returning JSON directly for errors. All error conditions now throw typed errors that are handled by the global error handler middleware in app.ts. The implementation correctly fulfills both VAL-ERR-017 and VAL-ERR-018 assertions.",
+    "issues": []
+  },
+  "sharedStateObservations": [],
+  "addressesFailureFrom": null,
+  "summary": "Feature implementation is complete and correct. The listings route (server/routes/listings.ts) now throws NotFoundError for all missing listing scenarios (GET /:id, PATCH /:id, POST /:id/cancel, and non-host access attempts) and ConflictError for invalid state operations (updating cancelled/expired listings, canceling expired/claimed listings). The global error handler in app.ts catches these HttpError instances and returns appropriate JSON responses with correct status codes (404 for NotFoundError, 409 for ConflictError). Tests verify the 404 status code for NotFoundError scenarios. The implementation maintains security through obscurity by returning the same NotFoundError for non-host access as for truly missing listings."
+}

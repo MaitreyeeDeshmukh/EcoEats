@@ -1,0 +1,44 @@
+{
+	"featureId": "frontend-error-integration",
+	"reviewedAt": "2026-04-11T00:00:00.000Z",
+	"commitId": "12182d6",
+	"transcriptSkeletonReviewed": true,
+	"diffReviewed": true,
+	"status": "pass",
+	"codeReview": {
+		"summary": "The feature successfully implements typed errors in frontend services. NetworkError is thrown on fetch failures in rpc-client.ts and auth-client.ts. AuthError is thrown on authentication failures (401/403 responses, missing session, auth operation failures). Most error messages are user-friendly and suitable for display to users.",
+		"issues": [
+			{
+				"file": "src/services/listings.ts",
+				"line": 73,
+				"severity": "non_blocking",
+				"description": "Error messages use 'Failed to...' pattern instead of user-friendly 'Unable to... Please try again.' pattern used elsewhere. Functions createListing, getListingById, updateListing, and cancelListing have non-user-friendly fallback messages."
+			},
+			{
+				"file": "src/services/claims.ts",
+				"line": 57,
+				"severity": "non_blocking",
+				"description": "Functions confirmPickup, markNoShow, and submitRating use 'Failed to...' error messages instead of user-friendly 'Unable to... Please try again.' pattern. Other functions in this file were updated but these were missed."
+			}
+		]
+	},
+	"sharedStateObservations": [
+		{
+			"area": "conventions",
+			"observation": "The error handling pattern in rpc-client.ts wraps fetch in try-catch and throws typed errors (NetworkError for network failures, AuthError for 401/403). This is a reusable pattern that could be documented in AGENTS.md for consistency across services.",
+			"evidence": "src/services/rpc-client.ts:28-47 shows the fetch wrapper pattern that throws typed errors"
+		},
+		{
+			"area": "conventions",
+			"observation": "The user-friendly error message pattern 'Unable to [action]. Please try again.' is used inconsistently across services. Some files use 'Failed to...' which is less helpful to users. AGENTS.md could document the preferred error message format.",
+			"evidence": "Compare src/services/users.ts (user-friendly) with src/services/listings.ts (non-user-friendly fallbacks)"
+		},
+		{
+			"area": "knowledge",
+			"observation": "The subscription polling functions (subscribeToStudentClaims, subscribeToListingClaims, subscribeToActiveListings) intentionally catch and log errors without re-throwing to prevent app crashes during background polling. This pattern is commented but could be documented more explicitly.",
+			"evidence": "src/services/claims.ts:101-105, src/services/claims.ts:128-132, src/services/listings.ts:70-73 all have comments about not crashing the app for polling errors"
+		}
+	],
+	"addressesFailureFrom": null,
+	"summary": "PASS with minor issues. The feature correctly implements VAL-ERR-021 (NetworkError on fetch failures) and VAL-ERR-022 (AuthError on auth failures). VAL-ERR-025 (user-friendly messages) is mostly satisfied, but some functions in listings.ts and claims.ts still use less helpful 'Failed to...' messages. These are non-blocking because the typed error infrastructure is correct and messages don't expose internal details."
+}
