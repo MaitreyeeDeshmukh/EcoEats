@@ -63,8 +63,11 @@ export function createApp(runtime: AppRuntime) {
 				err.statusCode as 400 | 401 | 404 | 409 | 500,
 			);
 		}
-		// Re-throw unknown errors to let Hono handle them (returns 500)
-		throw err;
+		// Return generic 500 for unknown errors without statusCode
+		return c.json(
+			messageResponseSchema.parse({ message: "Internal Server Error" }),
+			500,
+		);
 	});
 
 	return app
