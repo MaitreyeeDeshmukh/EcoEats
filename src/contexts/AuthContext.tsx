@@ -15,6 +15,9 @@ import {
 import { createUserProfile, getUserProfile } from "@/services/users";
 import type { User } from "@/types/models";
 
+/**
+ * Context value type for authentication state and actions.
+ */
 interface AuthContextValue {
 	session: Session | null;
 	user: AuthUser | null;
@@ -27,6 +30,12 @@ interface AuthContextValue {
 
 const AuthContext = createContext<AuthContextValue | null>(null);
 
+/**
+ * Provider component that manages authentication state and provides
+ * auth context to child components. Handles session initialization,
+ * user profile loading/creation, and sign-in/sign-out actions.
+ * @param children - Child components to wrap with auth context
+ */
 export function AuthProvider({ children }: { children: ReactNode }) {
 	const [session, setSession] = useState<Session | null>(null);
 	const [profile, setProfile] = useState<User | null>(null);
@@ -123,6 +132,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 	);
 }
 
+/**
+ * Hook to access the authentication context.
+ * Must be used within an AuthProvider component.
+ * @returns The authentication context value
+ * @throws {Error} If used outside of AuthProvider
+ */
 export function useAuth() {
 	const ctx = useContext(AuthContext);
 	if (!ctx) {

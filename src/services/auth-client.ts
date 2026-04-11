@@ -72,6 +72,9 @@ const storage = {
 	},
 };
 
+/**
+ * Session data structure containing user authentication state.
+ */
 export interface Session {
 	id: string;
 	userId: string;
@@ -79,6 +82,9 @@ export interface Session {
 	user: User;
 }
 
+/**
+ * User data structure representing an authenticated user.
+ */
 export interface User {
 	id: string;
 	email: string;
@@ -87,11 +93,21 @@ export interface User {
 	emailVerified: boolean;
 }
 
+/**
+ * Client-side authentication manager handling session storage,
+ * magic link authentication, and token management.
+ * Supports both web (localStorage) and native (SecureStore) platforms.
+ */
 class AuthClient {
 	private session: Session | null = null;
 	private authToken: string | null = null;
 	private listeners: Set<(session: Session | null) => void> = new Set();
 
+	/**
+	 * Retrieves the current session, checking for stored session if not in memory.
+	 * Automatically clears expired sessions.
+	 * @returns The current session or null if no valid session exists
+	 */
 	async getSession(): Promise<Session | null> {
 		if (this.session) {
 			if (this.session.expiresAt <= new Date()) {
@@ -140,6 +156,12 @@ class AuthClient {
 		}
 	}
 
+	/**
+	 * Requests a magic link to be sent to the user's email for passwordless sign-in.
+	 * @param email - The user's email address
+	 * @throws {NetworkError} If the network connection fails
+	 * @throws {AuthError} If the magic link request fails
+	 */
 	async requestMagicLink(email: string): Promise<void> {
 		const callbackURL = getMagicLinkCallbackURL();
 		const errorCallbackURL = getMagicLinkErrorCallbackURL();
@@ -171,6 +193,13 @@ class AuthClient {
 		}
 	}
 
+	/**
+	 * Verifies a magic link token and establishes a session.
+	 * @param token - The magic link token from the verification URL
+	 * @returns The authenticated session
+	 * @throws {NetworkError} If the network connection fails
+	 * @throws {AuthError} If the token is invalid or expired
+	 */
 	async verifyMagicLink(token: string): Promise<Session> {
 		const params = new URLSearchParams({ token });
 
@@ -211,6 +240,10 @@ class AuthClient {
 		return session;
 	}
 
+	/**
+	 * Signs out the current user, clearing session data and notifying listeners.
+	 * Attempts to notify the server but succeeds locally regardless of server response.
+	 */
 	async signOut(): Promise<void> {
 		try {
 			const headers = new Headers();
@@ -232,6 +265,11 @@ class AuthClient {
 		this.notifyListeners();
 	}
 
+	/**
+	 * Subscribes to session state changes.
+	 * @param callback - Function called whenever the session changes
+	 * @returns Unsubscribe function to stop receiving updates
+	 */
 	onSessionChange(callback: (session: Session | null) => void): () => void {
 		this.listeners.add(callback);
 		return () => this.listeners.delete(callback);
@@ -243,6 +281,10 @@ class AuthClient {
 		}
 	}
 
+	/**
+	 * Gets the current access token for authenticated API requests.
+	 * @returns The access token or null if not authenticated
+	 */
 	getAccessToken(): string | null {
 		return this.authToken;
 	}
