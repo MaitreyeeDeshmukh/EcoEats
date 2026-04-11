@@ -1,65 +1,65 @@
 {
-  "featureId": "claims-error-standardization",
-  "reviewedAt": "2026-04-10T17:15:00.000Z",
-  "commitId": "1701d69",
-  "transcriptSkeletonReviewed": true,
-  "diffReviewed": true,
-  "status": "pass",
-  "codeReview": {
-    "summary": "The implementation correctly refactors server/routes/claims.ts to use typed errors from server/errors.ts. All error conditions are properly replaced with appropriate typed errors: ConflictError for duplicate claims and inactive listings (409), NotFoundError for missing listings and claims (404), and ValidationError for insufficient quantity (400). Tests are correctly updated to expect the new status codes.",
-    "issues": [
-      {
-        "file": "server/routes/claims.ts",
-        "line": 209,
-        "severity": "non_blocking",
-        "description": "The confirm-pickup endpoint returns 404 directly without throwing NotFoundError. While the behavior is correct (returns 404 status), the pattern is inconsistent with the no-show endpoint which throws NotFoundError. This is non-blocking because the endpoint doesn't have a try-catch block and correctly returns 404."
-      },
-      {
-        "file": "server/routes/claims.ts",
-        "line": 298,
-        "severity": "non_blocking",
-        "description": "The rating endpoint returns 404 directly without throwing NotFoundError. Same observation as confirm-pickup - pattern inconsistency but correct behavior."
-      }
-    ]
-  },
-  "sharedStateObservations": [
-    {
-      "area": "conventions",
-      "observation": "Type assertion pattern `as 400 | 404 | 409` is used to satisfy Hono's ContentfulStatusCode type requirements when extracting statusCode from HttpError. This workaround is necessary because Hono expects specific status code types, not generic numbers.",
-      "evidence": "server/routes/claims.ts:178-179 and server/routes/claims.ts:278-279 show the type assertion pattern in catch blocks"
-    },
-    {
-      "area": "conventions",
-      "observation": "Two patterns exist for error handling: transactional endpoints (create claim, no-show) throw typed errors caught in try-catch blocks, while non-transactional endpoints (confirm-pickup, rating) return status codes directly. This is reasonable because non-transactional endpoints don't need rollback handling.",
-      "evidence": "server/routes/claims.ts:174-185 (create claim catch block) vs server/routes/claims.ts:209-212 (confirm-pickup direct 404 return)"
-    }
-  ],
-  "addressesFailureFrom": null,
-  "assertionsVerified": [
-    {
-      "id": "VAL-ERR-013",
-      "description": "Claims Route Uses Typed Errors for Not Found",
-      "status": "pass",
-      "evidence": "NotFoundError thrown for 'Claim not found' in no-show endpoint (line 242). Note: confirm-pickup and rating endpoints return 404 directly, which is functionally correct."
-    },
-    {
-      "id": "VAL-ERR-014",
-      "description": "Claims Route Uses Typed Errors for Conflict",
-      "status": "pass",
-      "evidence": "ConflictError thrown for 'Already claimed' (line 89) and 'Listing is no longer active' (line 112)"
-    },
-    {
-      "id": "VAL-ERR-015",
-      "description": "Claims Route Uses ValidationError for Invalid Input",
-      "status": "pass",
-      "evidence": "ValidationError thrown for 'Not enough portions remaining' (line 115)"
-    },
-    {
-      "id": "VAL-ERR-016",
-      "description": "Claims Route Uses NotFoundError for Missing Listing",
-      "status": "pass",
-      "evidence": "NotFoundError thrown for 'Listing not found' (line 103)"
-    }
-  ],
-  "summary": "PASS. The feature implementation correctly refactors server/routes/claims.ts to use typed errors, fulfilling all four assertions (VAL-ERR-013 through VAL-ERR-016). All verification commands passed (tsc, biome, tests). Two non-blocking issues noted: confirm-pickup and rating endpoints return 404 directly instead of throwing NotFoundError, but this is a pattern inconsistency rather than a bug. The worker followed the backend-worker skill procedure correctly."
+	"featureId": "claims-error-standardization",
+	"reviewedAt": "2026-04-10T17:15:00.000Z",
+	"commitId": "1701d69",
+	"transcriptSkeletonReviewed": true,
+	"diffReviewed": true,
+	"status": "pass",
+	"codeReview": {
+		"summary": "The implementation correctly refactors server/routes/claims.ts to use typed errors from server/errors.ts. All error conditions are properly replaced with appropriate typed errors: ConflictError for duplicate claims and inactive listings (409), NotFoundError for missing listings and claims (404), and ValidationError for insufficient quantity (400). Tests are correctly updated to expect the new status codes.",
+		"issues": [
+			{
+				"file": "server/routes/claims.ts",
+				"line": 209,
+				"severity": "non_blocking",
+				"description": "The confirm-pickup endpoint returns 404 directly without throwing NotFoundError. While the behavior is correct (returns 404 status), the pattern is inconsistent with the no-show endpoint which throws NotFoundError. This is non-blocking because the endpoint doesn't have a try-catch block and correctly returns 404."
+			},
+			{
+				"file": "server/routes/claims.ts",
+				"line": 298,
+				"severity": "non_blocking",
+				"description": "The rating endpoint returns 404 directly without throwing NotFoundError. Same observation as confirm-pickup - pattern inconsistency but correct behavior."
+			}
+		]
+	},
+	"sharedStateObservations": [
+		{
+			"area": "conventions",
+			"observation": "Type assertion pattern `as 400 | 404 | 409` is used to satisfy Hono's ContentfulStatusCode type requirements when extracting statusCode from HttpError. This workaround is necessary because Hono expects specific status code types, not generic numbers.",
+			"evidence": "server/routes/claims.ts:178-179 and server/routes/claims.ts:278-279 show the type assertion pattern in catch blocks"
+		},
+		{
+			"area": "conventions",
+			"observation": "Two patterns exist for error handling: transactional endpoints (create claim, no-show) throw typed errors caught in try-catch blocks, while non-transactional endpoints (confirm-pickup, rating) return status codes directly. This is reasonable because non-transactional endpoints don't need rollback handling.",
+			"evidence": "server/routes/claims.ts:174-185 (create claim catch block) vs server/routes/claims.ts:209-212 (confirm-pickup direct 404 return)"
+		}
+	],
+	"addressesFailureFrom": null,
+	"assertionsVerified": [
+		{
+			"id": "VAL-ERR-013",
+			"description": "Claims Route Uses Typed Errors for Not Found",
+			"status": "pass",
+			"evidence": "NotFoundError thrown for 'Claim not found' in no-show endpoint (line 242). Note: confirm-pickup and rating endpoints return 404 directly, which is functionally correct."
+		},
+		{
+			"id": "VAL-ERR-014",
+			"description": "Claims Route Uses Typed Errors for Conflict",
+			"status": "pass",
+			"evidence": "ConflictError thrown for 'Already claimed' (line 89) and 'Listing is no longer active' (line 112)"
+		},
+		{
+			"id": "VAL-ERR-015",
+			"description": "Claims Route Uses ValidationError for Invalid Input",
+			"status": "pass",
+			"evidence": "ValidationError thrown for 'Not enough portions remaining' (line 115)"
+		},
+		{
+			"id": "VAL-ERR-016",
+			"description": "Claims Route Uses NotFoundError for Missing Listing",
+			"status": "pass",
+			"evidence": "NotFoundError thrown for 'Listing not found' (line 103)"
+		}
+	],
+	"summary": "PASS. The feature implementation correctly refactors server/routes/claims.ts to use typed errors, fulfilling all four assertions (VAL-ERR-013 through VAL-ERR-016). All verification commands passed (tsc, biome, tests). Two non-blocking issues noted: confirm-pickup and rating endpoints return 404 directly instead of throwing NotFoundError, but this is a pattern inconsistency rather than a bug. The worker followed the backend-worker skill procedure correctly."
 }

@@ -1,50 +1,50 @@
 {
-  "featureId": "error-handler-middleware",
-  "reviewedAt": "2026-04-11T00:09:40.000Z",
-  "commitId": "b6033ceeb4966c88f39199f0031f7c96169a743f",
-  "transcriptSkeletonReviewed": true,
-  "diffReviewed": true,
-  "status": "pass",
-  "codeReview": {
-    "summary": "The global error handler middleware correctly catches typed HttpError instances and returns appropriate JSON responses with status codes from the error's statusCode property. Unknown errors return generic 500 with 'Internal Server Error' message. All responses follow messageResponseSchema format. Tests comprehensively cover all typed error classes and unknown error scenarios.",
-    "issues": [
-      {
-        "file": "server/app.ts",
-        "line": 63,
-        "severity": "non_blocking",
-        "description": "The error handler catches ZodError as an unknown error and returns 500 instead of converting it to ValidationError (400). However, this is outside the scope of the feature description which only mentions catching 'typed errors'. VAL-ERR-027 describes behavior that would need Zod error handling in the error handler or validation middleware."
-      },
-      {
-        "file": "server/session.ts",
-        "line": 16,
-        "severity": "non_blocking",
-        "description": "The session middleware returns JSON directly ({ message: 'Unauthorized' }, 401) instead of throwing UnauthorizedError. This means VAL-ERR-028 is not fulfilled by this code path, though the error handler WOULD correctly handle UnauthorizedError if thrown. This is outside the scope of this feature but affects assertion fulfillment."
-      },
-      {
-        "file": "server/app.test.ts",
-        "line": 14,
-        "severity": "non_blocking",
-        "description": "Tests use a helper function createTestAppWithErrorHandler() that duplicates the error handler logic rather than testing the actual createApp() function's error handler. This is acceptable for unit testing but creates potential for drift between test and implementation."
-      }
-    ]
-  },
-  "sharedStateObservations": [
-    {
-      "area": "conventions",
-      "observation": "Session middleware (server/session.ts) returns JSON directly for unauthorized access instead of throwing UnauthorizedError. This is inconsistent with the error handling pattern where typed errors should be thrown and caught by the global error handler.",
-      "evidence": "server/session.ts:16-18 returns c.json({ message: 'Unauthorized' }, 401) instead of throw new UnauthorizedError('Unauthorized')"
-    },
-    {
-      "area": "conventions",
-      "observation": "Error handler tests use a helper function to create a test app with the same error handler logic, rather than importing and testing the actual createApp function. This pattern isolates tests but creates potential for test-implementation drift.",
-      "evidence": "server/app.test.ts:14-30 createTestAppWithErrorHandler() duplicates the error handler implementation"
-    },
-    {
-      "area": "skills",
-      "observation": "Worker followed the backend-worker skill procedure correctly. No deviations reported in skillFeedback. All verification steps passed (tsc, biome, bun test).",
-      "evidence": "handoff.skillFeedback.followedProcedure: true, verification commands all returned exitCode 0"
-    }
-  ],
-  "addressesFailureFrom": null,
-  "summary": "PASS. The error handler middleware implementation correctly fulfills the feature description: catches typed HttpError instances and returns correct status codes, returns 500 for unknown errors. Tests are comprehensive with 10 cases covering all scenarios. Non-blocking issues: VAL-ERR-027 (Zod error conversion) and VAL-ERR-028 (session middleware throwing UnauthorizedError) appear to be incorrectly scoped to this feature - they describe behaviors needed in validation/session middleware, not the error handler itself. The error handler correctly handles these error types IF they are thrown."
+	"featureId": "error-handler-middleware",
+	"reviewedAt": "2026-04-11T00:09:40.000Z",
+	"commitId": "b6033ceeb4966c88f39199f0031f7c96169a743f",
+	"transcriptSkeletonReviewed": true,
+	"diffReviewed": true,
+	"status": "pass",
+	"codeReview": {
+		"summary": "The global error handler middleware correctly catches typed HttpError instances and returns appropriate JSON responses with status codes from the error's statusCode property. Unknown errors return generic 500 with 'Internal Server Error' message. All responses follow messageResponseSchema format. Tests comprehensively cover all typed error classes and unknown error scenarios.",
+		"issues": [
+			{
+				"file": "server/app.ts",
+				"line": 63,
+				"severity": "non_blocking",
+				"description": "The error handler catches ZodError as an unknown error and returns 500 instead of converting it to ValidationError (400). However, this is outside the scope of the feature description which only mentions catching 'typed errors'. VAL-ERR-027 describes behavior that would need Zod error handling in the error handler or validation middleware."
+			},
+			{
+				"file": "server/session.ts",
+				"line": 16,
+				"severity": "non_blocking",
+				"description": "The session middleware returns JSON directly ({ message: 'Unauthorized' }, 401) instead of throwing UnauthorizedError. This means VAL-ERR-028 is not fulfilled by this code path, though the error handler WOULD correctly handle UnauthorizedError if thrown. This is outside the scope of this feature but affects assertion fulfillment."
+			},
+			{
+				"file": "server/app.test.ts",
+				"line": 14,
+				"severity": "non_blocking",
+				"description": "Tests use a helper function createTestAppWithErrorHandler() that duplicates the error handler logic rather than testing the actual createApp() function's error handler. This is acceptable for unit testing but creates potential for drift between test and implementation."
+			}
+		]
+	},
+	"sharedStateObservations": [
+		{
+			"area": "conventions",
+			"observation": "Session middleware (server/session.ts) returns JSON directly for unauthorized access instead of throwing UnauthorizedError. This is inconsistent with the error handling pattern where typed errors should be thrown and caught by the global error handler.",
+			"evidence": "server/session.ts:16-18 returns c.json({ message: 'Unauthorized' }, 401) instead of throw new UnauthorizedError('Unauthorized')"
+		},
+		{
+			"area": "conventions",
+			"observation": "Error handler tests use a helper function to create a test app with the same error handler logic, rather than importing and testing the actual createApp function. This pattern isolates tests but creates potential for test-implementation drift.",
+			"evidence": "server/app.test.ts:14-30 createTestAppWithErrorHandler() duplicates the error handler implementation"
+		},
+		{
+			"area": "skills",
+			"observation": "Worker followed the backend-worker skill procedure correctly. No deviations reported in skillFeedback. All verification steps passed (tsc, biome, bun test).",
+			"evidence": "handoff.skillFeedback.followedProcedure: true, verification commands all returned exitCode 0"
+		}
+	],
+	"addressesFailureFrom": null,
+	"summary": "PASS. The error handler middleware implementation correctly fulfills the feature description: catches typed HttpError instances and returns correct status codes, returns 500 for unknown errors. Tests are comprehensive with 10 cases covering all scenarios. Non-blocking issues: VAL-ERR-027 (Zod error conversion) and VAL-ERR-028 (session middleware throwing UnauthorizedError) appear to be incorrectly scoped to this feature - they describe behaviors needed in validation/session middleware, not the error handler itself. The error handler correctly handles these error types IF they are thrown."
 }
