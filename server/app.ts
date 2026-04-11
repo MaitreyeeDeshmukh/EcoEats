@@ -1,6 +1,7 @@
 import { Hono } from "hono";
 import { cors } from "hono/cors";
 import { logger } from "hono/logger";
+import { rateLimiter } from "hono-rate-limiter";
 import { messageResponseSchema } from "../shared/contracts";
 import { HttpError } from "./errors";
 import { createClaimsRouter } from "./routes/claims";
@@ -44,12 +45,26 @@ export function createApp(runtime: AppRuntime) {
 		}),
 	);
 
+	// Health endpoint - no rate limiting for monitoring
 	app.get("/health", (c) => {
 		return c.json({
 			status: "ok",
 			timestamp: new Date().toISOString(),
 		});
 	});
+
+	// Rate limiting for API routes: 100 requests per 15 minutes per IP
+	app.use(
+		"/api/*",
+		rateLimiter({
+			windowMs: 15 * 60 * 1000, // 15 minutes
+			limit: 100, // 100 requests per window
+			keyGenerator: (c) =>
+				c.req.header("x-forwarded-for") ??
+				c.req.header("cf-connecting-ip") ??
+				"unknown",
+		}),
+	);
 
 	app.on(["GET", "POST"], "/api/auth/*", (c) => {
 		return runtime.auth.handler(c.req.raw);
