@@ -11,6 +11,7 @@ import {
 	mutateClaimResponseSchema,
 	submitRatingBodySchema,
 } from "../../shared/contracts";
+import { MAX_CLAIMS_QUERY, RESERVATION_MINUTES } from "../constants";
 import {
 	ConflictError,
 	HttpError,
@@ -19,8 +20,6 @@ import {
 } from "../errors";
 import { type AppEnv, getSession } from "../session";
 import { validate } from "../validation";
-
-const RESERVATION_MINUTES = 20;
 
 export function createClaimsRouter(
 	db: Pool,
@@ -37,9 +36,9 @@ export function createClaimsRouter(
 					FROM claims
 					WHERE student_id = $1
 					ORDER BY claimed_at DESC
-					LIMIT 20
+					LIMIT $2
 				`,
-				[session.user.id],
+				[session.user.id, MAX_CLAIMS_QUERY],
 			);
 
 			return c.json(getClaimsResponseSchema.parse({ data: result.rows }), 200);

@@ -10,6 +10,7 @@ import {
 	mutateListingResponseSchema,
 	updateListingBodySchema,
 } from "../../shared/contracts";
+import { DEFAULT_EXPIRY_MINUTES, MAX_LISTINGS_QUERY } from "../constants";
 import { ConflictError, NotFoundError } from "../errors";
 import { type AppEnv, getSession } from "../session";
 import { validate } from "../validation";
@@ -42,8 +43,9 @@ export function createListingsRouter(
 					WHERE status = 'active'
 						AND expires_at > NOW()
 					ORDER BY posted_at DESC
-					LIMIT 50
+					LIMIT $1
 				`,
+				[MAX_LISTINGS_QUERY],
 			);
 
 			return c.json(
@@ -76,7 +78,7 @@ export function createListingsRouter(
 			const session = getSession(c);
 			const payload = c.req.valid("json");
 			const id = crypto.randomUUID();
-			const expiryMinutes = payload.expiryMinutes ?? 90;
+			const expiryMinutes = payload.expiryMinutes ?? DEFAULT_EXPIRY_MINUTES;
 
 			await db.query(
 				`

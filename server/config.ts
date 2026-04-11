@@ -1,3 +1,5 @@
+import { DEFAULT_PORT } from "./constants";
+
 const DEFAULT_ALLOWED_ORIGINS = [
 	"http://localhost:8081",
 	"http://localhost:3000",
@@ -26,10 +28,10 @@ interface RuntimeConfigInput {
 }
 
 function normalizePort(value?: number | string): number {
-	const port = Number(value ?? 3001);
+	const port = Number(value ?? DEFAULT_PORT);
 
 	if (!Number.isFinite(port) || port <= 0) {
-		return 3001;
+		return DEFAULT_PORT;
 	}
 
 	return port;
