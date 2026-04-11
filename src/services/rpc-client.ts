@@ -1,4 +1,5 @@
 import { type ClientRequestOptions, hc } from "hono/client";
+import { AuthError, NetworkError } from "@/utils/errors";
 import type { AppType } from "../../server/app";
 import { authClient } from "./auth-client";
 import { readErrorMessage } from "./request";
@@ -27,10 +28,26 @@ export function rpcOptions(
 ): ClientRequestOptions {
 	return {
 		fetch: async (input: RequestInfo | URL, init?: RequestInit) => {
-			const response = await fetch(input, init);
+			let response: Response;
+			try {
+				response = await fetch(input, init);
+			} catch (_error) {
+				throw new NetworkError(
+					"Unable to connect to the server. Please check your internet connection and try again.",
+				);
+			}
 
 			if (!response.ok) {
-				throw new Error(await readErrorMessage(response, fallbackError));
+				const message = await readErrorMessage(response, fallbackError);
+
+				// Map HTTP status codes to appropriate error types
+				if (response.status === 401 || response.status === 403) {
+					throw new AuthError(
+						message || "Authentication failed. Please sign in again.",
+					);
+				}
+
+				throw new NetworkError(message);
 			}
 
 			return response;

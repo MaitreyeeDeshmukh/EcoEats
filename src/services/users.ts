@@ -3,6 +3,7 @@
 import type { InferRequestType, InferResponseType } from "hono/client";
 import type { UserRow } from "@/types/database";
 import type { DietaryTag, ImpactStats, User, UserRole } from "@/types/models";
+import { AuthError } from "@/utils/errors";
 import { readRpcJson, rpcClient, rpcOptions } from "./rpc-client";
 
 type CreateUserProfileInput = InferRequestType<
@@ -38,7 +39,7 @@ function normalizeUser(row: UserRow): User {
 export async function getUserProfile(): Promise<User | null> {
 	const response = await rpcClient.api.users.me.$get(
 		undefined,
-		rpcOptions("Failed to load user profile"),
+		rpcOptions("Unable to load your profile. Please try again."),
 	);
 	const payload = await readRpcJson<GetUserProfileResponse>(response);
 	return payload.data ? normalizeUser(payload.data) : null;
@@ -49,7 +50,7 @@ export async function updateUserProfile(
 ): Promise<void> {
 	await rpcClient.api.users.me.$patch(
 		{ json: data },
-		rpcOptions("Failed to update user profile"),
+		rpcOptions("Unable to update your profile. Please try again."),
 	);
 }
 
@@ -59,7 +60,7 @@ export async function incrementUserImpactStats(
 ): Promise<void> {
 	const profile = await getUserProfile();
 	if (!profile || profile.id !== userId) {
-		throw new Error("User profile not found");
+		throw new AuthError("User profile not found. Please sign in again.");
 	}
 
 	const current: ImpactStats = profile.impactStats || {
@@ -80,7 +81,7 @@ export async function incrementUserImpactStats(
 				},
 			},
 		},
-		rpcOptions("Failed to update impact stats"),
+		rpcOptions("Unable to update your impact stats. Please try again."),
 	);
 }
 
@@ -89,6 +90,6 @@ export async function createUserProfile(
 ): Promise<void> {
 	await rpcClient.api.users.me.$post(
 		{ json: data },
-		rpcOptions("Failed to create user profile"),
+		rpcOptions("Unable to create your profile. Please try again."),
 	);
 }

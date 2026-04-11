@@ -3,6 +3,7 @@
 import type { InferResponseType } from "hono/client";
 import type { ClaimRow } from "@/types/database";
 import type { Claim, ClaimStatus } from "@/types/models";
+import { AuthError } from "@/utils/errors";
 import { readRpcJson, rpcClient, rpcOptions } from "./rpc-client";
 
 const POLL_INTERVAL_MS = 15000;
@@ -42,7 +43,7 @@ export async function createClaim(
 	quantity: number = 1,
 ): Promise<string> {
 	if (!studentId) {
-		throw new Error("Student session is required");
+		throw new AuthError("Please sign in to claim this listing.");
 	}
 
 	const response = await rpcClient.api.claims.$post(
@@ -53,7 +54,7 @@ export async function createClaim(
 				quantity,
 			},
 		},
-		rpcOptions("Failed to create claim"),
+		rpcOptions("Unable to create claim. Please try again."),
 	);
 	const payload = await readRpcJson<CreateClaimResponse>(response);
 	return payload.data.id;
@@ -99,12 +100,13 @@ export function subscribeToStudentClaims(
 
 			const response = await rpcClient.api.claims.mine.$get(
 				undefined,
-				rpcOptions("Failed to fetch claims"),
+				rpcOptions("Unable to fetch your claims. Please try again."),
 			);
 			const payload = await readRpcJson<GetStudentClaimsResponse>(response);
 			callback((payload.data || []).map(normalizeClaim));
 		} catch (err) {
 			console.error("Failed to fetch claims:", err);
+			// For subscription polling, we log errors but don't crash the app
 		}
 	}
 
@@ -121,12 +123,15 @@ export function subscribeToListingClaims(
 		try {
 			const response = await rpcClient.api.claims.listing[":listingId"].$get(
 				{ param: { listingId } },
-				rpcOptions("Failed to fetch listing claims"),
+				rpcOptions(
+					"Unable to fetch claims for this listing. Please try again.",
+				),
 			);
 			const payload = await readRpcJson<GetListingClaimsResponse>(response);
 			callback((payload.data || []).map(normalizeClaim));
 		} catch (err) {
 			console.error("Failed to fetch listing claims:", err);
+			// For subscription polling, we log errors but don't crash the app
 		}
 	}
 

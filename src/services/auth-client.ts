@@ -1,6 +1,7 @@
 // src/services/auth-client.ts
 import * as SecureStore from "expo-secure-store";
 import { Platform } from "react-native";
+import { AuthError, NetworkError } from "@/utils/errors";
 import { readErrorMessage } from "./request";
 import { buildServerUrl } from "./server-config";
 
@@ -142,9 +143,10 @@ class AuthClient {
 	async requestMagicLink(email: string): Promise<void> {
 		const callbackURL = getMagicLinkCallbackURL();
 		const errorCallbackURL = getMagicLinkErrorCallbackURL();
-		const response = await fetch(
-			buildServerUrl("/api/auth/sign-in/magic-link"),
-			{
+
+		let response: Response;
+		try {
+			response = await fetch(buildServerUrl("/api/auth/sign-in/magic-link"), {
 				method: "POST",
 				headers: { "Content-Type": "application/json" },
 				credentials: "include",
@@ -153,30 +155,46 @@ class AuthClient {
 					callbackURL,
 					errorCallbackURL,
 				}),
-			},
-		);
+			});
+		} catch (_error) {
+			throw new NetworkError(
+				"Network connection failed. Please check your internet connection and try again.",
+			);
+		}
 
 		if (!response.ok) {
-			throw new Error(
-				await readErrorMessage(response, "Failed to send magic link"),
+			const message = await readErrorMessage(
+				response,
+				"Failed to send magic link. Please try again.",
 			);
+			throw new AuthError(message);
 		}
 	}
 
 	async verifyMagicLink(token: string): Promise<Session> {
 		const params = new URLSearchParams({ token });
-		const response = await fetch(
-			buildServerUrl(`/api/auth/magic-link/verify?${params.toString()}`),
-			{
-				method: "GET",
-				credentials: "include",
-			},
-		);
+
+		let response: Response;
+		try {
+			response = await fetch(
+				buildServerUrl(`/api/auth/magic-link/verify?${params.toString()}`),
+				{
+					method: "GET",
+					credentials: "include",
+				},
+			);
+		} catch (_error) {
+			throw new NetworkError(
+				"Network connection failed. Please check your internet connection and try again.",
+			);
+		}
 
 		if (!response.ok) {
-			throw new Error(
-				await readErrorMessage(response, "Failed to verify magic link"),
+			const message = await readErrorMessage(
+				response,
+				"Failed to verify magic link. The link may have expired or is invalid.",
 			);
+			throw new AuthError(message);
 		}
 
 		const data = await response.json();
@@ -206,6 +224,7 @@ class AuthClient {
 				credentials: "include",
 			});
 		} catch (error) {
+			// Log network errors but don't block sign-out
 			console.warn("Sign out request failed:", error);
 		}
 

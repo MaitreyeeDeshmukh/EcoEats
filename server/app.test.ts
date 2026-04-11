@@ -147,7 +147,6 @@ describe("error handler middleware", () => {
 			const body = await res.json();
 			expect(body).toEqual({ message: "Internal Server Error" });
 		});
-
 	});
 
 	describe("error responses follow messageResponseSchema format", () => {

@@ -67,7 +67,10 @@ export function subscribeToActiveListings(
 	const sync = () => {
 		fetchActiveListings()
 			.then(callback)
-			.catch((err) => console.error("Failed to fetch listings:", err));
+			.catch((err) => {
+				console.error("Failed to fetch listings:", err);
+				// For subscription polling, we log errors but don't crash the app
+			});
 	};
 
 	sync();
