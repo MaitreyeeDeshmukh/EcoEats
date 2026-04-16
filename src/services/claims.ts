@@ -59,20 +59,6 @@ export async function createClaim(
 	return payload.data.id;
 }
 
-export async function confirmPickup(claimId: string): Promise<void> {
-	await rpcClient.api.claims[":id"]["confirm-pickup"].$post(
-		{ param: { id: claimId } },
-		rpcOptions("Failed to confirm pickup"),
-	);
-}
-
-export async function markNoShow(claimId: string): Promise<void> {
-	await rpcClient.api.claims[":id"]["no-show"].$post(
-		{ param: { id: claimId } },
-		rpcOptions("Failed to mark no-show"),
-	);
-}
-
 export async function submitRating(
 	claimId: string,
 	rating: number,

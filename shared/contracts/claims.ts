@@ -1,5 +1,9 @@
 import { z } from "zod";
-import { successResponseSchema, uuidSchema } from "./common";
+import {
+	resourceIdResponseSchema,
+	successResponseSchema,
+	uuidSchema,
+} from "./common";
 import { claimRowSchema } from "./database";
 
 /**
@@ -40,11 +44,7 @@ export const createClaimBodySchema = z.object({
  * Response schema for successful claim creation.
  * Returns the ID of the newly created claim.
  */
-export const createClaimResponseSchema = z.object({
-	data: z.object({
-		id: uuidSchema,
-	}),
-});
+export const createClaimResponseSchema = resourceIdResponseSchema;
 
 /**
  * Request body schema for submitting a rating on a completed claim.

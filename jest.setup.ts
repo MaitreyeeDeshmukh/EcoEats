@@ -290,13 +290,3 @@ global.afterEach(() => {
 	// Clean up after each test
 	jest.clearAllMocks();
 });
-
-/**
- * Suppress console warnings during tests (optional)
- * Uncomment if you want to reduce noise
- */
-// const originalWarn = console.warn;
-// console.warn = (...args: any[]) => {
-// 	// Filter out specific warnings if needed
-// 	originalWarn.apply(console, args);
-// };

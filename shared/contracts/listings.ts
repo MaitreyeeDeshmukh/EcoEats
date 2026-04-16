@@ -1,5 +1,10 @@
 import { z } from "zod";
-import { successResponseSchema, uuidSchema } from "./common";
+import {
+	atLeastOneFieldSchema,
+	resourceIdResponseSchema,
+	successResponseSchema,
+	uuidSchema,
+} from "./common";
 import { listingRowSchema, listingStatusSchema } from "./database";
 
 /**
@@ -59,25 +64,17 @@ export const createListingBodySchema = z.object({
  * Response schema for successful listing creation.
  * Returns the ID of the newly created listing.
  */
-export const createListingResponseSchema = z.object({
-	data: z.object({
-		id: uuidSchema,
-	}),
-});
+export const createListingResponseSchema = resourceIdResponseSchema;
 
 /**
  * Request body schema for updating an existing listing.
  * Supports partial updates to status and quantityRemaining.
  * At least one field must be provided.
  */
-export const updateListingBodySchema = z
-	.object({
-		status: listingStatusSchema.optional(),
-		quantityRemaining: z.number().int().nonnegative().optional(),
-	})
-	.refine((value) => Object.keys(value).length > 0, {
-		message: "At least one field is required",
-	});
+export const updateListingBodySchema = atLeastOneFieldSchema({
+	status: listingStatusSchema.optional(),
+	quantityRemaining: z.number().int().nonnegative().optional(),
+});
 
 /**
  * Response schema for listing mutation operations (update, cancel).

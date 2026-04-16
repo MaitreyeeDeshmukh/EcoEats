@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { successResponseSchema } from "./common";
+import { atLeastOneFieldSchema, successResponseSchema } from "./common";
 import { impactStatsSchema, userRoleSchema, userRowSchema } from "./database";
 
 /**
@@ -27,17 +27,13 @@ export const createUserProfileBodySchema = z.object({
  * Supports partial updates to name, avatar, role, dietary preferences, and impact stats.
  * At least one field must be provided.
  */
-export const updateUserProfileBodySchema = z
-	.object({
-		name: z.string().min(1).optional(),
-		avatar: z.string().nullable().optional(),
-		role: userRoleSchema.optional(),
-		dietaryPrefs: z.array(z.string()).optional(),
-		impactStats: impactStatsSchema.optional(),
-	})
-	.refine((value) => Object.keys(value).length > 0, {
-		message: "At least one field is required",
-	});
+export const updateUserProfileBodySchema = atLeastOneFieldSchema({
+	name: z.string().min(1).optional(),
+	avatar: z.string().nullable().optional(),
+	role: userRoleSchema.optional(),
+	dietaryPrefs: z.array(z.string()).optional(),
+	impactStats: impactStatsSchema.optional(),
+});
 
 /**
  * Response schema for user profile mutation operations (create, update).

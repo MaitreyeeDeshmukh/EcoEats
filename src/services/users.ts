@@ -2,8 +2,7 @@
 
 import type { InferRequestType, InferResponseType } from "hono/client";
 import type { UserRow } from "@/types/database";
-import type { DietaryTag, ImpactStats, User, UserRole } from "@/types/models";
-import { AuthError } from "@/utils/errors";
+import type { DietaryTag, User, UserRole } from "@/types/models";
 import { readRpcJson, rpcClient, rpcOptions } from "./rpc-client";
 
 type CreateUserProfileInput = InferRequestType<
@@ -51,37 +50,6 @@ export async function updateUserProfile(
 	await rpcClient.api.users.me.$patch(
 		{ json: data },
 		rpcOptions("Unable to update your profile. Please try again."),
-	);
-}
-
-export async function incrementUserImpactStats(
-	userId: string,
-	quantity: number,
-): Promise<void> {
-	const profile = await getUserProfile();
-	if (!profile || profile.id !== userId) {
-		throw new AuthError("User profile not found. Please sign in again.");
-	}
-
-	const current: ImpactStats = profile.impactStats || {
-		mealsRescued: 0,
-		co2Saved: 0,
-		pointsEarned: 0,
-	};
-
-	const POINTS_PER_MEAL = 10;
-
-	await rpcClient.api.users.me.$patch(
-		{
-			json: {
-				impactStats: {
-					mealsRescued: current.mealsRescued + quantity,
-					co2Saved: current.co2Saved + quantity * 0.5,
-					pointsEarned: current.pointsEarned + quantity * POINTS_PER_MEAL,
-				},
-			},
-		},
-		rpcOptions("Unable to update your impact stats. Please try again."),
 	);
 }
 

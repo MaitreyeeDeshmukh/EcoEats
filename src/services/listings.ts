@@ -13,10 +13,6 @@ type CreateListingResponse = InferResponseType<
 	typeof rpcClient.api.listings.$post,
 	201
 >;
-type GetListingResponse = InferResponseType<
-	(typeof rpcClient.api.listings)[":id"]["$get"],
-	200
->;
 type GetListingsResponse = InferResponseType<
 	typeof rpcClient.api.listings.$get,
 	200
@@ -87,19 +83,6 @@ export async function createListing(data: CreateListingInput): Promise<string> {
 	return payload.data.id;
 }
 
-export async function getListingById(id: string): Promise<Listing | null> {
-	try {
-		const response = await rpcClient.api.listings[":id"].$get(
-			{ param: { id } },
-			rpcOptions("Failed to load listing"),
-		);
-		const payload = await readRpcJson<GetListingResponse>(response);
-		return normalizeListing(payload.data);
-	} catch {
-		return null;
-	}
-}
-
 export async function updateListing(
 	id: string,
 	data: UpdateListingInput,
@@ -110,13 +93,6 @@ export async function updateListing(
 			json: data,
 		},
 		rpcOptions("Failed to update listing"),
-	);
-}
-
-export async function cancelListing(id: string): Promise<void> {
-	await rpcClient.api.listings[":id"].cancel.$post(
-		{ param: { id } },
-		rpcOptions("Failed to cancel listing"),
 	);
 }
 

@@ -37,12 +37,7 @@ export default function FeedScreen() {
 				data={filteredListings}
 				keyExtractor={(item) => item.id}
 				renderItem={({ item }) => (
-					<ListingCard
-						listing={item}
-						onPress={() => {
-							// Navigate to listing detail
-						}}
-					/>
+					<ListingCard listing={item} onPress={() => {}} />
 				)}
 				contentContainerStyle={{ padding: 16, gap: 16 }}
 				showsVerticalScrollIndicator={false}

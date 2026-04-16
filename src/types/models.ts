@@ -69,8 +69,3 @@ export interface Filters {
 	radiusMiles: number;
 	maxMinutes: number;
 }
-
-export interface Coordinates {
-	lat: number;
-	lng: number;
-}
