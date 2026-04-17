@@ -1,6 +1,6 @@
 import { Hono } from "hono";
 import type { Pool } from "pg";
-import { beforeEach, describe, expect, it } from "vitest";
+import { beforeEach, describe, expect } from "vitest";
 import type { AppEnv } from "../session";
 import {
 	cleanupTestData,
@@ -12,40 +12,12 @@ import {
 	insertTestUsers,
 	isDbAvailable,
 } from "../test";
+import {
+	createMockRequireSession,
+	createTestClaimsApp,
+	itIf,
+} from "../test/helpers";
 import { createClaimsRouter } from "./claims";
-
-/**
- * Create a mock requireSession middleware for testing
- */
-function createMockRequireSession(userId: string): any {
-	return async (c: any, next: any) => {
-		c.set("authSession", {
-			user: {
-				id: userId,
-				name: "Test User",
-				email: `test-${userId}@example.com`,
-				role: "student",
-			},
-			session: {
-				id: generateTestId(),
-				userId,
-				expiresAt: futureMinutes(60).toISOString(),
-			},
-		});
-		await next();
-	};
-}
-
-/**
- * Conditional test helper - runs test only if condition is true
- */
-function itIf(condition: boolean, name: string, fn: () => Promise<void>) {
-	if (condition) {
-		it(name, fn);
-	} else {
-		it.skip(name, fn);
-	}
-}
 
 describe("Claims Router", () => {
 	let db: Pool;
@@ -89,10 +61,7 @@ describe("Claims Router", () => {
 					},
 				]);
 
-				const app = new Hono<AppEnv>().route(
-					"/claims",
-					createClaimsRouter(db, createMockRequireSession(userId)),
-				);
+				const app = createTestClaimsApp(db, createMockRequireSession(userId));
 
 				const res = await app.request("/claims/mine");
 				expect(res.status).toBe(200);
@@ -115,10 +84,7 @@ describe("Claims Router", () => {
 					{ id: userId, name: "Test User", email: "test@example.com" },
 				]);
 
-				const app = new Hono<AppEnv>().route(
-					"/claims",
-					createClaimsRouter(db, createMockRequireSession(userId)),
-				);
+				const app = createTestClaimsApp(db, createMockRequireSession(userId));
 
 				const res = await app.request("/claims/mine");
 				expect(res.status).toBe(200);
@@ -184,10 +150,7 @@ describe("Claims Router", () => {
 				}));
 				await insertTestClaims(claims);
 
-				const app = new Hono<AppEnv>().route(
-					"/claims",
-					createClaimsRouter(db, createMockRequireSession(userId)),
-				);
+				const app = createTestClaimsApp(db, createMockRequireSession(userId));
 
 				const res = await app.request("/claims/mine");
 				expect(res.status).toBe(200);
@@ -234,10 +197,7 @@ describe("Claims Router", () => {
 				},
 			]);
 
-			const app = new Hono<AppEnv>().route(
-				"/claims",
-				createClaimsRouter(db, createMockRequireSession(hostId)),
-			);
+			const app = createTestClaimsApp(db, createMockRequireSession(hostId));
 
 			const res = await app.request(`/claims/listing/${listingId}`);
 			expect(res.status).toBe(200);
@@ -270,10 +230,7 @@ describe("Claims Router", () => {
 					},
 				]);
 
-				const app = new Hono<AppEnv>().route(
-					"/claims",
-					createClaimsRouter(db, createMockRequireSession(hostId)),
-				);
+				const app = createTestClaimsApp(db, createMockRequireSession(hostId));
 
 				const res = await app.request(`/claims/listing/${listingId}`);
 				expect(res.status).toBe(200);
@@ -321,9 +278,9 @@ describe("Claims Router", () => {
 					},
 				]);
 
-				const app = new Hono<AppEnv>().route(
-					"/claims",
-					createClaimsRouter(db, createMockRequireSession(nonHostId)),
+				const app = createTestClaimsApp(
+					db,
+					createMockRequireSession(nonHostId),
 				);
 
 				const res = await app.request(`/claims/listing/${listingId}`);
@@ -346,10 +303,7 @@ describe("Claims Router", () => {
 					{ id: userId, name: "Test User", email: "test@example.com" },
 				]);
 
-				const app = new Hono<AppEnv>().route(
-					"/claims",
-					createClaimsRouter(db, createMockRequireSession(userId)),
-				);
+				const app = createTestClaimsApp(db, createMockRequireSession(userId));
 
 				const res = await app.request("/claims/listing/invalid-uuid");
 				expect(res.status).toBe(400);
@@ -409,9 +363,9 @@ describe("Claims Router", () => {
 					},
 				]);
 
-				const app = new Hono<AppEnv>().route(
-					"/claims",
-					createClaimsRouter(db, createMockRequireSession(studentId)),
+				const app = createTestClaimsApp(
+					db,
+					createMockRequireSession(studentId),
 				);
 
 				const res = await app.request("/claims", {
@@ -475,9 +429,9 @@ describe("Claims Router", () => {
 					},
 				]);
 
-				const app = new Hono<AppEnv>().route(
-					"/claims",
-					createClaimsRouter(db, createMockRequireSession(studentId)),
+				const app = createTestClaimsApp(
+					db,
+					createMockRequireSession(studentId),
 				);
 
 				const res = await app.request("/claims", {
@@ -508,9 +462,9 @@ describe("Claims Router", () => {
 					{ id: studentId, name: "Student", email: "student@example.com" },
 				]);
 
-				const app = new Hono<AppEnv>().route(
-					"/claims",
-					createClaimsRouter(db, createMockRequireSession(studentId)),
+				const app = createTestClaimsApp(
+					db,
+					createMockRequireSession(studentId),
 				);
 
 				const res = await app.request("/claims", {
@@ -556,9 +510,9 @@ describe("Claims Router", () => {
 					},
 				]);
 
-				const app = new Hono<AppEnv>().route(
-					"/claims",
-					createClaimsRouter(db, createMockRequireSession(studentId)),
+				const app = createTestClaimsApp(
+					db,
+					createMockRequireSession(studentId),
 				);
 
 				const res = await app.request("/claims", {
@@ -603,9 +557,9 @@ describe("Claims Router", () => {
 					},
 				]);
 
-				const app = new Hono<AppEnv>().route(
-					"/claims",
-					createClaimsRouter(db, createMockRequireSession(studentId)),
+				const app = createTestClaimsApp(
+					db,
+					createMockRequireSession(studentId),
 				);
 
 				const res = await app.request("/claims", {
@@ -652,9 +606,9 @@ describe("Claims Router", () => {
 
 				const beforeCreate = new Date();
 
-				const app = new Hono<AppEnv>().route(
-					"/claims",
-					createClaimsRouter(db, createMockRequireSession(studentId)),
+				const app = createTestClaimsApp(
+					db,
+					createMockRequireSession(studentId),
 				);
 
 				const res = await app.request("/claims", {
@@ -712,9 +666,9 @@ describe("Claims Router", () => {
 					},
 				]);
 
-				const app = new Hono<AppEnv>().route(
-					"/claims",
-					createClaimsRouter(db, createMockRequireSession(studentId)),
+				const app = createTestClaimsApp(
+					db,
+					createMockRequireSession(studentId),
 				);
 
 				const res = await app.request("/claims", {
@@ -771,9 +725,9 @@ describe("Claims Router", () => {
 					},
 				]);
 
-				const _app = new Hono<AppEnv>().route(
-					"/claims",
-					createClaimsRouter(db, createMockRequireSession(studentId)),
+				const _app = createTestClaimsApp(
+					db,
+					createMockRequireSession(studentId),
 				);
 
 				// Make multiple claims to ensure connections are released
@@ -788,9 +742,9 @@ describe("Claims Router", () => {
 				);
 
 				for (let i = 0; i < 5; i++) {
-					const studentApp = new Hono<AppEnv>().route(
-						"/claims",
-						createClaimsRouter(db, createMockRequireSession(studentIds[i].id)),
+					const studentApp = createTestClaimsApp(
+						db,
+						createMockRequireSession(studentIds[i].id),
 					);
 
 					const res = await studentApp.request("/claims", {
@@ -840,9 +794,9 @@ describe("Claims Router", () => {
 					},
 				]);
 
-				const app = new Hono<AppEnv>().route(
-					"/claims",
-					createClaimsRouter(db, createMockRequireSession(studentId)),
+				const app = createTestClaimsApp(
+					db,
+					createMockRequireSession(studentId),
 				);
 
 				const res = await app.request("/claims", {
@@ -903,10 +857,7 @@ describe("Claims Router", () => {
 				},
 			]);
 
-			const app = new Hono<AppEnv>().route(
-				"/claims",
-				createClaimsRouter(db, createMockRequireSession(hostId)),
-			);
+			const app = createTestClaimsApp(db, createMockRequireSession(hostId));
 
 			const res = await app.request(`/claims/${claimId}/confirm-pickup`, {
 				method: "POST",
@@ -965,9 +916,9 @@ describe("Claims Router", () => {
 					},
 				]);
 
-				const app = new Hono<AppEnv>().route(
-					"/claims",
-					createClaimsRouter(db, createMockRequireSession(nonHostId)),
+				const app = createTestClaimsApp(
+					db,
+					createMockRequireSession(nonHostId),
 				);
 
 				const res = await app.request(`/claims/${claimId}/confirm-pickup`, {
@@ -1004,10 +955,7 @@ describe("Claims Router", () => {
 					},
 				]);
 
-				const app = new Hono<AppEnv>().route(
-					"/claims",
-					createClaimsRouter(db, createMockRequireSession(hostId)),
-				);
+				const app = createTestClaimsApp(db, createMockRequireSession(hostId));
 
 				const res = await app.request(
 					`/claims/${generateTestId()}/confirm-pickup`,
@@ -1034,10 +982,7 @@ describe("Claims Router", () => {
 					{ id: hostId, name: "Host", email: "host@example.com" },
 				]);
 
-				const app = new Hono<AppEnv>().route(
-					"/claims",
-					createClaimsRouter(db, createMockRequireSession(hostId)),
-				);
+				const app = createTestClaimsApp(db, createMockRequireSession(hostId));
 
 				const res = await app.request("/claims/invalid-uuid/confirm-pickup", {
 					method: "POST",
@@ -1086,10 +1031,7 @@ describe("Claims Router", () => {
 					},
 				]);
 
-				const app = new Hono<AppEnv>().route(
-					"/claims",
-					createClaimsRouter(db, createMockRequireSession(hostId)),
-				);
+				const app = createTestClaimsApp(db, createMockRequireSession(hostId));
 
 				const res = await app.request(`/claims/${claimId}/no-show`, {
 					method: "POST",
@@ -1156,9 +1098,9 @@ describe("Claims Router", () => {
 					},
 				]);
 
-				const app = new Hono<AppEnv>().route(
-					"/claims",
-					createClaimsRouter(db, createMockRequireSession(nonHostId)),
+				const app = createTestClaimsApp(
+					db,
+					createMockRequireSession(nonHostId),
 				);
 
 				const res = await app.request(`/claims/${claimId}/no-show`, {
@@ -1183,10 +1125,7 @@ describe("Claims Router", () => {
 					{ id: hostId, name: "Host", email: "host@example.com" },
 				]);
 
-				const app = new Hono<AppEnv>().route(
-					"/claims",
-					createClaimsRouter(db, createMockRequireSession(hostId)),
-				);
+				const app = createTestClaimsApp(db, createMockRequireSession(hostId));
 
 				const res = await app.request(`/claims/${generateTestId()}/no-show`, {
 					method: "POST",
@@ -1247,9 +1186,9 @@ describe("Claims Router", () => {
 				{ id: wrongHostId, name: "Wrong Host", email: "wrong@example.com" },
 			]);
 
-			const wrongApp = new Hono<AppEnv>().route(
-				"/claims",
-				createClaimsRouter(db, createMockRequireSession(wrongHostId)),
+			const wrongApp = createTestClaimsApp(
+				db,
+				createMockRequireSession(wrongHostId),
 			);
 
 			const res = await wrongApp.request(`/claims/${claimId}/no-show`, {
@@ -1310,10 +1249,7 @@ describe("Claims Router", () => {
 				},
 			]);
 
-			const app = new Hono<AppEnv>().route(
-				"/claims",
-				createClaimsRouter(db, createMockRequireSession(studentId)),
-			);
+			const app = createTestClaimsApp(db, createMockRequireSession(studentId));
 
 			const res = await app.request(`/claims/${claimId}/rating`, {
 				method: "POST",
@@ -1373,9 +1309,9 @@ describe("Claims Router", () => {
 					},
 				]);
 
-				const app = new Hono<AppEnv>().route(
-					"/claims",
-					createClaimsRouter(db, createMockRequireSession(nonOwnerId)),
+				const app = createTestClaimsApp(
+					db,
+					createMockRequireSession(nonOwnerId),
 				);
 
 				const res = await app.request(`/claims/${claimId}/rating`, {
@@ -1425,10 +1361,7 @@ describe("Claims Router", () => {
 				},
 			]);
 
-			const app = new Hono<AppEnv>().route(
-				"/claims",
-				createClaimsRouter(db, createMockRequireSession(studentId)),
-			);
+			const app = createTestClaimsApp(db, createMockRequireSession(studentId));
 
 			// Test rating below 1
 			const resLow = await app.request(`/claims/${claimId}/rating`, {
@@ -1458,9 +1391,9 @@ describe("Claims Router", () => {
 					{ id: studentId, name: "Student", email: "student@example.com" },
 				]);
 
-				const app = new Hono<AppEnv>().route(
-					"/claims",
-					createClaimsRouter(db, createMockRequireSession(studentId)),
+				const app = createTestClaimsApp(
+					db,
+					createMockRequireSession(studentId),
 				);
 
 				const res = await app.request(`/claims/${generateTestId()}/rating`, {
@@ -1487,9 +1420,9 @@ describe("Claims Router", () => {
 					{ id: studentId, name: "Student", email: "student@example.com" },
 				]);
 
-				const app = new Hono<AppEnv>().route(
-					"/claims",
-					createClaimsRouter(db, createMockRequireSession(studentId)),
+				const app = createTestClaimsApp(
+					db,
+					createMockRequireSession(studentId),
 				);
 
 				const res = await app.request("/claims/invalid-uuid/rating", {

@@ -1,8 +1,6 @@
 import { Hono } from "hono";
 import type { Pool } from "pg";
-import { beforeEach, describe, expect, it } from "vitest";
-import { messageResponseSchema } from "../../shared/contracts";
-import { HttpError } from "../errors";
+import { beforeEach, describe, expect } from "vitest";
 import type { AppEnv } from "../session";
 import {
 	cleanupTestData,
@@ -14,61 +12,8 @@ import {
 	isDbAvailable,
 	pastMinutes,
 } from "../test";
+import { createMockRequireSession, createTestApp, itIf } from "../test/helpers";
 import { createListingsRouter } from "./listings";
-
-/**
- * Helper to create test app with error handling for typed errors
- */
-function createTestApp(db: Pool, requireSession: any) {
-	const app = new Hono<AppEnv>().route(
-		"/listings",
-		createListingsRouter(db, requireSession),
-	);
-	// Error handler for typed errors (mirrors app.ts)
-	app.onError((err, c) => {
-		if (err instanceof HttpError) {
-			return c.json(
-				messageResponseSchema.parse({ message: err.message }),
-				err.statusCode as 400 | 401 | 404 | 409 | 500,
-			);
-		}
-		throw err;
-	});
-	return app;
-}
-
-/**
- * Create a mock requireSession middleware for testing
- */
-function createMockRequireSession(userId: string): any {
-	return async (c: any, next: any) => {
-		c.set("authSession", {
-			user: {
-				id: userId,
-				name: "Test User",
-				email: `test-${userId}@example.com`,
-				role: "student",
-			},
-			session: {
-				id: generateTestId(),
-				userId,
-				expiresAt: futureMinutes(60).toISOString(),
-			},
-		});
-		await next();
-	};
-}
-
-/**
- * Conditional test helper - runs test only if condition is true
- */
-function itIf(condition: boolean, name: string, fn: () => Promise<void>) {
-	if (condition) {
-		it(name, fn);
-	} else {
-		it.skip(name, fn);
-	}
-}
 
 describe("Listings Router", () => {
 	let db: Pool;
