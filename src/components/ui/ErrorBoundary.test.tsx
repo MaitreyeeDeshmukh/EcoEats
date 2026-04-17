@@ -1,5 +1,3 @@
-// src/components/ui/ErrorBoundary.test.tsx
-
 import { fireEvent, render, screen } from "@testing-library/react-native";
 import { useState } from "react";
 import { Button as RNButton, Text, View } from "react-native";

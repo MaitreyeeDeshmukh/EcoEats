@@ -1,3 +1,9 @@
+import type { z } from "zod";
+import type {
+	claimStatusSchema,
+	listingStatusSchema,
+	userRoleSchema,
+} from "../../shared/contracts/database";
 import { ImpactStats } from "./database";
 
 export type DietaryTag =
@@ -6,9 +12,9 @@ export type DietaryTag =
 	| "halal"
 	| "kosher"
 	| "gluten-free";
-export type ListingStatus = "active" | "claimed" | "expired" | "cancelled";
-export type ClaimStatus = "pending" | "picked_up" | "no_show";
-export type UserRole = "student" | "organizer";
+export type ListingStatus = z.infer<typeof listingStatusSchema>;
+export type ClaimStatus = z.infer<typeof claimStatusSchema>;
+export type UserRole = z.infer<typeof userRoleSchema>;
 
 export { ImpactStats };
 

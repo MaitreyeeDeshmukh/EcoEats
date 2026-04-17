@@ -1,5 +1,3 @@
-// src/services/claims.ts
-
 import type { InferResponseType } from "hono/client";
 import { POLL_INTERVAL_CLAIMS_MS } from "@/constants/app";
 import type { ClaimRow } from "@/types/database";
@@ -100,7 +98,7 @@ export function subscribeToStudentClaims(
 	return () => clearInterval(timer);
 }
 
-export function subscribeToListingClaims(
+function _subscribeToListingClaims(
 	listingId: string,
 	callback: (claims: Claim[]) => void,
 ): () => void {

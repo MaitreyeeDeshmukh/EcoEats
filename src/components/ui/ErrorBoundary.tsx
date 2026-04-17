@@ -1,5 +1,3 @@
-// src/components/ui/ErrorBoundary.tsx
-
 import { Component, type ReactNode } from "react";
 import { ScrollView, Text, View } from "react-native";
 import { Button } from "./Button";

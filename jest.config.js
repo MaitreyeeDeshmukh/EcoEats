@@ -38,8 +38,10 @@ module.exports = {
 		],
 	},
 
-	// Transform ignore patterns - don't transform node_modules
-	transformIgnorePatterns: ["/node_modules/"],
+	// Transform ignore patterns - don't transform node_modules except react-native
+	transformIgnorePatterns: [
+		"/node_modules/(?!react-native|@react-native|expo|expo-.*|@expo/.*)",
+	],
 
 	// Module name mapping for path aliases
 	moduleNameMapper: {

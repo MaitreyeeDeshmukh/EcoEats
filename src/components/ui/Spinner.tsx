@@ -1,4 +1,3 @@
-// src/components/ui/Spinner.tsx
 import { ActivityIndicator, View } from "react-native";
 
 interface SpinnerProps {

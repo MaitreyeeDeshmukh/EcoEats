@@ -1,5 +1,3 @@
-// app/(auth)/auth/callback.tsx
-
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { useEffect } from "react";
 import { Text, View } from "react-native";

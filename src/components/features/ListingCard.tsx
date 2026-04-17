@@ -1,5 +1,3 @@
-// src/components/features/ListingCard.tsx
-
 import { Clock, Leaf, MapPin } from "phosphor-react-native";
 import { memo, useEffect, useMemo, useState } from "react";
 import { Image, Pressable, Text, View } from "react-native";

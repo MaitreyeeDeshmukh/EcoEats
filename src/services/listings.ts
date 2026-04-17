@@ -1,5 +1,3 @@
-// src/services/listings.ts
-
 import type { InferRequestType, InferResponseType } from "hono/client";
 import { POLL_INTERVAL_LISTINGS_MS } from "@/constants/app";
 import type { ListingRow } from "@/types/database";

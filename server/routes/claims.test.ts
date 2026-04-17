@@ -1,9 +1,10 @@
 import { Hono } from "hono";
 import type { Pool } from "pg";
-import { beforeEach, describe, expect, it } from "vitest";
+import { beforeEach, describe, expect } from "vitest";
 import type { AppEnv } from "../session";
 import {
 	cleanupTestData,
+	createMockRequireSession,
 	futureMinutes,
 	generateTestId,
 	getTestPoolOrThrow,
@@ -11,41 +12,9 @@ import {
 	insertTestListings,
 	insertTestUsers,
 	isDbAvailable,
+	itIf,
 } from "../test";
 import { createClaimsRouter } from "./claims";
-
-/**
- * Create a mock requireSession middleware for testing
- */
-function createMockRequireSession(userId: string): any {
-	return async (c: any, next: any) => {
-		c.set("authSession", {
-			user: {
-				id: userId,
-				name: "Test User",
-				email: `test-${userId}@example.com`,
-				role: "student",
-			},
-			session: {
-				id: generateTestId(),
-				userId,
-				expiresAt: futureMinutes(60).toISOString(),
-			},
-		});
-		await next();
-	};
-}
-
-/**
- * Conditional test helper - runs test only if condition is true
- */
-function itIf(condition: boolean, name: string, fn: () => Promise<void>) {
-	if (condition) {
-		it(name, fn);
-	} else {
-		it.skip(name, fn);
-	}
-}
 
 describe("Claims Router", () => {
 	let db: Pool;

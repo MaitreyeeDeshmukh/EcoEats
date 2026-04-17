@@ -1,5 +1,3 @@
-// src/stores/listings.ts
-
 import { useEffect } from "react";
 import { create } from "zustand";
 import { subscribeWithSelector } from "zustand/middleware";

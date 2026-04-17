@@ -1,4 +1,3 @@
-// src/utils/validators.ts
 import { MAX_QUANTITY, MIN_QUANTITY } from "@/constants/app";
 
 const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -14,7 +13,7 @@ export function validateEmail(email: string): string | null {
 	return null;
 }
 
-export function validateName(name: string): string | null {
+function _validateName(name: string): string | null {
 	if (!name.trim()) {
 		return "Name is required";
 	}
@@ -24,7 +23,7 @@ export function validateName(name: string): string | null {
 	return null;
 }
 
-export function validateTitle(title: string): string | null {
+function _validateTitle(title: string): string | null {
 	if (!title.trim()) {
 		return "Title is required";
 	}
