@@ -1,4 +1,4 @@
-export interface TimeRemaining {
+interface TimeRemaining {
 	minutes: number;
 	display: string;
 }
@@ -29,18 +29,4 @@ export function getTimeRemaining(expiresAt: Date | null): TimeRemaining | null {
 	}
 
 	return { minutes, display };
-}
-
-export function isExpired(expiresAt: Date | null): boolean {
-	if (!expiresAt) return true;
-	return expiresAt.getTime() <= Date.now();
-}
-
-export function isExpiringSoon(
-	expiresAt: Date | null,
-	thresholdMinutes: number = 15,
-): boolean {
-	if (!expiresAt) return false;
-	const remaining = getTimeRemaining(expiresAt);
-	return remaining ? remaining.minutes < thresholdMinutes : false;
 }

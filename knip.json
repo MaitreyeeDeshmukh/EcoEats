@@ -25,8 +25,6 @@
 		"src/stores/listings.ts": ["exports"],
 		"src/types/database.ts": ["types"],
 		"src/types/models.ts": ["types"],
-		"src/utils/foodSafety.ts": ["exports", "types"],
-		"src/utils/validators.ts": ["exports"],
 		"src/constants/app.ts": ["exports"]
 	}
 }
