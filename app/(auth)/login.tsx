@@ -1,4 +1,3 @@
-import { useRouter } from "expo-router";
 import { Leaf } from "phosphor-react-native";
 import { useState } from "react";
 import {
@@ -22,7 +21,6 @@ export default function LoginScreen() {
 
 	const { signIn } = useAuth();
 	const toast = useToast();
-	const _router = useRouter();
 
 	const handleSignIn = async () => {
 		const emailError = validateEmail(email);
