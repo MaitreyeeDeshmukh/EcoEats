@@ -1,0 +1,15 @@
+{
+  "featureId": "cleanup-extract-test-helpers",
+  "reviewedAt": "2026-04-17T21:48:00Z",
+  "commitId": "9aaab152fa8f6290ce7e435d06ab771ad1cacb89",
+  "transcriptSkeletonReviewed": true,
+  "diffReviewed": true,
+  "status": "pass",
+  "codeReview": {
+    "summary": "Successfully extracted duplicated test helpers from listings.test.ts and claims.test.ts into server/test/helpers.ts. The implementation correctly moved createMockRequireSession, itIf from both test files, and createTestApp from listings.test.ts. A new createTestClaimsApp function was added for claims route tests. Both test files now properly import from the shared helpers module. Code duplication reduced by 37 lines (194 deletions, 157 additions across 3 files). All 42 server route tests pass.",
+    "issues": []
+  },
+  "sharedStateObservations": [],
+  "addressesFailureFrom": null,
+  "summary": "Feature 'cleanup-extract-test-helpers' implemented correctly. server/test/helpers.ts created with 4 exported functions (createMockRequireSession, itIf, createTestApp, createTestClaimsApp). listings.test.ts and claims.test.ts both import from helpers.ts. claims.test.ts now uses createTestClaimsApp instead of inline Hono app creation. No duplicate code remains between test files. All tests pass, TypeScript compilation succeeds, Biome linting passes."
+}

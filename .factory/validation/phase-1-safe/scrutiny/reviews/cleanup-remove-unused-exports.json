@@ -1,0 +1,15 @@
+{
+  "featureId": "cleanup-remove-unused-exports",
+  "reviewedAt": "2026-04-17T21:41:00Z",
+  "commitId": "3ae6fb6b4ad8a96e7660a97b81ca752fd64f92a1",
+  "transcriptSkeletonReviewed": true,
+  "diffReviewed": true,
+  "status": "pass",
+  "codeReview": {
+    "summary": "Successfully removed unused exports from foodSafety.ts (isExpired, isExpiringSoon) and validators.ts (validateName, validateTitle, validateQuantity). Also made TimeRemaining non-exported and cleaned up knip.json. 227 lines deleted across 4 files. Knip passes with no unused export warnings.",
+    "issues": []
+  },
+  "sharedStateObservations": [],
+  "addressesFailureFrom": null,
+  "summary": "PASS: All unused functions removed. knip.json cleaned up. Tests pass (42 passed, 71 skipped). Knip shows no unused export warnings for these files. Additional improvements: TimeRemaining made non-exported, unused imports cleaned from validators.ts."
+}
