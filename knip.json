@@ -1,16 +1,13 @@
 {
 	"$schema": "./node_modules/knip/schema.json",
 	"ignoreDependencies": [
-		"@biomejs/biome",
-		"@opentelemetry/api",
 		"expo-system-ui",
 		"expo-updates",
-		"vitest",
-		"@vitest/coverage-v8",
 		"jest-environment-jsdom",
 		"jest-watch-typeahead",
 		"identity-obj-proxy"
 	],
+	"ignoreBinaries": ["expo-router/entry"],
 	"ignoreFiles": [
 		"babel.config.js",
 		"server/auth.ts",
