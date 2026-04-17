@@ -34,6 +34,7 @@ export const claimStatusSchema = z.enum(["pending", "picked_up", "no_show"]);
  */
 export const dietaryTagSchema = z.enum([
 	"vegetarian",
+	"vegetarian-available",
 	"vegan",
 	"halal",
 	"kosher",

@@ -11,6 +11,7 @@ interface BadgeProps {
 
 const dietaryColors: Record<DietaryTag, string> = {
 	vegetarian: "bg-green-100 text-green-800",
+	"vegetarian-available": "bg-green-100 text-green-800",
 	vegan: "bg-emerald-100 text-emerald-800",
 	halal: "bg-teal-100 text-teal-800",
 	kosher: "bg-blue-100 text-blue-800",
@@ -48,14 +49,14 @@ export function Badge({
 		<View
 			className={`
         rounded-full self-start
-        ${colorClasses.split(" ")[0]}
+        ${colorClasses?.split(" ")[0] ?? ""}
         ${sizeClasses[size]}
       `}
 		>
 			<Text
 				className={`
           font-body font-medium capitalize
-          ${colorClasses.split(" ")[1]}
+          ${colorClasses?.split(" ")[1] ?? ""}
           ${textSizeClasses[size]}
         `}
 			>
