@@ -583,6 +583,39 @@ describe("Listings Router", () => {
 			},
 		);
 
+		itIf(isDbAvailable, "should reject unsupported dietary tags", async () => {
+			db = getTestPoolOrThrow();
+			const userId = generateTestId();
+
+			await insertTestUsers([
+				{ id: userId, name: "Test User", email: "test@example.com" },
+			]);
+
+			const app = createTestApp(db, createMockRequireSession(userId));
+
+			const res = await app.request("/listings", {
+				method: "POST",
+				headers: { "Content-Type": "application/json" },
+				body: JSON.stringify({
+					hostName: "Test Host",
+					hostBuilding: "Building A",
+					title: "Fresh Pizza",
+					description: "Delicious pizza",
+					foodItems: ["Pizza"],
+					quantity: 5,
+					dietaryTags: ["pescatarian"],
+					imageUrl: null,
+					location: {
+						lat: 40.7128,
+						lng: -74.006,
+						buildingName: "Student Center",
+					},
+				}),
+			});
+
+			expect(res.status).toBe(400);
+		});
+
 		itIf(isDbAvailable, "should validate required fields", async () => {
 			db = getTestPoolOrThrow();
 			const userId = generateTestId();
