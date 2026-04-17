@@ -13,26 +13,6 @@ export function validateEmail(email: string): string | null {
 	return null;
 }
 
-function _validateName(name: string): string | null {
-	if (!name.trim()) {
-		return "Name is required";
-	}
-	if (name.trim().length < 2) {
-		return "Name must be at least 2 characters";
-	}
-	return null;
-}
-
-function _validateTitle(title: string): string | null {
-	if (!title.trim()) {
-		return "Title is required";
-	}
-	if (title.trim().length < 3) {
-		return "Title must be at least 3 characters";
-	}
-	return null;
-}
-
 export function validateQuantity(quantity: number): string | null {
 	if (!Number.isFinite(quantity)) {
 		return "Quantity must be a valid number";

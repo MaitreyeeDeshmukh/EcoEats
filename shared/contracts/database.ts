@@ -82,7 +82,7 @@ export const listingRowSchema = z.object({
 	food_items: z.array(z.string()),
 	quantity: z.number().int().positive(),
 	quantity_remaining: z.number().int().nonnegative(),
-	dietary_tags: z.array(z.string()),
+	dietary_tags: z.array(dietaryTagSchema),
 	image_url: z.string().nullable(),
 	building_name: z.string().nullable(),
 	room_number: z.string().nullable(),

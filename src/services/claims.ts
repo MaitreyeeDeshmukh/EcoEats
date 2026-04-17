@@ -9,10 +9,6 @@ type CreateClaimResponse = InferResponseType<
 	typeof rpcClient.api.claims.$post,
 	201
 >;
-type GetListingClaimsResponse = InferResponseType<
-	(typeof rpcClient.api.claims.listing)[":listingId"]["$get"],
-	200
->;
 type GetStudentClaimsResponse = InferResponseType<
 	typeof rpcClient.api.claims.mine.$get,
 	200
@@ -89,31 +85,6 @@ export function subscribeToStudentClaims(
 			callback((payload.data || []).map(normalizeClaim));
 		} catch (err) {
 			console.error("Failed to fetch claims:", err);
-			// For subscription polling, we log errors but don't crash the app
-		}
-	}
-
-	fetch();
-	const timer = setInterval(fetch, POLL_INTERVAL_CLAIMS_MS);
-	return () => clearInterval(timer);
-}
-
-function _subscribeToListingClaims(
-	listingId: string,
-	callback: (claims: Claim[]) => void,
-): () => void {
-	async function fetch() {
-		try {
-			const response = await rpcClient.api.claims.listing[":listingId"].$get(
-				{ param: { listingId } },
-				rpcOptions(
-					"Unable to fetch claims for this listing. Please try again.",
-				),
-			);
-			const payload = await readRpcJson<GetListingClaimsResponse>(response);
-			callback((payload.data || []).map(normalizeClaim));
-		} catch (err) {
-			console.error("Failed to fetch listing claims:", err);
 			// For subscription polling, we log errors but don't crash the app
 		}
 	}

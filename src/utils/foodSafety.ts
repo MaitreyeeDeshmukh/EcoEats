@@ -31,11 +31,6 @@ export function getTimeRemaining(expiresAt: Date | null): TimeRemaining | null {
 	return { minutes, display };
 }
 
-function _isExpired(expiresAt: Date | null): boolean {
-	if (!expiresAt) return true;
-	return expiresAt.getTime() <= Date.now();
-}
-
 export function isExpiringSoon(
 	expiresAt: Date | null,
 	thresholdMinutes: number = 15,
