@@ -1,5 +1,3 @@
-// src/services/claims.ts
-
 import type { InferResponseType } from "hono/client";
 import { POLL_INTERVAL_CLAIMS_MS } from "@/constants/app";
 import type { ClaimRow } from "@/types/database";

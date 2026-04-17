@@ -1,4 +1,3 @@
-// src/utils/validators.ts
 import { MAX_QUANTITY, MIN_QUANTITY } from "@/constants/app";
 
 const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;

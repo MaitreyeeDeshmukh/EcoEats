@@ -1,4 +1,3 @@
-// src/utils/foodSafety.ts
 export interface TimeRemaining {
 	minutes: number;
 	display: string;

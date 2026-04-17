@@ -1,4 +1,3 @@
-// src/services/auth-client.ts
 import * as SecureStore from "expo-secure-store";
 import { Platform } from "react-native";
 import { AuthError, NetworkError } from "@/utils/errors";

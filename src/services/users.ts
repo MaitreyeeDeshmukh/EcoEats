@@ -1,5 +1,3 @@
-// src/services/users.ts
-
 import type { InferRequestType, InferResponseType } from "hono/client";
 import type { UserRow } from "@/types/database";
 import type { DietaryTag, User, UserRole } from "@/types/models";

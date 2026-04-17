@@ -1,5 +1,3 @@
-// src/components/ui/Badge.tsx
-
 import type { ReactNode } from "react";
 import { Text, View } from "react-native";
 import type { DietaryTag } from "@/types/models";

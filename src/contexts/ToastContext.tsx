@@ -1,4 +1,3 @@
-// src/contexts/ToastContext.tsx
 import { createContext, type ReactNode, useCallback, useContext } from "react";
 import Toast from "react-native-toast-message";
 

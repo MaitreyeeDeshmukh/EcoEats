@@ -1,5 +1,3 @@
-// app/(auth)/login.tsx
-
 import { useRouter } from "expo-router";
 import { Leaf } from "phosphor-react-native";
 import { useState } from "react";

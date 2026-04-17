@@ -1,5 +1,3 @@
-// src/components/features/ListingCard.tsx
-
 import { Clock, Leaf, MapPin } from "phosphor-react-native";
 import { memo, useEffect, useMemo, useState } from "react";
 import { Image, Pressable, Text, View } from "react-native";
@@ -117,5 +115,4 @@ function ListingCardBase({ listing, onPress }: ListingCardProps) {
 	);
 }
 
-// Simple memo - rely on React's shallow comparison
 export const ListingCard = memo(ListingCardBase);
