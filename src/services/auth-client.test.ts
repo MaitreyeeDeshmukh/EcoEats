@@ -10,6 +10,24 @@ jest.mock("expo", () => ({
 	registerRootComponent: jest.fn(),
 }));
 
+// Platform OS mock that can be changed in tests
+const platformState = { OS: "ios" };
+jest.mock("react-native", () => ({
+	Platform: {
+		get OS() {
+			return platformState.OS;
+		},
+		select: jest.fn((obj: Record<string, unknown>) => {
+			const platform = platformState.OS as keyof typeof obj;
+			return obj[platform] || obj.default;
+		}),
+	},
+	StyleSheet: {
+		create: jest.fn((styles: unknown) => styles),
+		flatten: jest.fn((style: unknown) => style),
+	},
+}));
+
 import { type AuthUser, authClient, type Session } from "./auth-client";
 import { readErrorMessage } from "./request";
 import { buildServerUrl } from "./server-config";
@@ -269,15 +287,14 @@ describe("AuthClient", () => {
 
 		it("uses platform-specific callbacks on web", async () => {
 			// Mock web platform
-			const rn = jest.requireMock("react-native");
-			const originalOS = rn.Platform.OS;
-			rn.Platform.OS = "web";
+			platformState.OS = "web";
 
 			// Mock window location
-			const originalLocation = window.location.href;
+			const originalHref = window.location?.href || "http://localhost";
 			Object.defineProperty(window, "location", {
-				value: { origin: "https://app.ecoeats.com" },
+				value: { origin: "https://app.ecoeats.com", href: originalHref },
 				writable: true,
+				configurable: true,
 			});
 
 			mockFetch.mockResolvedValueOnce({
@@ -296,11 +313,7 @@ describe("AuthClient", () => {
 			);
 
 			// Cleanup
-			Object.defineProperty(window, "location", {
-				value: { href: originalLocation },
-				writable: true,
-			});
-			rn.Platform.OS = originalOS;
+			platformState.OS = "ios";
 		});
 
 		it("throws on API failure", async () => {
@@ -874,7 +887,6 @@ describe("AuthClient", () => {
 	});
 
 	describe("web storage handling", () => {
-		let originalOS: string;
 		let localStorageMock: {
 			getItem: jest.Mock;
 			setItem: jest.Mock;
@@ -883,9 +895,7 @@ describe("AuthClient", () => {
 
 		beforeEach(() => {
 			// Mock web platform
-			const rn = jest.requireMock("react-native");
-			originalOS = rn.Platform.OS;
-			rn.Platform.OS = "web";
+			platformState.OS = "web";
 
 			// Setup localStorage mock
 			localStorageMock = {
@@ -900,8 +910,7 @@ describe("AuthClient", () => {
 		});
 
 		afterEach(() => {
-			const rn = jest.requireMock("react-native");
-			rn.Platform.OS = originalOS;
+			platformState.OS = "ios";
 		});
 
 		describe("SSR window undefined (VAL-TEST-078)", () => {
