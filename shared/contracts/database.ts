@@ -26,7 +26,20 @@ export const listingStatusSchema = z.enum([
  * - "picked_up": Food was successfully picked up by the student
  * - "no_show": Student did not show up within the reservation window
  */
-const claimStatusSchema = z.enum(["pending", "picked_up", "no_show"]);
+export const claimStatusSchema = z.enum(["pending", "picked_up", "no_show"]);
+
+/**
+ * Enum schema for dietary tags on food listings.
+ * Used to filter listings by dietary preferences and restrictions.
+ */
+export const dietaryTagSchema = z.enum([
+	"vegetarian",
+	"vegetarian-available",
+	"vegan",
+	"halal",
+	"kosher",
+	"gluten-free",
+]);
 
 /**
  * Schema for user impact statistics tracking their contribution to food rescue.
@@ -70,7 +83,7 @@ export const listingRowSchema = z.object({
 	food_items: z.array(z.string()),
 	quantity: z.number().int().positive(),
 	quantity_remaining: z.number().int().nonnegative(),
-	dietary_tags: z.array(z.string()),
+	dietary_tags: z.array(dietaryTagSchema),
 	image_url: z.string().nullable(),
 	building_name: z.string().nullable(),
 	room_number: z.string().nullable(),

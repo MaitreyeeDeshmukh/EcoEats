@@ -1,4 +1,3 @@
-// src/services/auth-client.ts
 import * as SecureStore from "expo-secure-store";
 import { Platform } from "react-native";
 import { AuthError, NetworkError } from "@/utils/errors";
@@ -50,7 +49,6 @@ const webStorage = {
 	},
 };
 
-// Storage adapter: localStorage for web, SecureStore for native
 const storage = {
 	getItem: async (key: string): Promise<string | null> => {
 		if (Platform.OS === "web") {
@@ -73,24 +71,25 @@ const storage = {
 };
 
 /**
+ * User data structure representing an authenticated Better Auth user.
+ * Distinct from the app profile User to avoid confusion.
+ */
+export interface AuthUser {
+	id: string;
+	email: string;
+	name: string | null;
+	image: string | null;
+	emailVerified: boolean;
+}
+
+/**
  * Session data structure containing user authentication state.
  */
 export interface Session {
 	id: string;
 	userId: string;
 	expiresAt: Date;
-	user: User;
-}
-
-/**
- * User data structure representing an authenticated user.
- */
-export interface User {
-	id: string;
-	email: string;
-	name: string | null;
-	image: string | null;
-	emailVerified: boolean;
+	user: AuthUser;
 }
 
 /**

@@ -57,6 +57,7 @@
 		"zustand": "^5.0.12"
 	},
 	"devDependencies": {
+		"@babel/core": "^7.29.0",
 		"@biomejs/biome": "^2.4.10",
 		"@testing-library/jest-dom": "^6.9.1",
 		"@testing-library/jest-native": "^5.4.3",
@@ -71,12 +72,26 @@
 		"knip": "^6.3.1",
 		"lint-staged": "^16.4.0",
 		"tailwindcss": "^3.4.19",
-		"ts-jest": "^29.4.9",
 		"typescript": "~5.9.2",
 		"vitest": "^4.1.4",
 		"wrangler": "^4.81.1"
 	},
 	"private": true,
+	"jest": {
+		"preset": "jest-expo",
+		"roots": [
+			"<rootDir>/src"
+		],
+		"setupFilesAfterEnv": [
+			"<rootDir>/jest.setup.ts"
+		],
+		"transformIgnorePatterns": [
+			"node_modules/(?!((jest-)?react-native|@react-native(-community)?)|expo(nent)?|@expo(nent)?/.*|@expo-google-fonts/.*|react-navigation|@react-navigation/.*|@sentry/react-native|native-base|react-native-svg|nativewind|react-native-css-interop)"
+		],
+		"moduleNameMapper": {
+			"^@/(.*)$": "<rootDir>/src/$1"
+		}
+	},
 	"lint-staged": {
 		"*.{ts,tsx,js,jsx}": [
 			"biome check --write",

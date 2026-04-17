@@ -1,13 +1,5 @@
-// app/(tabs)/_layout.tsx
 import { Tabs } from "expo-router";
-import {
-	ClipboardText,
-	House,
-	Leaf,
-	MapPin,
-	Plus,
-	User,
-} from "phosphor-react-native";
+import { House, User } from "phosphor-react-native";
 import { ErrorBoundary } from "@/components/ui/ErrorBoundary";
 
 export default function TabsLayout() {
@@ -40,38 +32,6 @@ export default function TabsLayout() {
 						tabBarIcon: ({ color, size }) => (
 							<House size={size} color={color} />
 						),
-					}}
-				/>
-				<Tabs.Screen
-					name="map"
-					options={{
-						title: "Map",
-						tabBarIcon: ({ color, size }) => (
-							<MapPin size={size} color={color} />
-						),
-					}}
-				/>
-				<Tabs.Screen
-					name="post"
-					options={{
-						title: "Post",
-						tabBarIcon: ({ color, size }) => <Plus size={size} color={color} />,
-					}}
-				/>
-				<Tabs.Screen
-					name="claims"
-					options={{
-						title: "Claims",
-						tabBarIcon: ({ color, size }) => (
-							<ClipboardText size={size} color={color} />
-						),
-					}}
-				/>
-				<Tabs.Screen
-					name="impact"
-					options={{
-						title: "Impact",
-						tabBarIcon: ({ color, size }) => <Leaf size={size} color={color} />,
 					}}
 				/>
 				<Tabs.Screen

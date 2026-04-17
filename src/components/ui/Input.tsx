@@ -1,4 +1,3 @@
-// src/components/ui/Input.tsx
 import { Text, TextInput, type TextInputProps, View } from "react-native";
 
 interface InputProps extends Omit<TextInputProps, "className"> {

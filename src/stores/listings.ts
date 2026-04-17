@@ -1,5 +1,3 @@
-// src/stores/listings.ts
-
 import { useEffect } from "react";
 import { create } from "zustand";
 import { subscribeWithSelector } from "zustand/middleware";
@@ -86,7 +84,6 @@ const useListingsStore = create<ListingsState>()(
 	})),
 );
 
-// Selective hooks
 export function useFilteredListings() {
 	return useListingsStore((s) => s.filteredListings);
 }
@@ -95,7 +92,6 @@ export function useListingsLoading() {
 	return useListingsStore((s) => s.loading);
 }
 
-// Auto-cleanup hook for subscription
 export function useListingsSubscription() {
 	useEffect(() => {
 		useListingsStore.getState().subscribe();

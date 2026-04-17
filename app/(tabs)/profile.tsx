@@ -1,4 +1,3 @@
-// app/(tabs)/profile.tsx
 import { Text, View } from "react-native";
 import { Button } from "@/components/ui/Button";
 import { useAuth } from "@/contexts/AuthContext";

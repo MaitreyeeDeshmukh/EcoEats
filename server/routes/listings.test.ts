@@ -1,17 +1,20 @@
+import type { MiddlewareHandler } from "hono";
 import { Hono } from "hono";
 import type { Pool } from "pg";
-import { beforeEach, describe, expect, it } from "vitest";
+import { beforeEach, describe, expect } from "vitest";
 import { messageResponseSchema } from "../../shared/contracts";
 import { HttpError } from "../errors";
 import type { AppEnv } from "../session";
 import {
 	cleanupTestData,
+	createMockRequireSession,
 	futureMinutes,
 	generateTestId,
 	getTestPoolOrThrow,
 	insertTestListings,
 	insertTestUsers,
 	isDbAvailable,
+	itIf,
 	pastMinutes,
 } from "../test";
 import { createListingsRouter } from "./listings";
@@ -19,7 +22,7 @@ import { createListingsRouter } from "./listings";
 /**
  * Helper to create test app with error handling for typed errors
  */
-function createTestApp(db: Pool, requireSession: any) {
+function createTestApp(db: Pool, requireSession: MiddlewareHandler<AppEnv>) {
 	const app = new Hono<AppEnv>().route(
 		"/listings",
 		createListingsRouter(db, requireSession),
@@ -35,39 +38,6 @@ function createTestApp(db: Pool, requireSession: any) {
 		throw err;
 	});
 	return app;
-}
-
-/**
- * Create a mock requireSession middleware for testing
- */
-function createMockRequireSession(userId: string): any {
-	return async (c: any, next: any) => {
-		c.set("authSession", {
-			user: {
-				id: userId,
-				name: "Test User",
-				email: `test-${userId}@example.com`,
-				role: "student",
-			},
-			session: {
-				id: generateTestId(),
-				userId,
-				expiresAt: futureMinutes(60).toISOString(),
-			},
-		});
-		await next();
-	};
-}
-
-/**
- * Conditional test helper - runs test only if condition is true
- */
-function itIf(condition: boolean, name: string, fn: () => Promise<void>) {
-	if (condition) {
-		it(name, fn);
-	} else {
-		it.skip(name, fn);
-	}
 }
 
 describe("Listings Router", () => {
@@ -612,6 +582,39 @@ describe("Listings Router", () => {
 				]);
 			},
 		);
+
+		itIf(isDbAvailable, "should reject unsupported dietary tags", async () => {
+			db = getTestPoolOrThrow();
+			const userId = generateTestId();
+
+			await insertTestUsers([
+				{ id: userId, name: "Test User", email: "test@example.com" },
+			]);
+
+			const app = createTestApp(db, createMockRequireSession(userId));
+
+			const res = await app.request("/listings", {
+				method: "POST",
+				headers: { "Content-Type": "application/json" },
+				body: JSON.stringify({
+					hostName: "Test Host",
+					hostBuilding: "Building A",
+					title: "Fresh Pizza",
+					description: "Delicious pizza",
+					foodItems: ["Pizza"],
+					quantity: 5,
+					dietaryTags: ["pescatarian"],
+					imageUrl: null,
+					location: {
+						lat: 40.7128,
+						lng: -74.006,
+						buildingName: "Student Center",
+					},
+				}),
+			});
+
+			expect(res.status).toBe(400);
+		});
 
 		itIf(isDbAvailable, "should validate required fields", async () => {
 			db = getTestPoolOrThrow();

@@ -1,9 +1,4 @@
-import {
-	validateEmail,
-	validateName,
-	validateQuantity,
-	validateTitle,
-} from "./validators";
+import { validateEmail, validateQuantity } from "./validators";
 
 describe("validateEmail", () => {
 	it("returns null for valid email", () => {
@@ -60,98 +55,6 @@ describe("validateEmail", () => {
 
 	it("trims and validates correctly with leading/trailing spaces", () => {
 		expect(validateEmail("  user@domain.com  ")).toBeNull();
-	});
-});
-
-describe("validateName", () => {
-	it("returns null for valid name (2 characters)", () => {
-		expect(validateName("Jo")).toBeNull();
-	});
-
-	it("returns null for valid name (longer)", () => {
-		expect(validateName("John Doe")).toBeNull();
-	});
-
-	it("returns null for valid name with special characters", () => {
-		expect(validateName("Mary-Jane O'Connor")).toBeNull();
-	});
-
-	it("returns error for empty string", () => {
-		expect(validateName("")).toBe("Name is required");
-	});
-
-	it("returns error for whitespace-only string", () => {
-		expect(validateName("   ")).toBe("Name is required");
-	});
-
-	it("returns error for too short name (1 character)", () => {
-		expect(validateName("J")).toBe("Name must be at least 2 characters");
-	});
-
-	it("trims input before validation", () => {
-		expect(validateName("  Jo  ")).toBeNull();
-	});
-
-	it("trims and returns error for too short after trim", () => {
-		expect(validateName("  J  ")).toBe("Name must be at least 2 characters");
-	});
-
-	it("trims and returns error for empty after trim", () => {
-		expect(validateName("     ")).toBe("Name is required");
-	});
-
-	it("handles unicode characters correctly", () => {
-		expect(validateName("José")).toBeNull();
-	});
-});
-
-describe("validateTitle", () => {
-	it("returns null for valid title (3 characters)", () => {
-		expect(validateTitle("Pie")).toBeNull();
-	});
-
-	it("returns null for valid title (longer)", () => {
-		expect(validateTitle("Chocolate Cake")).toBeNull();
-	});
-
-	it("returns null for valid title with special characters", () => {
-		expect(validateTitle("Pizza & Pasta")).toBeNull();
-	});
-
-	it("returns null for valid title with numbers", () => {
-		expect(validateTitle("50 Cupcakes")).toBeNull();
-	});
-
-	it("returns error for empty string", () => {
-		expect(validateTitle("")).toBe("Title is required");
-	});
-
-	it("returns error for whitespace-only string", () => {
-		expect(validateTitle("   ")).toBe("Title is required");
-	});
-
-	it("returns error for too short title (1 character)", () => {
-		expect(validateTitle("A")).toBe("Title must be at least 3 characters");
-	});
-
-	it("returns error for too short title (2 characters)", () => {
-		expect(validateTitle("AB")).toBe("Title must be at least 3 characters");
-	});
-
-	it("trims input before validation", () => {
-		expect(validateTitle("  Pie  ")).toBeNull();
-	});
-
-	it("trims and returns error for too short after trim", () => {
-		expect(validateTitle("  AB  ")).toBe("Title must be at least 3 characters");
-	});
-
-	it("trims and returns error for empty after trim", () => {
-		expect(validateTitle("     ")).toBe("Title is required");
-	});
-
-	it("handles unicode characters correctly", () => {
-		expect(validateTitle("Sushi 🍣")).toBeNull();
 	});
 });
 

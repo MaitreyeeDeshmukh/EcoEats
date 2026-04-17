@@ -10,7 +10,25 @@ jest.mock("expo", () => ({
 	registerRootComponent: jest.fn(),
 }));
 
-import { authClient, type Session, type User } from "./auth-client";
+// Platform OS mock that can be changed in tests
+const platformState = { OS: "ios" };
+jest.mock("react-native", () => ({
+	Platform: {
+		get OS() {
+			return platformState.OS;
+		},
+		select: jest.fn((obj: Record<string, unknown>) => {
+			const platform = platformState.OS as keyof typeof obj;
+			return obj[platform] || obj.default;
+		}),
+	},
+	StyleSheet: {
+		create: jest.fn((styles: unknown) => styles),
+		flatten: jest.fn((style: unknown) => style),
+	},
+}));
+
+import { type AuthUser, authClient, type Session } from "./auth-client";
 import { readErrorMessage } from "./request";
 import { buildServerUrl } from "./server-config";
 
@@ -51,7 +69,7 @@ describe("AuthClient", () => {
 	});
 
 	describe("getSession", () => {
-		const mockUser: User = {
+		const mockUser: AuthUser = {
 			id: "user-123",
 			email: "test@example.com",
 			name: "Test User",
@@ -269,15 +287,14 @@ describe("AuthClient", () => {
 
 		it("uses platform-specific callbacks on web", async () => {
 			// Mock web platform
-			const rn = jest.requireMock("react-native");
-			const originalOS = rn.Platform.OS;
-			rn.Platform.OS = "web";
+			platformState.OS = "web";
 
 			// Mock window location
-			const originalLocation = window.location.href;
+			const originalHref = window.location?.href || "http://localhost";
 			Object.defineProperty(window, "location", {
-				value: { origin: "https://app.ecoeats.com" },
+				value: { origin: "https://app.ecoeats.com", href: originalHref },
 				writable: true,
+				configurable: true,
 			});
 
 			mockFetch.mockResolvedValueOnce({
@@ -296,11 +313,7 @@ describe("AuthClient", () => {
 			);
 
 			// Cleanup
-			Object.defineProperty(window, "location", {
-				value: { href: originalLocation },
-				writable: true,
-			});
-			rn.Platform.OS = originalOS;
+			platformState.OS = "ios";
 		});
 
 		it("throws on API failure", async () => {
@@ -320,7 +333,7 @@ describe("AuthClient", () => {
 	});
 
 	describe("verifyMagicLink", () => {
-		const mockUser: User = {
+		const mockUser: AuthUser = {
 			id: "user-123",
 			email: "test@example.com",
 			name: "Test User",
@@ -415,7 +428,7 @@ describe("AuthClient", () => {
 	});
 
 	describe("signOut", () => {
-		const mockUser: User = {
+		const mockUser: AuthUser = {
 			id: "user-123",
 			email: "test@example.com",
 			name: "Test User",
@@ -533,7 +546,7 @@ describe("AuthClient", () => {
 			const listener = jest.fn();
 			authClient.onSessionChange(listener);
 
-			const mockUser: User = {
+			const mockUser: AuthUser = {
 				id: "user-123",
 				email: "test@example.com",
 				name: "Test User",
@@ -568,7 +581,7 @@ describe("AuthClient", () => {
 			// Unsubscribe
 			unsubscribe();
 
-			const mockUser: User = {
+			const mockUser: AuthUser = {
 				id: "user-123",
 				email: "test@example.com",
 				name: "Test User",
@@ -617,7 +630,7 @@ describe("AuthClient", () => {
 	});
 
 	describe("session persistence across app reload (VAL-TEST-100)", () => {
-		const mockUser: User = {
+		const mockUser: AuthUser = {
 			id: "user-123",
 			email: "test@example.com",
 			name: "Test User",
@@ -736,12 +749,19 @@ describe("AuthClient", () => {
 
 		it("subsequent getSession calls use cached session after reload", async () => {
 			const futureDate = new Date(Date.now() + 3600000);
+			const mockUserCached: AuthUser = {
+				id: "user-789",
+				email: "cached@example.com",
+				name: "Cached User",
+				image: null,
+				emailVerified: true,
+			};
 			const storedData = {
 				session: {
 					id: "cached-session-789",
 					userId: "user-789",
 					expiresAt: futureDate.toISOString(),
-					user: mockUser,
+					user: mockUserCached,
 				},
 				authToken: "cached-token-789",
 			};
@@ -804,7 +824,7 @@ describe("AuthClient", () => {
 			const rn = jest.requireMock("react-native");
 			rn.Platform.OS = "ios";
 
-			const mockUser: User = {
+			const mockUser: AuthUser = {
 				id: "user-123",
 				email: "test@example.com",
 				name: "Test User",
@@ -837,7 +857,7 @@ describe("AuthClient", () => {
 			const rn = jest.requireMock("react-native");
 			rn.Platform.OS = "android";
 
-			const mockUser: User = {
+			const mockUser: AuthUser = {
 				id: "user-123",
 				email: "test@example.com",
 				name: "Test User",
@@ -867,7 +887,6 @@ describe("AuthClient", () => {
 	});
 
 	describe("web storage handling", () => {
-		let originalOS: string;
 		let localStorageMock: {
 			getItem: jest.Mock;
 			setItem: jest.Mock;
@@ -876,9 +895,7 @@ describe("AuthClient", () => {
 
 		beforeEach(() => {
 			// Mock web platform
-			const rn = jest.requireMock("react-native");
-			originalOS = rn.Platform.OS;
-			rn.Platform.OS = "web";
+			platformState.OS = "web";
 
 			// Setup localStorage mock
 			localStorageMock = {
@@ -893,8 +910,7 @@ describe("AuthClient", () => {
 		});
 
 		afterEach(() => {
-			const rn = jest.requireMock("react-native");
-			rn.Platform.OS = originalOS;
+			platformState.OS = "ios";
 		});
 
 		describe("SSR window undefined (VAL-TEST-078)", () => {
@@ -931,7 +947,7 @@ describe("AuthClient", () => {
 			});
 
 			it("returns null from getItem when window is undefined", async () => {
-				const mockUser: User = {
+				const mockUser: AuthUser = {
 					id: "user-123",
 					email: "test@example.com",
 					name: "Test User",
@@ -965,7 +981,7 @@ describe("AuthClient", () => {
 			});
 
 			it("setItem is no-op when window is undefined", async () => {
-				const mockUser: User = {
+				const mockUser: AuthUser = {
 					id: "user-123",
 					email: "test@example.com",
 					name: "Test User",
@@ -1009,7 +1025,7 @@ describe("AuthClient", () => {
 						name: "Test User",
 						image: null,
 						emailVerified: true,
-					},
+					} as AuthUser,
 				};
 				setPrivate(authClient, "session", mockSession);
 				setPrivate(authClient, "authToken", "token-123");
@@ -1050,7 +1066,7 @@ describe("AuthClient", () => {
 						name: "Test User",
 						image: null,
 						emailVerified: true,
-					},
+					} as AuthUser,
 				},
 				authToken: "token-123",
 			};
@@ -1068,7 +1084,7 @@ describe("AuthClient", () => {
 		});
 
 		it("uses localStorage on web platform for setItem", async () => {
-			const mockUser: User = {
+			const mockUser: AuthUser = {
 				id: "user-123",
 				email: "test@example.com",
 				name: "Test User",
@@ -1111,7 +1127,7 @@ describe("AuthClient", () => {
 					name: "Test User",
 					image: null,
 					emailVerified: true,
-				},
+				} as AuthUser,
 			};
 			setPrivate(authClient, "session", mockSession);
 			setPrivate(authClient, "authToken", "token-123");
@@ -1153,7 +1169,7 @@ describe("AuthClient", () => {
 				throw new Error("Quota exceeded");
 			});
 
-			const mockUser: User = {
+			const mockUser: AuthUser = {
 				id: "user-123",
 				email: "test@example.com",
 				name: "Test User",
@@ -1207,7 +1223,7 @@ describe("AuthClient", () => {
 					name: "Test User",
 					image: null,
 					emailVerified: true,
-				},
+				} as AuthUser,
 			};
 			setPrivate(authClient, "session", mockSession);
 			setPrivate(authClient, "authToken", "token-123");

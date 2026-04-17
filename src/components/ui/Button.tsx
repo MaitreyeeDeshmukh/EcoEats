@@ -1,5 +1,3 @@
-// src/components/ui/Button.tsx
-
 import type { ReactNode } from "react";
 import {
 	ActivityIndicator,

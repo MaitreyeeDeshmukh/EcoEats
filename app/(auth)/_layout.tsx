@@ -1,4 +1,3 @@
-// app/(auth)/_layout.tsx
 import { Stack } from "expo-router";
 import { ErrorBoundary } from "@/components/ui/ErrorBoundary";
 

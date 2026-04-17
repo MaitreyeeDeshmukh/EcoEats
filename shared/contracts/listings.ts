@@ -5,7 +5,11 @@ import {
 	successResponseSchema,
 	uuidSchema,
 } from "./common";
-import { listingRowSchema, listingStatusSchema } from "./database";
+import {
+	dietaryTagSchema,
+	listingRowSchema,
+	listingStatusSchema,
+} from "./database";
 
 /**
  * Schema for the location object within a food listing.
@@ -54,7 +58,7 @@ export const createListingBodySchema = z.object({
 	description: z.string(),
 	foodItems: z.array(z.string()),
 	quantity: z.number().int().positive(),
-	dietaryTags: z.array(z.string()),
+	dietaryTags: z.array(dietaryTagSchema),
 	imageUrl: z.string().nullable(),
 	location: listingLocationSchema,
 	expiryMinutes: z.number().int().positive().optional(),

@@ -1,5 +1,3 @@
-// app/(auth)/onboarding.tsx
-
 import { useRouter } from "expo-router";
 import { useState } from "react";
 import { Pressable, Text, View } from "react-native";

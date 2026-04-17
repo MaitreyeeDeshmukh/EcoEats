@@ -1,5 +1,3 @@
-// src/services/listings.ts
-
 import type { InferRequestType, InferResponseType } from "hono/client";
 import { POLL_INTERVAL_LISTINGS_MS } from "@/constants/app";
 import type { ListingRow } from "@/types/database";
@@ -101,7 +99,6 @@ export function filterListings(
 	filters: Filters,
 ): Listing[] {
 	return listings.filter((listing) => {
-		// Dietary filter
 		if (filters.dietary.length > 0) {
 			const hasAllTags = filters.dietary.every((tag) =>
 				listing.dietaryTags.includes(tag),
@@ -109,7 +106,6 @@ export function filterListings(
 			if (!hasAllTags) return false;
 		}
 
-		// Time filter
 		if (listing.expiresAt) {
 			const minutesRemaining = Math.floor(
 				(listing.expiresAt.getTime() - Date.now()) / 60000,

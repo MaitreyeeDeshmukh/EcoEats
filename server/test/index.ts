@@ -1,3 +1,6 @@
+import type { Context, MiddlewareHandler, Next } from "hono";
+import type { AppEnv } from "../session";
+
 /**
  * Test utilities export
  * Provides database fixtures and helper functions for server tests
@@ -37,6 +40,38 @@ export function createMockSession(userId: string) {
 			expiresAt: new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString(),
 		},
 	};
+}
+
+/**
+ * Create a mock requireSession middleware for testing
+ */
+export function createMockRequireSession(
+	userId: string,
+): MiddlewareHandler<AppEnv> {
+	return async (c: Context<AppEnv>, next: Next) => {
+		c.set(
+			"authSession",
+			createMockSession(
+				userId,
+			) as unknown as AppEnv["Variables"]["authSession"],
+		);
+		await next();
+	};
+}
+
+/**
+ * Conditional test helper - runs test only if condition is true
+ */
+export function itIf(
+	condition: boolean,
+	name: string,
+	fn: () => Promise<void>,
+) {
+	if (condition) {
+		it(name, fn);
+	} else {
+		it.skip(name, fn);
+	}
 }
 
 /**

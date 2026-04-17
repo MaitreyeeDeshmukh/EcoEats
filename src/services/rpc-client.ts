@@ -40,7 +40,6 @@ export function rpcOptions(
 			if (!response.ok) {
 				const message = await readErrorMessage(response, fallbackError);
 
-				// Map HTTP status codes to appropriate error types
 				if (response.status === 401 || response.status === 403) {
 					throw new AuthError(
 						message || "Authentication failed. Please sign in again.",

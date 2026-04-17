@@ -53,3 +53,14 @@ export class UnauthorizedError extends HttpError {
 		super(message, 401);
 	}
 }
+
+/**
+ * Format an error for JSON response.
+ * Extracts message from Error instances, falls back to default message.
+ */
+export function formatErrorMessage(
+	error: unknown,
+	defaultMessage: string,
+): string {
+	return error instanceof Error ? error.message : defaultMessage;
+}

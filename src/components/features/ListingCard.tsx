@@ -1,7 +1,5 @@
-// src/components/features/ListingCard.tsx
-
 import { Clock, Leaf, MapPin } from "phosphor-react-native";
-import { memo, useEffect, useMemo, useState } from "react";
+import { memo, useEffect, useState } from "react";
 import { Image, Pressable, Text, View } from "react-native";
 import { Badge } from "@/components/ui/Badge";
 import type { Listing } from "@/types/models";
@@ -24,16 +22,9 @@ function ListingCardBase({ listing, onPress }: ListingCardProps) {
 		return () => clearInterval(interval);
 	}, []);
 
-	// Memoize time calculations with tick dependency so it updates
-	const remaining = useMemo(
-		() => getTimeRemaining(listing.expiresAt),
-		[listing.expiresAt],
-	);
-
-	const isExpiringSoon = useMemo(
-		() => (remaining?.minutes ?? Infinity) < 15,
-		[remaining],
-	);
+	// Time calculations - recalculates on each render (inexpensive)
+	const remaining = getTimeRemaining(listing.expiresAt);
+	const isExpiringSoon = (remaining?.minutes ?? Infinity) < 15;
 
 	// Safe access to location
 	const locationName = listing.location?.buildingName ?? "Unknown location";
