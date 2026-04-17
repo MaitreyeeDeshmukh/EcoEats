@@ -14,6 +14,7 @@ import {
 import { MAX_CLAIMS_QUERY, RESERVATION_MINUTES } from "../constants";
 import {
 	ConflictError,
+	formatErrorMessage,
 	HttpError,
 	NotFoundError,
 	ValidationError,
@@ -219,10 +220,7 @@ export function createClaimsRouter(
 							: 400;
 					return c.json(
 						messageResponseSchema.parse({
-							message:
-								error instanceof Error
-									? error.message
-									: "Failed to create claim",
+							message: formatErrorMessage(error, "Failed to create claim"),
 						}),
 						statusCode,
 					);
@@ -353,10 +351,7 @@ export function createClaimsRouter(
 								: 400;
 						return c.json(
 							messageResponseSchema.parse({
-								message:
-									error instanceof Error
-										? error.message
-										: "Failed to mark no-show",
+								message: formatErrorMessage(error, "Failed to mark no-show"),
 							}),
 							statusCode,
 						);

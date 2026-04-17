@@ -29,6 +29,18 @@ export const listingStatusSchema = z.enum([
 export const claimStatusSchema = z.enum(["pending", "picked_up", "no_show"]);
 
 /**
+ * Enum schema for dietary tags on food listings.
+ * Used to filter listings by dietary preferences and restrictions.
+ */
+export const dietaryTagSchema = z.enum([
+	"vegetarian",
+	"vegan",
+	"halal",
+	"kosher",
+	"gluten-free",
+]);
+
+/**
  * Schema for user impact statistics tracking their contribution to food rescue.
  * Tracks meals rescued, CO2 emissions saved, and reputation points earned.
  */
