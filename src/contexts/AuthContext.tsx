@@ -7,7 +7,7 @@ import {
 	useState,
 } from "react";
 import {
-	type User as AuthUser,
+	type AuthUser,
 	authClient,
 	type Session,
 } from "@/services/auth-client";

@@ -10,7 +10,7 @@ jest.mock("expo", () => ({
 	registerRootComponent: jest.fn(),
 }));
 
-import { authClient, type Session, type User } from "./auth-client";
+import { type AuthUser, authClient, type Session } from "./auth-client";
 import { readErrorMessage } from "./request";
 import { buildServerUrl } from "./server-config";
 
@@ -51,7 +51,7 @@ describe("AuthClient", () => {
 	});
 
 	describe("getSession", () => {
-		const mockUser: User = {
+		const mockUser: AuthUser = {
 			id: "user-123",
 			email: "test@example.com",
 			name: "Test User",
@@ -320,7 +320,7 @@ describe("AuthClient", () => {
 	});
 
 	describe("verifyMagicLink", () => {
-		const mockUser: User = {
+		const mockUser: AuthUser = {
 			id: "user-123",
 			email: "test@example.com",
 			name: "Test User",
@@ -415,7 +415,7 @@ describe("AuthClient", () => {
 	});
 
 	describe("signOut", () => {
-		const mockUser: User = {
+		const mockUser: AuthUser = {
 			id: "user-123",
 			email: "test@example.com",
 			name: "Test User",
@@ -533,7 +533,7 @@ describe("AuthClient", () => {
 			const listener = jest.fn();
 			authClient.onSessionChange(listener);
 
-			const mockUser: User = {
+			const mockUser: AuthUser = {
 				id: "user-123",
 				email: "test@example.com",
 				name: "Test User",
@@ -568,7 +568,7 @@ describe("AuthClient", () => {
 			// Unsubscribe
 			unsubscribe();
 
-			const mockUser: User = {
+			const mockUser: AuthUser = {
 				id: "user-123",
 				email: "test@example.com",
 				name: "Test User",
@@ -617,7 +617,7 @@ describe("AuthClient", () => {
 	});
 
 	describe("session persistence across app reload (VAL-TEST-100)", () => {
-		const mockUser: User = {
+		const mockUser: AuthUser = {
 			id: "user-123",
 			email: "test@example.com",
 			name: "Test User",
@@ -736,12 +736,19 @@ describe("AuthClient", () => {
 
 		it("subsequent getSession calls use cached session after reload", async () => {
 			const futureDate = new Date(Date.now() + 3600000);
+			const mockUserCached: AuthUser = {
+				id: "user-789",
+				email: "cached@example.com",
+				name: "Cached User",
+				image: null,
+				emailVerified: true,
+			};
 			const storedData = {
 				session: {
 					id: "cached-session-789",
 					userId: "user-789",
 					expiresAt: futureDate.toISOString(),
-					user: mockUser,
+					user: mockUserCached,
 				},
 				authToken: "cached-token-789",
 			};
@@ -804,7 +811,7 @@ describe("AuthClient", () => {
 			const rn = jest.requireMock("react-native");
 			rn.Platform.OS = "ios";
 
-			const mockUser: User = {
+			const mockUser: AuthUser = {
 				id: "user-123",
 				email: "test@example.com",
 				name: "Test User",
@@ -837,7 +844,7 @@ describe("AuthClient", () => {
 			const rn = jest.requireMock("react-native");
 			rn.Platform.OS = "android";
 
-			const mockUser: User = {
+			const mockUser: AuthUser = {
 				id: "user-123",
 				email: "test@example.com",
 				name: "Test User",
@@ -931,7 +938,7 @@ describe("AuthClient", () => {
 			});
 
 			it("returns null from getItem when window is undefined", async () => {
-				const mockUser: User = {
+				const mockUser: AuthUser = {
 					id: "user-123",
 					email: "test@example.com",
 					name: "Test User",
@@ -965,7 +972,7 @@ describe("AuthClient", () => {
 			});
 
 			it("setItem is no-op when window is undefined", async () => {
-				const mockUser: User = {
+				const mockUser: AuthUser = {
 					id: "user-123",
 					email: "test@example.com",
 					name: "Test User",
@@ -1009,7 +1016,7 @@ describe("AuthClient", () => {
 						name: "Test User",
 						image: null,
 						emailVerified: true,
-					},
+					} as AuthUser,
 				};
 				setPrivate(authClient, "session", mockSession);
 				setPrivate(authClient, "authToken", "token-123");
@@ -1050,7 +1057,7 @@ describe("AuthClient", () => {
 						name: "Test User",
 						image: null,
 						emailVerified: true,
-					},
+					} as AuthUser,
 				},
 				authToken: "token-123",
 			};
@@ -1068,7 +1075,7 @@ describe("AuthClient", () => {
 		});
 
 		it("uses localStorage on web platform for setItem", async () => {
-			const mockUser: User = {
+			const mockUser: AuthUser = {
 				id: "user-123",
 				email: "test@example.com",
 				name: "Test User",
@@ -1111,7 +1118,7 @@ describe("AuthClient", () => {
 					name: "Test User",
 					image: null,
 					emailVerified: true,
-				},
+				} as AuthUser,
 			};
 			setPrivate(authClient, "session", mockSession);
 			setPrivate(authClient, "authToken", "token-123");
@@ -1153,7 +1160,7 @@ describe("AuthClient", () => {
 				throw new Error("Quota exceeded");
 			});
 
-			const mockUser: User = {
+			const mockUser: AuthUser = {
 				id: "user-123",
 				email: "test@example.com",
 				name: "Test User",
@@ -1207,7 +1214,7 @@ describe("AuthClient", () => {
 					name: "Test User",
 					image: null,
 					emailVerified: true,
-				},
+				} as AuthUser,
 			};
 			setPrivate(authClient, "session", mockSession);
 			setPrivate(authClient, "authToken", "token-123");
