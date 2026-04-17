@@ -1,4 +1,11 @@
-import { ImpactStats } from "./database";
+import type { z } from "zod";
+import type {
+	claimStatusSchema,
+	impactStatsSchema,
+	listingStatusSchema,
+	userRoleSchema,
+} from "../../shared/contracts/database";
+import type { listingLocationSchema } from "../../shared/contracts/listings";
 
 export type DietaryTag =
 	| "vegetarian"
@@ -6,18 +13,12 @@ export type DietaryTag =
 	| "halal"
 	| "kosher"
 	| "gluten-free";
-export type ListingStatus = "active" | "claimed" | "expired" | "cancelled";
-export type ClaimStatus = "pending" | "picked_up" | "no_show";
-export type UserRole = "student" | "organizer";
 
-export { ImpactStats };
-
-export interface Location {
-	lat: number;
-	lng: number;
-	buildingName: string;
-	roomNumber?: string;
-}
+export type ListingStatus = z.infer<typeof listingStatusSchema>;
+export type ClaimStatus = z.infer<typeof claimStatusSchema>;
+export type UserRole = z.infer<typeof userRoleSchema>;
+export type ImpactStats = z.infer<typeof impactStatsSchema>;
+export type Location = z.infer<typeof listingLocationSchema>;
 
 export interface User {
 	id: string;

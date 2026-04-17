@@ -26,7 +26,7 @@ export const listingStatusSchema = z.enum([
  * - "picked_up": Food was successfully picked up by the student
  * - "no_show": Student did not show up within the reservation window
  */
-const claimStatusSchema = z.enum(["pending", "picked_up", "no_show"]);
+export const claimStatusSchema = z.enum(["pending", "picked_up", "no_show"]);
 
 /**
  * Schema for user impact statistics tracking their contribution to food rescue.

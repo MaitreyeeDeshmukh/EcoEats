@@ -11,7 +11,7 @@ import { listingRowSchema, listingStatusSchema } from "./database";
  * Schema for the location object within a food listing.
  * Contains GPS coordinates (lat/lng) and building/room identifiers.
  */
-const listingLocationSchema = z.object({
+export const listingLocationSchema = z.object({
 	lat: z.number(),
 	lng: z.number(),
 	buildingName: z.string().min(1),
